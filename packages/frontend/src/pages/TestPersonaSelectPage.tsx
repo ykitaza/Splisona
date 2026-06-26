@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, CheckCheck, Sparkles, PencilLine, Check, ArrowLeft, ArrowRight } from 'lucide-react';
 import { usePersonas } from '../hooks/usePersonas';
 import { testDraft } from '../lib/testDraft';
+import { updateTest } from '../api/tests';
 import { PERSONA_TYPE_LABELS } from '../types';
 import { Stepper } from '../components/Stepper';
 
@@ -54,8 +55,20 @@ export function TestPersonaSelectPage() {
     setSelectedIds(new Set(filtered.map((p) => p.personaId)));
   }
 
-  function handleNext() {
-    testDraft.setPersonaIds(Array.from(selectedIds));
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function handleNext() {
+    const ids = Array.from(selectedIds);
+    testDraft.setPersonaIds(ids);
+    setIsSaving(true);
+    try {
+      const { resumeId } = testDraft.get();
+      if (resumeId) await updateTest(resumeId, { personaIds: ids });
+    } catch {
+      // 保存失敗でも遷移は続行
+    } finally {
+      setIsSaving(false);
+    }
     navigate('/tests/new/confirm');
   }
 
@@ -234,12 +247,12 @@ export function TestPersonaSelectPage() {
         </button>
         <button
           type="button"
-          disabled={selectedIds.size === 0}
+          disabled={selectedIds.size === 0 || isSaving}
           onClick={handleNext}
           className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
           style={{ background: '#0A0A0A', borderRadius: 6 }}
         >
-          次へ: 確認
+          {isSaving ? '保存中...' : '次へ: 確認'}
           <ArrowRight size={16} color="#FFFFFF" />
         </button>
       </div>

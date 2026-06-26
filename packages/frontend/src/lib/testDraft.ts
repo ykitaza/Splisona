@@ -18,6 +18,12 @@ const _draft: TestDraftData = {
   personaIds: [],
 };
 
+export function sideToDesignInput(side: DesignSideData): import('../types').DesignInput {
+  if (side.inputType === 'figma_url') return { inputType: 'figma_url', figmaUrl: side.url, imageKey: side.imageKey || undefined };
+  if (side.inputType === 'site_url') return { inputType: 'site_url', siteUrl: side.url, imageKey: side.imageKey || undefined };
+  return { inputType: 'image_upload', imageKey: side.imageKey || undefined };
+}
+
 export const testDraft = {
   get(): TestDraftData {
     return { ..._draft };

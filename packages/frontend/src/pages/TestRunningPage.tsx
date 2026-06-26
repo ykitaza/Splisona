@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getProgress, getTest } from '../api/tests';
+import { ArrowRight } from 'lucide-react';
 import { usePersonas } from '../hooks/usePersonas';
 import { API_BASE } from '../api/client';
 import type { ProgressResponse, ABTest } from '../types';
@@ -73,6 +74,8 @@ export function TestRunningPage() {
     getTest(id).then(setTest).catch(() => {});
   }, [id]);
 
+  const [isDone, setIsDone] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     let active = true;
@@ -83,7 +86,7 @@ export function TestRunningPage() {
         if (!active) return;
         setProgress(data);
         if (data.status === 'completed' || data.status === 'failed') {
-          navigate(`/tests/${id}/report`);
+          setIsDone(true);
           return;
         }
       } catch {
@@ -94,7 +97,7 @@ export function TestRunningPage() {
 
     poll();
     return () => { active = false; };
-  }, [id, navigate]);
+  }, [id]);
 
   const total = progress?.total ?? 0;
   const completed = progress?.completed ?? 0;
@@ -208,12 +211,12 @@ export function TestRunningPage() {
         >
           <div
             className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, background: '#3B7DD8' }}
+            style={{ width: `${pct}%`, background: isDone ? '#2E9E5B' : '#3B7DD8' }}
           />
         </div>
         <div className="flex items-center justify-between">
           <span style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-            {pct}% 完了
+            {isDone ? '評価が完了しました' : `${pct}% 完了`}
           </span>
           {failed > 0 && (
             <span style={{ color: '#D64545', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
@@ -222,6 +225,20 @@ export function TestRunningPage() {
           )}
         </div>
       </div>
+
+      {/* Done CTA */}
+      {isDone && (
+        <div className="flex justify-end">
+          <Link
+            to={`/tests/${id}/report`}
+            className="flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: '#0A0A0A', borderRadius: 6 }}
+          >
+            結果を見る
+            <ArrowRight size={16} color="#FFFFFF" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

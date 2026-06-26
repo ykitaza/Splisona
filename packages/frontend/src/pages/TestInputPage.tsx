@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Image, Info, ArrowRight, Link2, Camera } from 'lucide-react';
-import { testDraft, type DesignSideData } from '../lib/testDraft';
-import { captureUrl } from '../api/tests';
+import { testDraft, sideToDesignInput, type DesignSideData } from '../lib/testDraft';
+import { captureUrl, createTest, updateTest } from '../api/tests';
 import { API_BASE } from '../api/client';
 import { Stepper } from '../components/Stepper';
 
@@ -284,6 +284,7 @@ export function TestInputPage() {
   const [sideB, setSideB] = useState<DesignSideData | null>(initial.sideB);
 
   const canProceed = title.trim().length > 0 && isSideReady(sideA) && isSideReady(sideB);
+  const [isSaving, setIsSaving] = useState(false);
 
   function handleTitleChange(value: string) {
     setTitle(value);
@@ -294,6 +295,27 @@ export function TestInputPage() {
     testDraft.setSide(side, data);
     if (side === 'A') setSideA(data);
     else setSideB(data);
+  }
+
+  async function handleNext() {
+    if (!sideA || !sideB) return;
+    setIsSaving(true);
+    try {
+      const draft = testDraft.get();
+      const designAInput = sideToDesignInput(sideA);
+      const designBInput = sideToDesignInput(sideB);
+      if (draft.resumeId) {
+        await updateTest(draft.resumeId, { title, designAInput, designBInput });
+      } else {
+        const test = await createTest({ title, designAInput, designBInput, personaIds: draft.personaIds });
+        testDraft.resume({ ...draft, resumeId: test.testId });
+      }
+      navigate('/tests/new/personas');
+    } catch {
+      navigate('/tests/new/personas');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -357,12 +379,12 @@ export function TestInputPage() {
         </Link>
         <button
           type="button"
-          disabled={!canProceed}
-          onClick={() => navigate('/tests/new/personas')}
+          disabled={!canProceed || isSaving}
+          onClick={handleNext}
           className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
           style={{ background: '#0A0A0A', borderRadius: 6 }}
         >
-          次へ: ペルソナを選択
+          {isSaving ? '保存中...' : '次へ: ペルソナを選択'}
           <ArrowRight size={16} color="#FFFFFF" />
         </button>
       </div>
