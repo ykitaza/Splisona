@@ -27,12 +27,12 @@ describe('AppLayout', () => {
   });
 
   describe('ナビゲーション項目', () => {
-    it('「ペルソナ」「A/Bテスト」「結果」の3項目が表示される', () => {
+    it('「新規A/Bテスト」「A/Bテスト」「ペルソナ」の3項目が表示される', () => {
       renderLayout();
 
-      expect(screen.getByText('ペルソナ')).toBeInTheDocument();
+      expect(screen.getByText('新規A/Bテスト')).toBeInTheDocument();
       expect(screen.getByText('A/Bテスト')).toBeInTheDocument();
-      expect(screen.getByText('結果')).toBeInTheDocument();
+      expect(screen.getByText('ペルソナ')).toBeInTheDocument();
     });
 
     it('「ダッシュボード」ナビ項目が存在しない', () => {
@@ -44,12 +44,12 @@ describe('AppLayout', () => {
     it('ナビ項目が正しいルートにリンクしている', () => {
       renderLayout();
 
-      const personaLink = screen.getByText('ペルソナ').closest('a');
+      const newTestLink = screen.getByText('新規A/Bテスト').closest('a');
       const testLink = screen.getByText('A/Bテスト').closest('a');
-      const resultLink = screen.getByText('結果').closest('a');
+      const personaLink = screen.getByText('ペルソナ').closest('a');
+      expect(newTestLink).toHaveAttribute('href', '/tests/new');
+      expect(testLink).toHaveAttribute('href', '/results');
       expect(personaLink).toHaveAttribute('href', '/personas');
-      expect(testLink).toHaveAttribute('href', '/tests/new');
-      expect(resultLink).toHaveAttribute('href', '/results');
     });
   });
 

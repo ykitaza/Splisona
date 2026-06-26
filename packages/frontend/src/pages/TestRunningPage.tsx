@@ -1,78 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getProgress, getTest, getReport } from '../api/tests';
-import { ArrowRight } from 'lucide-react';
+import { Square, ArrowRight } from 'lucide-react';
+import { getProgress, getTest, getReport, abortTest } from '../api/tests';
 import { usePersonas } from '../hooks/usePersonas';
-import { API_BASE } from '../api/client';
-import { ImageLightbox } from '../components/ImageLightbox';
+import { getNodeColor } from '../components/persona/PersonaNode';
+import { PERSONA_TYPE_LABELS } from '../types';
 import type { ProgressResponse, ABTest, EvaluationResult } from '../types';
 
-type Zone = 'A' | 'B' | 'center';
-const ZONE_X: Record<Zone, number> = { A: 22, center: 50, B: 78 };
-
-const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
-const SEED_SPACING = 64;
-function sunflowerOffset(k: number): { dx: number; dy: number } {
-  const r = SEED_SPACING * Math.sqrt(k);
-  const theta = k * GOLDEN_ANGLE;
-  return { dx: r * Math.cos(theta), dy: r * Math.sin(theta) };
-}
-
-const VERDICT_CHIP: Record<'A' | 'B' | 'none', { label: string; color: string; bg: string }> = {
-  A: { label: 'A案', color: 'var(--color-win-a)', bg: 'var(--color-accent-dim)' },
-  B: { label: 'B案', color: 'var(--color-win-b)', bg: 'var(--color-win-b-dim, rgba(201,151,79,0.15))' },
-  none: { label: '互角', color: 'var(--color-text-lo)', bg: 'var(--color-raised)' },
-};
-const FAILED_CHIP = { label: '失敗', color: 'var(--color-danger)', bg: 'var(--color-danger-dim, rgba(214,69,69,0.15))' };
-const THINKING_CHIP = { label: '検討中', color: 'var(--color-text-lo)', bg: 'var(--color-raised)' };
-
-function DesignThumb({ label, imageKey, accentColor, scanning }: { label: string; imageKey?: string; accentColor: string; scanning?: boolean }) {
-  const [lightbox, setLightbox] = useState(false);
-  const src = imageKey ? `${API_BASE}/stub-upload/${imageKey}` : null;
-
-  return (
-    <>
-      {lightbox && src && <ImageLightbox src={src} alt={`${label}プレビュー`} onClose={() => setLightbox(false)} />}
-      <div className="flex flex-col gap-2 flex-1 overflow-hidden rounded-md" style={{ borderLeft: `2px solid ${accentColor}` }}>
-        <div className="flex items-center gap-2 px-4 pt-3">
-          <span className="inline-block w-2 h-2 rounded-full" style={{ background: accentColor }} />
-          <span className="text-text-hi font-sans text-xs font-semibold">{label}</span>
-        </div>
-        <div
-          className="relative mx-3 mb-3 overflow-hidden rounded flex items-center justify-center"
-          style={{ height: 120, background: 'var(--color-raised)', cursor: src ? 'zoom-in' : 'default' }}
-          onClick={() => { if (src) setLightbox(true); }}
-        >
-          {src ? (
-            <img src={src} alt={`${label}プレビュー`} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-text-lo font-sans text-xs">画像なし</span>
-          )}
-          {scanning && (
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  height: 48,
-                  background: `linear-gradient(to bottom, transparent, ${accentColor}40 50%, transparent)`,
-                  animation: 'ai-scan 1.8s ease-in-out infinite',
-                }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
+interface LogEntry {
+  ts: string;
+  msg: string;
+  level: 'lo' | 'mid' | 'hi' | 'accent';
 }
 
 export function TestRunningPage() {
   const { id } = useParams<{ id: string }>();
   const [progress, setProgress] = useState<ProgressResponse | null>(null);
   const [test, setTest] = useState<ABTest | null>(null);
+  const [results, setResults] = useState<Record<string, EvaluationResult>>({});
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [startTime] = useState(() => Date.now());
   const { personas } = usePersonas();
+  const logsEndRef = useRef<HTMLDivElement>(null);
+
+  function elapsed() {
+    const s = Math.floor((Date.now() - startTime) / 1000);
+    const m = String(Math.floor(s / 60)).padStart(2, '0');
+    const ss = String(s % 60).padStart(2, '0');
+    return `${m}:${ss}`;
+  }
+
+  function addLog(msg: string, level: LogEntry['level'] = 'mid') {
+    setLogs((prev) => [...prev, { ts: elapsed(), msg, level }]);
+  }
 
   useEffect(() => {
     if (!id) return;
@@ -80,11 +40,14 @@ export function TestRunningPage() {
   }, [id]);
 
   const [isDone, setIsDone] = useState(false);
-  const [results, setResults] = useState<Record<string, EvaluationResult>>({});
+  const [isAborting, setIsAborting] = useState(false);
+  const prevResultsRef = useRef<Record<string, EvaluationResult>>({});
 
   useEffect(() => {
     if (!id) return;
     let active = true;
+
+    addLog('テスト開始', 'lo');
 
     async function poll() {
       try {
@@ -97,8 +60,19 @@ export function TestRunningPage() {
           if (!active) return;
           const map: Record<string, EvaluationResult> = {};
           for (const ev of report.evaluations) {
-            if (ev.status === 'completed' || ev.status === 'failed') map[ev.personaId] = ev;
+            if (ev.status === 'completed' || ev.status === 'failed') {
+              map[ev.personaId] = ev;
+              if (!prevResultsRef.current[ev.personaId]) {
+                if (ev.status === 'completed') {
+                  const winner = ev.winner === 'A' ? 'A案' : ev.winner === 'B' ? 'B案' : '引分';
+                  addLog(`${ev.personaDisplayName} 完了 → ${winner}を支持`, 'hi');
+                } else {
+                  addLog(`${ev.personaDisplayName} 失敗`, 'lo');
+                }
+              }
+            }
           }
+          prevResultsRef.current = map;
           setResults(map);
         } catch {
           // ignore
@@ -106,6 +80,7 @@ export function TestRunningPage() {
 
         if (data.status === 'completed' || data.status === 'failed') {
           setIsDone(true);
+          addLog('評価完了', 'hi');
           return;
         }
       } catch {
@@ -118,9 +93,12 @@ export function TestRunningPage() {
     return () => { active = false; };
   }, [id]);
 
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logs]);
+
   const total = progress?.total ?? 0;
   const completed = progress?.completed ?? 0;
-  const failed = progress?.failed ?? 0;
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   const personaIds = test?.personaIds ?? [];
@@ -128,129 +106,180 @@ export function TestRunningPage() {
     .map((pid) => personas.find((p) => p.personaId === pid))
     .filter(Boolean) as typeof personas;
 
-  const displayCount = personaIds.length || 6;
-
-  const zoneSeen: Record<Zone, number> = { A: 0, center: 0, B: 0 };
-  const stageItems = Array.from({ length: displayCount }).map((_, i) => {
-    const persona = relevantPersonas[i];
-    const result = persona ? results[persona.personaId] : undefined;
-    const winner = result?.status === 'completed' ? result.winner : undefined;
-    const isFailed = result?.status === 'failed';
-    const zone: Zone = winner === 'A' ? 'A' : winner === 'B' ? 'B' : 'center';
-    const seedIndex = zoneSeen[zone]++;
-    return { i, persona, result, winner, isFailed, zone, seedIndex };
-  });
+  const isFailed = progress?.status === 'failed';
+  const statusColor = isDone ? (isFailed ? 'var(--color-danger)' : 'var(--color-success)') : 'var(--color-accent)';
+  const statusGlow = isDone ? (isFailed ? '#E06A6AAA' : '#54B587AA') : '#6E78D9AA';
 
   return (
-    <div className="flex flex-col gap-5 p-8 pb-10" style={{ height: '100%' }}>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-text-hi font-sans text-lg font-semibold">AIペルソナがレビュー中…</h1>
-          <p className="text-text-lo font-sans text-sm">ペルソナたちがA案・B案を見比べています</p>
-        </div>
-        <div className="flex items-center gap-2 rounded-full bg-accent-dim px-3 py-1.5">
-          <div className="rounded-full w-2 h-2 bg-accent" style={{ animation: 'pulse 1.5s infinite' }} />
-          <span className="text-accent font-sans text-xs font-semibold">
-            {progress ? `${completed} / ${total} 完了` : '準備中...'}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex gap-4">
-        <DesignThumb label="A案" imageKey={test?.designAInput?.imageKey} accentColor="var(--color-win-a, #6E78D9)" scanning={!isDone} />
-        <DesignThumb label="B案" imageKey={test?.designBInput?.imageKey} accentColor="var(--color-win-b, #C9974F)" scanning={!isDone} />
-      </div>
-
-      <div
-        className="relative overflow-hidden flex-1 rounded-md"
-        style={{
-          background: 'linear-gradient(90deg, var(--color-accent-dim) 0%, var(--color-base) 50%, var(--color-win-b-dim, rgba(201,151,79,0.15)) 100%)',
-          border: '1px solid var(--color-hairline)',
-          minHeight: 240,
-        }}
-      >
-        <span className="absolute text-win-a font-mono text-xs font-semibold" style={{ left: 16, top: 12, letterSpacing: 0.5 }}>
-          A案 支持
-        </span>
-        <span className="absolute text-win-b font-mono text-xs font-semibold" style={{ right: 16, top: 12, letterSpacing: 0.5 }}>
-          B案 支持
-        </span>
-
-        {stageItems.map(({ i, persona, result, winner, isFailed, zone, seedIndex }) => {
-          const name = persona?.displayName ?? `P${i + 1}`;
-          const { dx, dy } = sunflowerOffset(seedIndex);
-          const wavering = !result;
-          const chip = result
-            ? (winner ? VERDICT_CHIP[winner] : isFailed ? FAILED_CHIP : VERDICT_CHIP.none)
-            : THINKING_CHIP;
-
-          return (
-            <div
-              key={i}
-              className="absolute flex flex-col items-center gap-1.5"
+    <div className="flex flex-col" style={{ padding: '48px 128px', gap: 32, height: '100%' }}>
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col" style={{ gap: 7 }}>
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <span
+              className="inline-block rounded-full"
               style={{
-                left: `${ZONE_X[zone]}%`,
-                top: '50%',
-                transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`,
-                transition: 'left 1.6s cubic-bezier(0.22, 1, 0.36, 1), transform 1.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                width: 7, height: 7,
+                background: statusColor,
+                boxShadow: `0 0 8px ${statusGlow}`,
+                animation: isDone ? 'none' : 'pulse 1.5s infinite',
               }}
-            >
-              <div
-                style={{ animation: wavering ? `persona-waver ${2 + (i % 3) * 0.4}s ease-in-out ${i * 0.18}s infinite` : 'none' }}
-                className="flex flex-col items-center gap-1.5"
-              >
-                <div className="relative px-2.5 py-1 rounded-xl" style={{ background: chip.bg, marginBottom: 2 }}>
-                  <span className="font-sans text-xs font-semibold whitespace-nowrap" style={{ color: chip.color, fontSize: 10 }}>
-                    {chip.label}
-                  </span>
-                  <div className="absolute" style={{ left: '50%', bottom: -3, width: 8, height: 8, background: chip.bg, transform: 'translateX(-50%) rotate(45deg)', borderRadius: 1 }} />
-                </div>
-                <div className="flex items-center justify-center rounded-full bg-raised" style={{ width: 48, height: 48 }}>
-                  <span className="text-text-mid font-sans font-semibold" style={{ fontSize: 17 }}>
-                    {name.charAt(0)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <div
-          role="progressbar"
-          aria-valuenow={pct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          className="overflow-hidden rounded-full"
-          style={{ height: 6, background: 'var(--color-raised)' }}
-        >
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, background: isDone ? 'var(--color-win-b)' : 'var(--color-accent)' }}
-          />
+            />
+            <span className="font-mono text-xs" style={{ color: statusColor, letterSpacing: 1.5 }}>
+              {isDone ? (isFailed ? 'ABORTED' : 'COMPLETED') : 'RUNNING'}
+            </span>
+          </div>
+          <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>
+            {isDone ? (isFailed ? '中止済み' : '評価完了') : '実行中'}
+          </h1>
+          <div className="flex items-center" style={{ gap: 9 }}>
+            <span className="text-text-mid font-sans" style={{ fontSize: 13 }}>{test?.title ?? ''}</span>
+            <span className="text-text-lo font-mono text-xs">·</span>
+            <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.3 }}>
+              {isDone ? '所要' : '経過'} {elapsed()}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-text-lo font-sans text-sm">
-            {isDone ? '評価が完了しました' : `${pct}% 完了`}
-          </span>
-          {failed > 0 && (
-            <span className="text-danger font-sans text-sm">失敗: {failed}件</span>
-          )}
-        </div>
-      </div>
-
-      {isDone && (
-        <div className="flex justify-end">
+        {isDone ? (
           <Link
             to={`/tests/${id}/report`}
-            className="flex items-center gap-2 rounded-md bg-accent px-5 py-2.5 text-white font-sans text-sm font-semibold transition-opacity hover:opacity-90"
+            className="flex items-center border border-hairline text-text-hi font-sans font-medium transition-colors hover:bg-raised"
+            style={{ gap: 8, borderRadius: 6, padding: '8px 14px', fontSize: 13 }}
           >
             結果を見る
-            <ArrowRight size={16} />
+            <ArrowRight size={14} className="text-text-hi" />
           </Link>
+        ) : (
+          <button
+            type="button"
+            disabled={isAborting}
+            onClick={async () => {
+              if (!id) return;
+              setIsAborting(true);
+              try {
+                await abortTest(id);
+                addLog('テストを中止しました', 'lo');
+                setIsDone(true);
+                setProgress((prev) => prev ? { ...prev, status: 'failed' } : prev);
+              } catch {
+                addLog('中止に失敗しました', 'lo');
+              } finally {
+                setIsAborting(false);
+              }
+            }}
+            className="flex items-center bg-surface border border-hairline text-text-mid font-sans font-medium transition-colors hover:text-text-hi disabled:opacity-40"
+            style={{ gap: 8, borderRadius: 10, padding: '10px 15px', fontSize: 13 }}
+          >
+            <Square size={14} className="text-danger" />
+            {isAborting ? '中止中...' : '中止'}
+          </button>
+        )}
+      </div>
+
+      {/* Progress */}
+      <div className="flex flex-col" style={{ gap: 14 }}>
+        <div className="flex items-end justify-between">
+          <div className="flex items-end" style={{ gap: 6 }}>
+            <span className="text-text-hi font-mono font-semibold" style={{ fontSize: 40, lineHeight: 1 }}>{completed}</span>
+            <span className="text-text-lo font-mono" style={{ fontSize: 24, lineHeight: 1 }}>/ {total} 体 完了</span>
+          </div>
+          <span className="font-mono font-semibold" style={{ fontSize: 18, color: statusColor }}>{pct}%</span>
         </div>
-      )}
+        <div className="overflow-hidden" style={{ height: 6, borderRadius: 999, background: 'var(--color-raised)' }}>
+          <div
+            className="h-full transition-all duration-500"
+            style={{ width: `${pct}%`, borderRadius: 999, background: statusColor }}
+          />
+        </div>
+      </div>
+
+      {/* Columns */}
+      <div className="flex flex-1 min-h-0" style={{ gap: 48 }}>
+        {/* ロースター */}
+        <div className="flex flex-col" style={{ width: 480, gap: 16 }}>
+          <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>ロースター</span>
+          <div className="flex flex-col">
+            {relevantPersonas.map((persona, i) => {
+              const result = results[persona.personaId];
+              const dotColor = getNodeColor(persona.personaId);
+              const isCompleted = result?.status === 'completed';
+              const isFailed = result?.status === 'failed';
+              const isRunning = !result && i === completed;
+
+              return (
+                <div key={persona.personaId}>
+                  {i > 0 && <div className="h-px bg-hairline" />}
+                  <div className="flex items-center justify-between" style={{ padding: '12px 0', gap: 12 }}>
+                    <div className="flex items-center" style={{ gap: 12 }}>
+                      <span
+                        className="inline-block flex-shrink-0 rounded-full"
+                        style={{ width: 11, height: 11, background: dotColor, boxShadow: `0 0 6px ${dotColor}55` }}
+                      />
+                      <div className="flex flex-col" style={{ gap: 2 }}>
+                        <span className="text-text-hi font-sans text-sm font-medium">{persona.displayName}</span>
+                        <span className="text-text-lo font-mono text-xs">{PERSONA_TYPE_LABELS[persona.type]}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center" style={{ gap: 6 }}>
+                      {isCompleted && result.winner && result.winner !== 'none' && (
+                        <span
+                          className="font-mono text-xs font-semibold"
+                          style={{
+                            borderRadius: 999,
+                            padding: '4px 11px',
+                            background: result.winner === 'A' ? '#6E78D922' : '#C9974F22',
+                            color: result.winner === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)',
+                          }}
+                        >
+                          {result.winner}案
+                        </span>
+                      )}
+                      {isCompleted && result.winner === 'none' && (
+                        <span className="text-text-lo font-mono text-xs">引分</span>
+                      )}
+                      {isFailed && (
+                        <span className="text-danger font-mono text-xs">失敗</span>
+                      )}
+                      {isRunning && (
+                        <span className="text-accent font-mono text-xs" style={{ animation: 'pulse 1.5s infinite' }}>評価中…</span>
+                      )}
+                      {!result && !isRunning && (
+                        <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>待機</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ライブログ */}
+        <div className="flex flex-col flex-1 min-w-0" style={{ gap: 16 }}>
+          <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>ライブログ</span>
+          <div className="flex flex-col overflow-y-auto" style={{ gap: 9 }}>
+            {logs.map((entry, i) => (
+              <div key={i} className="flex" style={{ gap: 12 }}>
+                <span className="text-text-lo font-mono flex-shrink-0" style={{ fontSize: 13 }}>{entry.ts}</span>
+                <span
+                  className="font-mono"
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    color: entry.level === 'hi' ? 'var(--color-text-hi)'
+                      : entry.level === 'accent' ? 'var(--color-accent)'
+                      : entry.level === 'mid' ? 'var(--color-text-mid)'
+                      : 'var(--color-text-lo)',
+                  }}
+                >
+                  {entry.msg}
+                </span>
+              </div>
+            ))}
+            <div ref={logsEndRef} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

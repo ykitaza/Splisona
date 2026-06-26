@@ -47,7 +47,7 @@ function renderPage() {
   );
 }
 
-describe('TestListPage (LedgerRow版)', () => {
+describe('TestListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -58,21 +58,28 @@ describe('TestListPage (LedgerRow版)', () => {
     expect(screen.getByText('ヘッダー改善')).toBeInTheDocument();
   });
 
-  it('ペルソナ数が表示される', () => {
-    renderPage();
-    expect(screen.getByText('3人')).toBeInTheDocument();
-    expect(screen.getByText('1人')).toBeInTheDocument();
-  });
-
-  it('サムネイルが表示される', () => {
-    renderPage();
-    const images = screen.getAllByRole('img');
-    expect(images.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('ダークトークンのクラスが使用されている', () => {
+  it('タイトルが表示される', () => {
     renderPage();
     const heading = screen.getByText('A/Bテスト');
-    expect(heading.className).toContain('text-text-hi');
+    expect(heading.tagName).toBe('H1');
+  });
+
+  it('検索バーが表示される', () => {
+    renderPage();
+    expect(screen.getByPlaceholderText('テストを検索...')).toBeInTheDocument();
+  });
+
+  it('「テストを選択」ボタンで選択モードに入る', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByText('テストを選択'));
+    expect(screen.getByText('0件を選択中')).toBeInTheDocument();
+    expect(screen.getByText('キャンセル')).toBeInTheDocument();
+  });
+
+  it('新規テストリンクが表示される', () => {
+    renderPage();
+    const link = screen.getByText('新規テスト').closest('a');
+    expect(link).toHaveAttribute('href', '/tests/new');
   });
 });

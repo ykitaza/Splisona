@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Check, ArrowLeft, ArrowRight, CheckCheck } from 'lucide-react';
+import { Search, Check, ArrowLeft, ArrowRight } from 'lucide-react';
 import { usePersonas } from '../hooks/usePersonas';
 import { testDraft } from '../lib/testDraft';
 import { updateTest } from '../api/tests';
@@ -14,6 +14,7 @@ export function TestPersonaSelectPage() {
     new Set(testDraft.get().personaIds),
   );
   const [query, setQuery] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'default' | 'custom'>('all');
   const [isSaving, setIsSaving] = useState(false);
 
   if (isLoading) {
@@ -26,6 +27,8 @@ export function TestPersonaSelectPage() {
 
   const q = query.trim();
   const filtered = personas.filter((p) => {
+    if (sourceFilter === 'default' && p.source !== 'default') return false;
+    if (sourceFilter === 'custom' && p.source === 'default') return false;
     return !q || p.displayName.includes(q) || (p.occupation ?? '').includes(q);
   });
 
@@ -74,35 +77,50 @@ export function TestPersonaSelectPage() {
         </div>
       </div>
 
-      {/* Toolbar */}
+      {/* Filters */}
       <div className="flex items-center justify-between">
-        <div
-          className="flex items-center gap-2"
-          style={{ width: 280, borderRadius: 10, background: 'var(--color-surface)', border: '1px solid var(--color-hairline)', padding: '8px 12px' }}
+        <div className="flex items-center gap-2">
+          {([['all', 'すべて'], ['default', 'デフォルト'], ['custom', 'カスタム']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSourceFilter(key)}
+              className="font-mono text-xs transition-colors"
+              style={{
+                borderRadius: 999,
+                padding: '8px 12px',
+                letterSpacing: 0.3,
+                background: sourceFilter === key ? 'var(--color-raised)' : 'transparent',
+                border: sourceFilter === key ? '1px solid var(--color-hairline)' : '1px solid transparent',
+                color: sourceFilter === key ? 'var(--color-text-hi)' : 'var(--color-text-lo)',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={selectAll}
+          className="text-accent font-sans text-sm font-medium transition-opacity hover:opacity-80"
         >
-          <Search size={15} className="text-text-lo flex-shrink-0" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="ペルソナを検索"
-            className="flex-1 bg-transparent text-text-hi font-sans text-sm outline-none"
-          />
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-accent font-mono text-sm">
-            {selectedIds.size} / {personas.length} 体
-          </span>
-          <button
-            type="button"
-            onClick={selectAll}
-            className="flex items-center gap-2 text-text-mid font-sans text-sm transition-colors hover:text-text-hi"
-            style={{ borderRadius: 10, border: '1px solid var(--color-hairline)', padding: '8px 14px' }}
-          >
-            <CheckCheck size={15} />
-            全選択
-          </button>
-        </div>
+          全選択
+        </button>
+      </div>
+
+      {/* Search */}
+      <div
+        className="flex items-center gap-2"
+        style={{ width: 280, borderRadius: 10, background: 'var(--color-surface)', border: '1px solid var(--color-hairline)', padding: '8px 12px' }}
+      >
+        <Search size={15} className="text-text-lo flex-shrink-0" />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="ペルソナを検索"
+          className="flex-1 bg-transparent text-text-hi font-sans text-sm outline-none"
+        />
       </div>
 
       {/* List */}

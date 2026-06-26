@@ -6,6 +6,7 @@ import { SettingsModal } from './SettingsModal';
 vi.mock('../api/settings', () => ({
   getSettings: vi.fn().mockResolvedValue({}),
   putSettings: vi.fn().mockResolvedValue(undefined),
+  getConfig: vi.fn().mockResolvedValue({ modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0' }),
 }));
 
 import { getSettings, putSettings } from '../api/settings';
@@ -55,6 +56,6 @@ describe('SettingsModal', () => {
     });
 
     await user.click(screen.getByText('プロンプト'));
-    expect(screen.getByText('評価プロンプト')).toBeInTheDocument();
+    expect(screen.getByText('ペルソナ評価')).toBeInTheDocument();
   });
 });

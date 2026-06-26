@@ -50,6 +50,7 @@ export function AttributeHeatmap({ evaluations, personas, groupBy }: AttributeHe
       }
       const g = groups.get(label)!;
       const s = side === 'A' ? ev.scoresA : ev.scoresB;
+      if (!s) continue;
       for (const axis of AXES) {
         g.scores[axis.key].push(s[axis.key] ?? 0);
       }
@@ -73,23 +74,27 @@ export function AttributeHeatmap({ evaluations, personas, groupBy }: AttributeHe
     <div className="flex flex-col gap-3">
       {/* A/B toggle */}
       <div className="flex items-center gap-1">
-        {(['A', 'B'] as const).map((s) => (
-          <button
-            key={s}
-            type="button"
-            role="button"
-            aria-label={s}
-            aria-pressed={side === s}
-            onClick={() => setSide(s)}
-            className="rounded-md px-3 py-1 font-mono text-xs font-semibold transition-colors"
-            style={{
-              background: side === s ? 'var(--color-accent-dim, #6E78D926)' : 'transparent',
-              color: side === s ? 'var(--color-accent, #6E78D9)' : 'var(--color-text-lo, #5B616B)',
-            }}
-          >
-            {s}
-          </button>
-        ))}
+        {(['A', 'B'] as const).map((s) => {
+          const c = s === 'A' ? '#6E78D9' : '#C9974F';
+          const bg = s === 'A' ? 'rgba(110, 120, 217, 0.15)' : 'rgba(201, 151, 79, 0.15)';
+          return (
+            <button
+              key={s}
+              type="button"
+              role="button"
+              aria-label={s}
+              aria-pressed={side === s}
+              onClick={() => setSide(s)}
+              className="rounded-md px-3 py-1 font-mono text-xs font-semibold transition-colors"
+              style={{
+                background: side === s ? bg : 'transparent',
+                color: side === s ? c : 'var(--color-text-lo, #5B616B)',
+              }}
+            >
+              {s}
+            </button>
+          );
+        })}
       </div>
 
       {/* Table */}
@@ -120,7 +125,9 @@ export function AttributeHeatmap({ evaluations, personas, groupBy }: AttributeHe
                       className="text-right font-mono text-xs py-2.5 px-2"
                       style={{
                         color: 'var(--color-text-hi, #F2F4F7)',
-                        background: `rgba(110, 120, 217, ${(intensity * 0.3).toFixed(2)})`,
+                        background: side === 'A'
+                          ? `rgba(110, 120, 217, ${(intensity * 0.3).toFixed(2)})`
+                          : `rgba(201, 151, 79, ${(intensity * 0.3).toFixed(2)})`,
                       }}
                     >
                       {val.toFixed(1)}

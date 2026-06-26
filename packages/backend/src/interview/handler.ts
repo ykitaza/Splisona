@@ -4,6 +4,7 @@ import { errorResponse } from "../shared/errors.js";
 import { type PersonaRecord } from "../shared/types.js";
 import { bedrockClient, MODEL_ID } from "../shared/bedrock.js";
 import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
+import { getAdditionalInstruction } from "../settings/prompts.js";
 
 type LambdaResponse = { statusCode: number; headers: Record<string, string>; body: string };
 
@@ -27,7 +28,8 @@ export async function interviewPersona(
 
     const { messages = [] }: { messages: ConversationMessage[] } = JSON.parse(event.body ?? "{}");
 
-    const systemPrompt = buildSystemPrompt(persona);
+    const additional = await getAdditionalInstruction(userId, "interview");
+    const systemPrompt = buildSystemPrompt(persona, additional);
 
     const res = await bedrockClient.send(
       new ConverseCommand({
@@ -53,7 +55,7 @@ export async function interviewPersona(
   }
 }
 
-function buildSystemPrompt(persona: PersonaRecord): string {
+function buildSystemPrompt(persona: PersonaRecord, additionalInstruction?: string): string {
   const lines = [
     `あなたは「${persona.displayName}」という人物を演じてください。`,
     `タイプ: ${persona.type}`,
@@ -66,6 +68,7 @@ function buildSystemPrompt(persona: PersonaRecord): string {
     persona.freeText ? `人物像: ${persona.freeText}` : null,
     "",
     "この人物として自然に会話してください。UXやデザインについて聞かれた場合は、この人物の視点で率直に答えてください。",
+    additionalInstruction ? `\n追加指示:\n${additionalInstruction}` : null,
   ]
     .filter((l) => l !== null)
     .join("\n");

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Check } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
@@ -7,10 +7,12 @@ import { AttributeHeatmap } from '../components/report/AttributeHeatmap';
 import { MethodPopover, SourcePopover } from '../components/report/Popovers';
 import { HelpDot } from '../components/report/HelpDot';
 import { getReport, executeTest, exportTest } from '../api/tests';
+import { getConfig } from '../api/settings';
 import { usePersonas } from '../hooks/usePersonas';
 import { getNodeColor } from '../components/persona/PersonaNode';
 import { API_BASE } from '../api/client';
-import type { ReportResponse, EvaluationScores, DesignInput } from '../types';
+import { PERSONA_TYPE_LABELS } from '../types';
+import type { ReportResponse, EvaluationScores, DesignInput, Persona } from '../types';
 
 const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
   usability: '使いやすさ',
@@ -164,17 +166,60 @@ function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
   );
 }
 
+function AttributePopoverInline({ persona, onClose }: { persona: Persona; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      data-testid="attribute-popover"
+      className="absolute z-50 rounded-md bg-raised border border-hairline"
+      style={{ top: '100%', left: 0, marginTop: 4, padding: '10px 14px', minWidth: 180, boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}
+    >
+      <p className="text-text-hi font-sans text-xs font-semibold mb-2">ペルソナ属性</p>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-text-lo font-mono text-xs">タイプ</span>
+          <span className="text-text-mid font-sans text-xs">{PERSONA_TYPE_LABELS[persona.type]}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-text-lo font-mono text-xs">年齢</span>
+          <span className="text-text-mid font-sans text-xs">{persona.age ? `${persona.age}歳` : '—'}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-text-lo font-mono text-xs">性別</span>
+          <span className="text-text-mid font-sans text-xs">{persona.gender ?? '—'}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-text-lo font-mono text-xs">職業</span>
+          <span className="text-text-mid font-sans text-xs">{persona.occupation ?? '—'}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TestReportPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [report, setReport] = useState<ReportResponse | null>(null);
   const [isRerunning, setIsRerunning] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [attrPopoverId, setAttrPopoverId] = useState<string | null>(null);
+  const [modelId, setModelId] = useState<string>('');
   const { personas } = usePersonas();
 
   useEffect(() => {
     if (!id) return;
     getReport(id).then(setReport);
+    getConfig().then((c) => setModelId(c.modelId));
   }, [id]);
 
   async function handleRerun() {
@@ -215,7 +260,7 @@ export function TestReportPage() {
   const countNone = summary.totalPersonas - supportCountA - supportCountB;
 
   return (
-    <div className="flex flex-col p-8 pb-10" style={{ gap: 32 }}>
+    <div className="flex flex-col p-8" style={{ gap: 32 }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col" style={{ gap: 7 }}>
@@ -307,7 +352,7 @@ export function TestReportPage() {
         >
           <div className="flex items-center" style={{ gap: 8 }}>
             <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>評価のまとめ</span>
-            <HelpDot content="各ペルソナの評価理由をAI要約した結果です" />
+            <HelpDot content={`生成元: ${modelId || '—'}。各ペルソナの評価理由をAIが要約した結果です。`} />
           </div>
           {summary.reasonSummaryA.length === 0 && summary.reasonSummaryB.length === 0 ? (
             <p className="text-text-lo font-sans text-sm">—</p>
@@ -326,20 +371,25 @@ export function TestReportPage() {
         >
           <div className="flex items-center" style={{ gap: 8 }}>
             <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>評価軸別の比較</span>
-            <HelpDot content="5軸の平均スコアをレーダーチャートで比較" />
+            <HelpDot content={`生成元: ${modelId || '—'}。5軸の平均スコアをレーダーチャートで比較。各ペルソナが1〜5で採点した全ペルソナ平均。最大5固定・正規化なし。支持率は多数決で別算出。`} />
+          </div>
+          <div className="flex items-center" style={{ gap: 20 }}>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-2 h-2 rounded-full bg-win-a" />
+              <span className="text-text-mid font-mono text-xs">A案</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-2 h-2 rounded-full bg-win-b" />
+              <span className="text-text-mid font-mono text-xs">B案</span>
+            </span>
           </div>
           <div className="flex flex-col items-center" style={{ gap: 16 }}>
             <RadarChart scoresA={summary.avgScores.A} scoresB={summary.avgScores.B} />
-            <div className="flex items-center" style={{ gap: 20 }}>
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block w-2 h-2 rounded-full bg-win-a" />
-                <span className="text-text-mid font-mono text-xs">A案</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block w-2 h-2 rounded-full bg-win-b" />
-                <span className="text-text-mid font-mono text-xs">B案</span>
-              </span>
-            </div>
+          </div>
+          <div className="flex flex-col" style={{ gap: 10, paddingTop: 8 }}>
+            {(Object.keys(SCORE_LABELS) as (keyof EvaluationScores)[]).map((key) => (
+              <ScoreBars key={key} label={SCORE_LABELS[key]} scoreA={summary.avgScores.A[key]} scoreB={summary.avgScores.B[key]} />
+            ))}
           </div>
         </div>
       </div>
@@ -353,11 +403,14 @@ export function TestReportPage() {
       <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>ペルソナ別の評価</span>
       <div className="bg-base border border-hairline overflow-hidden" style={{ borderRadius: 14 }}>
         <div className="flex items-center px-4 border-b border-hairline bg-base" style={{ gap: 16, padding: '12px 16px' }}>
-          <div style={{ width: 250 }}>
+          <div style={{ width: 220 }}>
             <span className="text-text-lo font-mono" style={{ fontSize: 10, letterSpacing: 0.8 }}>PERSONA</span>
           </div>
-          <div style={{ width: 96 }}>
+          <div style={{ width: 72 }}>
             <span className="text-text-lo font-mono" style={{ fontSize: 10, letterSpacing: 0.8 }}>勝者</span>
+          </div>
+          <div style={{ width: 64 }}>
+            <span className="text-text-lo font-mono" style={{ fontSize: 10, letterSpacing: 0.8 }}>確信度</span>
           </div>
           <div className="flex-1">
             <span className="text-text-lo font-mono" style={{ fontSize: 10, letterSpacing: 0.8 }}>コメント</span>
@@ -366,24 +419,37 @@ export function TestReportPage() {
         {evaluations.map((ev, i) => {
           const isExpanded = expandedId === ev.personaId;
           const dotColor = getNodeColor(ev.personaId);
+          const matchedPersona = personas.find((p) => p.personaId === ev.personaId);
           return (
             <div key={ev.personaId}>
               {i > 0 && <div className="h-px bg-hairline" />}
               <button
                 type="button"
                 onClick={() => setExpandedId(isExpanded ? null : ev.personaId)}
-                className="flex items-center w-full text-left transition-colors hover:bg-raised"
+                className="group flex items-center w-full text-left transition-colors hover:bg-raised"
                 style={{ gap: 16, padding: '16px 16px' }}
                 aria-expanded={isExpanded}
               >
-                <div className="flex items-center" style={{ width: 250, gap: 11 }}>
+                <div className="relative flex items-center" style={{ width: 220, gap: 11 }}>
                   <span className="inline-block flex-shrink-0 rounded-full" style={{ width: 11, height: 11, background: dotColor }} />
                   <div className="flex flex-col" style={{ gap: 2 }}>
-                    <span className="text-text-hi font-sans text-sm font-medium">{ev.personaDisplayName}</span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      data-testid={`persona-name-${ev.personaId}`}
+                      className="text-text-hi font-sans text-sm font-medium hover:text-accent transition-colors cursor-pointer"
+                      onClick={(e) => { e.stopPropagation(); setAttrPopoverId(attrPopoverId === ev.personaId ? null : ev.personaId); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setAttrPopoverId(attrPopoverId === ev.personaId ? null : ev.personaId); } }}
+                    >
+                      {ev.personaDisplayName}
+                    </span>
                     {ev.status === 'failed' && <span className="text-xs text-danger">失敗</span>}
                   </div>
+                  {attrPopoverId === ev.personaId && matchedPersona && (
+                    <AttributePopoverInline persona={matchedPersona} onClose={() => setAttrPopoverId(null)} />
+                  )}
                 </div>
-                <div style={{ width: 96 }}>
+                <div style={{ width: 72 }}>
                   {ev.status !== 'failed' && (
                     <span
                       className="inline-flex items-center justify-center text-xs font-bold"
@@ -398,6 +464,11 @@ export function TestReportPage() {
                     </span>
                   )}
                 </div>
+                <div style={{ width: 64 }}>
+                  {ev.status !== 'failed' && (
+                    <span className="text-text-mid font-mono text-xs">{ev.confidence}%</span>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p
                     className="text-text-mid font-sans text-sm"
@@ -409,12 +480,22 @@ export function TestReportPage() {
                     {ev.reason || '—'}
                   </p>
                 </div>
-                <div className="flex items-center justify-center" style={{ width: 32 }}>
+                <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ width: 32, ...(isExpanded ? { opacity: 1 } : {}) }}>
                   <ChevronDown size={16} className="text-text-lo" style={{ transition: 'transform 0.15s', transform: isExpanded ? 'rotate(180deg)' : 'none' }} />
                 </div>
               </button>
               {isExpanded && (
                 <div className="flex flex-col gap-4 bg-raised" style={{ padding: '4px 16px 20px 277px' }}>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>使用モデル</span>
+                    <p className="text-text-mid font-mono text-xs">{modelId || '—'}</p>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>解決済みプロンプト</span>
+                    <p className="text-text-mid font-sans text-xs" style={{ lineHeight: 1.5 }}>
+                      ペルソナ「{ev.personaDisplayName}」として、デザイン A と B を比較し、5軸で評価してください。
+                    </p>
+                  </div>
                   <div className="flex flex-col gap-1.5">
                     <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>コメント全文</span>
                     <p className="text-text-hi font-sans text-sm whitespace-pre-wrap" style={{ lineHeight: 1.5 }}>{ev.reason || '—'}</p>
@@ -435,7 +516,7 @@ export function TestReportPage() {
       </div>
 
       <p className="text-text-lo font-sans text-xs">
-        ペルソナ名をクリックで属性、行末の ? で使用モデル・解決済みプロンプト・各軸スコアを表示。各まとめ見出しの ? で生成元、エクスポートに全メタデータを含みます。
+        ペルソナ名クリックで属性、行クリックで使用モデル・プロンプト・各軸スコアを表示。見出しの ? で生成元を確認できます。
       </p>
     </div>
   );

@@ -52,11 +52,11 @@ describe('TestInputPage (統合後)', () => {
     expect(screen.getByText(/ペルソナを選択/)).toBeInTheDocument();
   });
 
-  it('ペルソナ選択ボタンをクリックするとモーダルが開く', async () => {
+  it('変更ボタンをクリックするとモーダルが開く', async () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByText(/ペルソナを選択/));
+    await user.click(screen.getByText('変更'));
     await waitFor(() => {
       expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
     });

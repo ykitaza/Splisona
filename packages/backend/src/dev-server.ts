@@ -12,12 +12,15 @@ import { getItem, putItem, deleteItem, queryByPK, abtestKey, evaluationKey } fro
 import { bedrockClient, MODEL_ID } from "./shared/bedrock.js";
 import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { chunkArray } from "./evaluation/orchestrator.js";
+import { getAdditionalInstruction } from "./settings/prompts.js";
 import type { ABTestRecord, PersonaRecord, EvaluationRecord } from "./shared/types.js";
 
 const LOCAL_UPLOAD_DIR = "/tmp/chorus-uploads";
 mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
 
 const USE_LOCAL_BEDROCK = process.env.LOCAL_BEDROCK === "true";
+
+const runningAbortControllers = new Map<string, AbortController>();
 
 function getImageFormat(key: string): "png" | "jpeg" | "gif" | "webp" {
   const ext = extname(key).slice(1).toLowerCase();
@@ -82,6 +85,7 @@ async function evaluateLocalBedrock(
   const imageABuf = readFileSync(imageKeyToPath(imageKeyA));
   const imageBBuf = readFileSync(imageKeyToPath(imageKeyB));
 
+  const additional = await getAdditionalInstruction(userId, "evaluation");
   const prompt = [
     `あなたは「${personaDisplayName}」というペルソナです。`,
     `タイプ: ${persona?.type ?? "consumer"}`,
@@ -91,6 +95,7 @@ async function evaluateLocalBedrock(
     "最初の画像がデザインA、次の画像がデザインBです。",
     "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。",
     "scoresA と scoresB に、A案・B案それぞれの各軸スコア（0〜100）を採点してください。reason は必ず日本語で記述してください。",
+    additional ? `\n追加指示:\n${additional}` : null,
   ].filter((l) => l !== null).join("\n");
 
   const command = new ConverseCommand({
@@ -182,6 +187,10 @@ app.options("*", (c) => {
   c.res.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   c.res.headers.set("Access-Control-Allow-Headers", "Content-Type,Authorization,x-local-user-id");
   return c.body(null, 204);
+});
+
+app.get("/config", (c) => {
+  return c.json({ modelId: MODEL_ID });
 });
 
 // ローカル用モック認証ミドルウェア（x-local-user-id を信頼）
@@ -404,19 +413,27 @@ app.post("/tests/:id/execute", async (c) => {
     }
     const now = new Date().toISOString();
     await putItem({ ...testBase, status: "running", updatedAt: now } as unknown as Record<string, unknown>);
+    const ac = new AbortController();
+    runningAbortControllers.set(testId, ac);
     // 非同期で実行（レスポンスを待たずに返す）
     (async () => {
-      const batches = chunkArray(test.personaIds!, 5);
-      for (const batch of batches) {
-        await Promise.allSettled(
-          batch.map((personaId) =>
-            evaluateLocalBedrock(testId, personaId, userId, test.designAImageKey!, test.designBImageKey!)
-          )
-        );
+      try {
+        const batches = chunkArray(test.personaIds!, 5);
+        for (const batch of batches) {
+          if (ac.signal.aborted) break;
+          await Promise.allSettled(
+            batch.map((personaId) =>
+              evaluateLocalBedrock(testId, personaId, userId, test.designAImageKey!, test.designBImageKey!)
+            )
+          );
+        }
+        if (ac.signal.aborted) return;
+        const evals = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
+        const summaryFields = await generateReasonSummaryFields(evals.filter((e) => e.status === "completed"));
+        await putItem({ ...testBase, status: "completed", ...summaryFields, updatedAt: new Date().toISOString() } as unknown as Record<string, unknown>);
+      } finally {
+        runningAbortControllers.delete(testId);
       }
-      const evals = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
-      const summaryFields = await generateReasonSummaryFields(evals.filter((e) => e.status === "completed"));
-      await putItem({ ...testBase, status: "completed", ...summaryFields, updatedAt: new Date().toISOString() } as unknown as Record<string, unknown>);
     })();
     return c.json({ started: true });
   }
@@ -424,37 +441,60 @@ app.post("/tests/:id/execute", async (c) => {
   const now = new Date().toISOString();
   await putItem({ ...testBase, status: "running", updatedAt: now } as unknown as Record<string, unknown>);
 
+  const ac = new AbortController();
+  runningAbortControllers.set(testId, ac);
   // 非同期で実行（レスポンスを待たずに返す）
   (async () => {
-    const personaIds: string[] = test.personaIds ?? [];
-    for (const personaId of personaIds) {
-      const persona = await getItem<PersonaRecord>({ PK: `USER#${userId}`, SK: `PERSONA#${personaId}` });
-      const winner = Math.random() > 0.5 ? "A" : "B";
-      // 勝者側を高め、敗者側を低めに振った 0〜100 スコアを生成
-      const scoreFor = (isWinner: boolean) => {
-        const base = isWinner ? 70 : 45;
-        const r = () => base + Math.floor(Math.random() * 25);
-        return { usability: r(), aesthetics: r(), clarity: r(), engagement: r(), trust: r() };
-      };
-      const evalRecord: EvaluationRecord = {
-        ...evaluationKey(testId, personaId),
-        winner: winner as "A" | "B",
-        confidence: Math.floor(Math.random() * 35) + 60,
-        reason: `[ローカルスタブ] ${persona?.displayName ?? personaId}視点での評価。デザイン${winner}の方が視認性・操作性に優れていると判断しました。`,
-        scoresA: scoreFor(winner === "A"),
-        scoresB: scoreFor(winner === "B"),
-        status: "completed",
-        personaDisplayName: persona?.displayName ?? personaId,
-        evaluatedAt: now,
-      };
-      await putItem(evalRecord as unknown as Record<string, unknown>);
+    try {
+      const personaIds: string[] = test.personaIds ?? [];
+      for (const personaId of personaIds) {
+        if (ac.signal.aborted) break;
+        const persona = await getItem<PersonaRecord>({ PK: `USER#${userId}`, SK: `PERSONA#${personaId}` });
+        const winner = Math.random() > 0.5 ? "A" : "B";
+        // 勝者側を高め、敗者側を低めに振った 0〜100 スコアを生成
+        const scoreFor = (isWinner: boolean) => {
+          const base = isWinner ? 70 : 45;
+          const r = () => base + Math.floor(Math.random() * 25);
+          return { usability: r(), aesthetics: r(), clarity: r(), engagement: r(), trust: r() };
+        };
+        const evalRecord: EvaluationRecord = {
+          ...evaluationKey(testId, personaId),
+          winner: winner as "A" | "B",
+          confidence: Math.floor(Math.random() * 35) + 60,
+          reason: `[ローカルスタブ] ${persona?.displayName ?? personaId}視点での評価。デザイン${winner}の方が視認性・操作性に優れていると判断しました。`,
+          scoresA: scoreFor(winner === "A"),
+          scoresB: scoreFor(winner === "B"),
+          status: "completed",
+          personaDisplayName: persona?.displayName ?? personaId,
+          evaluatedAt: now,
+        };
+        await putItem(evalRecord as unknown as Record<string, unknown>);
+      }
+      if (ac.signal.aborted) return;
+      const evals = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
+      const summaryFields = await generateReasonSummaryFields(evals.filter((e) => e.status === "completed"));
+      await putItem({ ...testBase, status: "completed", ...summaryFields, updatedAt: now } as unknown as Record<string, unknown>);
+    } finally {
+      runningAbortControllers.delete(testId);
     }
-    const evals = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
-    const summaryFields = await generateReasonSummaryFields(evals.filter((e) => e.status === "completed"));
-    await putItem({ ...testBase, status: "completed", ...summaryFields, updatedAt: now } as unknown as Record<string, unknown>);
   })();
 
   return c.json({ started: true });
+});
+
+app.post("/tests/:id/abort", async (c) => {
+  const userId = c.req.header("x-local-user-id")!;
+  const testId = c.req.param("id");
+
+  const test = await getItem<ABTestRecord>(abtestKey(userId, testId));
+  if (!test) return c.json({ error: "NOT_FOUND" }, 404);
+
+  const ac = runningAbortControllers.get(testId);
+  if (ac) ac.abort();
+  runningAbortControllers.delete(testId);
+
+  await putItem({ ...test, status: "failed", updatedAt: new Date().toISOString() } as unknown as Record<string, unknown>);
+  return c.json({ aborted: true });
 });
 
 // Report routes（DynamoDB集計: 実ハンドラーを使用）

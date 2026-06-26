@@ -2,14 +2,12 @@ import { useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
 
 type Props = {
-  /** 削除対象の件数 */
   count: number;
   isDeleting?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 };
 
-/** テスト削除の確認ダイアログ（デザイン: chorus.pen S5a-confirm） */
 export function ConfirmDeleteModal({ count, isDeleting, onConfirm, onCancel }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -21,48 +19,35 @@ export function ConfirmDeleteModal({ count, isDeleting, onConfirm, onCancel }: P
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center"
-      style={{ background: 'rgba(10, 10, 10, 0.45)', zIndex: 50 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={() => { if (!isDeleting) onCancel(); }}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="flex flex-col"
+        className="flex flex-col gap-5 bg-surface border border-hairline rounded-lg p-7"
+        style={{ width: 420, boxShadow: '0 16px 48px rgba(0,0,0,0.4)' }}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 420,
-          gap: 20,
-          padding: 28,
-          background: '#FFFFFF',
-          borderRadius: 10,
-          border: '1px solid #E6E6E8',
-          boxShadow: '0 16px 48px rgba(10, 10, 10, 0.25)',
-        }}
       >
-        <div
-          className="flex items-center justify-center flex-shrink-0"
-          style={{ width: 48, height: 48, borderRadius: 9999, background: '#FDEAEA' }}
-        >
-          <Trash2 size={22} color="#D64545" />
+        <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-full bg-danger-dim">
+          <Trash2 size={22} className="text-danger" />
         </div>
 
-        <div className="flex flex-col" style={{ gap: 8 }}>
-          <h2 style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 18, fontWeight: 600 }}>
+        <div className="flex flex-col gap-2">
+          <h2 className="text-text-hi font-sans text-lg font-semibold">
             テストを削除しますか？
           </h2>
-          <p style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 14, lineHeight: 1.5 }}>
+          <p className="text-text-mid font-sans text-sm leading-relaxed">
             選択した {count} 件のテストとレビュー結果がすべて削除されます。この操作は取り消せません。
           </p>
         </div>
 
-        <div className="flex items-center justify-end" style={{ gap: 10 }}>
+        <div className="flex items-center justify-end gap-2.5">
           <button
             type="button"
             onClick={onCancel}
             disabled={isDeleting}
-            className="transition-colors hover:bg-[#F0F1F3] disabled:opacity-40"
-            style={{ padding: '10px 16px', borderRadius: 6, border: '1px solid #E6E6E8', background: '#FFFFFF', color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+            className="px-4 py-2.5 rounded-md border border-hairline bg-surface text-text-mid font-sans text-sm font-medium transition-colors hover:bg-raised disabled:opacity-40"
           >
             キャンセル
           </button>
@@ -70,10 +55,9 @@ export function ConfirmDeleteModal({ count, isDeleting, onConfirm, onCancel }: P
             type="button"
             onClick={onConfirm}
             disabled={isDeleting}
-            className="flex items-center gap-1.5 transition-opacity hover:opacity-90 disabled:opacity-40"
-            style={{ padding: '10px 16px', borderRadius: 6, border: 'none', background: '#D64545', color: '#FFFFFF', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-md bg-danger text-white font-sans text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            <Trash2 size={14} color="#FFFFFF" />
+            <Trash2 size={14} />
             削除する
           </button>
         </div>

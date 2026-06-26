@@ -5,6 +5,7 @@ import { createPersona, generateDraft, uploadPersonaAvatar, updatePersona, getAv
 import { getApiErrorMessage } from '../api/client';
 import { PERSONA_TYPE_LABELS, type PersonaType } from '../types';
 import { PersonaNode, getNodeColor } from '../components/persona/PersonaNode';
+import { FieldSelect } from '../components/ui/FieldSelect';
 
 const PERSONA_TYPES = Object.entries(PERSONA_TYPE_LABELS) as [PersonaType, string][];
 
@@ -201,16 +202,12 @@ export function PersonaEditPage() {
 
               <div className="flex flex-col gap-1">
                 <span className="text-text-mid font-sans text-sm">タイプ</span>
-                <select
+                <FieldSelect
                   id="type"
                   value={type}
-                  onChange={(e) => setType(e.target.value as PersonaType)}
-                  className="bg-transparent text-text-hi font-sans text-base border-b border-hairline pb-2 outline-none focus:border-accent"
-                >
-                  {PERSONA_TYPES.map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setType(v as PersonaType)}
+                  options={PERSONA_TYPES.map(([value, label]) => ({ value, label }))}
+                />
               </div>
             </div>
 
@@ -278,32 +275,24 @@ export function PersonaEditPage() {
 
               <div className="flex flex-col gap-1">
                 <span className="text-text-mid font-sans text-sm">年収</span>
-                <select
+                <FieldSelect
                   id="annualIncome"
                   value={annualIncome}
-                  onChange={(e) => setAnnualIncome(e.target.value)}
-                  className="bg-transparent text-text-hi font-sans text-base border-b border-hairline pb-2 outline-none focus:border-accent"
-                >
-                  <option value="">選択</option>
-                  {[200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500, 2000].map((v) => (
-                    <option key={v} value={v}>{v}万円</option>
-                  ))}
-                </select>
+                  onChange={setAnnualIncome}
+                  placeholder="選択"
+                  options={[200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500, 2000].map((v) => ({ value: String(v), label: `${v}万円` }))}
+                />
               </div>
 
               <div className="flex flex-col gap-1">
                 <span className="text-text-mid font-sans text-sm">学歴</span>
-                <select
+                <FieldSelect
                   id="education"
                   value={education}
-                  onChange={(e) => setEducation(e.target.value)}
-                  className="bg-transparent text-text-hi font-sans text-base border-b border-hairline pb-2 outline-none focus:border-accent"
-                >
-                  <option value="">選択</option>
-                  {['中卒', '高卒', '専門卒', '短大卒', '大卒', '院卒'].map((v) => (
-                    <option key={v} value={v}>{v}</option>
-                  ))}
-                </select>
+                  onChange={setEducation}
+                  placeholder="選択"
+                  options={['中卒', '高卒', '専門卒', '短大卒', '大卒', '院卒'].map((v) => ({ value: v, label: v }))}
+                />
               </div>
             </div>
 

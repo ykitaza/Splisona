@@ -41,9 +41,9 @@ test('合成プロンプトに Copy ボタンがある', async ({ page }) => {
   await expect(page.getByTestId('copy-prompt')).toBeVisible();
 });
 
-test('フッターに「削除」「キャンセル」「保存する」ボタン', async ({ page }) => {
-  await page.goto('/personas/p-1');
-  await expect(page.getByRole('button', { name: '削除' })).toBeVisible();
+test('編集タブにフッターボタンが表示される', async ({ page }) => {
+  await page.goto('/personas/p-3');
+  await page.getByText('編集', { exact: true }).click();
   await expect(page.getByRole('button', { name: 'キャンセル' })).toBeVisible();
   await expect(page.getByRole('button', { name: '保存する' })).toBeVisible();
 });

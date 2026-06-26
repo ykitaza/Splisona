@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Users, Columns2, BarChart3, Settings, LogOut, ChevronsUpDown, Info, X, PanelLeft, PanelLeftClose } from 'lucide-react';
+import { Users, FlaskConical, Plus, Settings, LogOut, ChevronsUpDown, Info, X, PanelLeft, PanelLeftClose } from 'lucide-react';
 import { signOut } from 'aws-amplify/auth';
 import { SettingsModal } from './SettingsModal';
 
 const NAV_ITEMS = [
+  { to: '/results', icon: FlaskConical, label: 'A/Bテスト' },
   { to: '/personas', icon: Users, label: 'ペルソナ' },
-  { to: '/tests/new', icon: Columns2, label: 'A/Bテスト' },
-  { to: '/results', icon: BarChart3, label: '結果' },
 ];
 
 const APP_VERSION = '0.0.1';
@@ -122,7 +121,27 @@ export function AppLayout() {
         </div>
 
         {/* Nav */}
-        <nav className="flex flex-col" style={{ gap: 2 }}>
+        <nav className="flex flex-col" style={{ gap: 3 }}>
+          {/* NewTestCTA */}
+          <NavLink
+            to="/tests/new"
+            title={collapsed ? '新規A/Bテスト' : undefined}
+            className="flex items-center transition-colors text-text-mid hover:bg-raised"
+            style={{
+              gap: collapsed ? 0 : 12,
+              padding: collapsed ? '8px 0' : '8px 12px',
+              borderRadius: 10,
+              justifyContent: collapsed ? 'center' : 'flex-start',
+            }}
+          >
+            <span
+              className="flex items-center justify-center flex-shrink-0 rounded-full"
+              style={{ width: 20, height: 20, background: '#3A3D42' }}
+            >
+              <Plus size={12} color="#FFFFFF" />
+            </span>
+            {!collapsed && <span className="font-sans text-sm whitespace-nowrap" style={{ color: '#9BA1AC' }}>新規A/Bテスト</span>}
+          </NavLink>
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}

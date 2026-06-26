@@ -1,47 +1,29 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
-import { Plus, Trash2, Check, Image } from 'lucide-react';
+import { Search, ChevronDown, Plus, Trash2, Check } from 'lucide-react';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
-import { ABTEST_STATUS_LABELS, type ABTest, type ABTestStatus } from '../types';
+import { ABTEST_STATUS_LABELS } from '../types';
+import type { ABTest, ABTestStatus } from '../types';
 import { testDraft, type DesignSideData } from '../lib/testDraft';
-import { API_BASE } from '../api/client';
 
-type SortKey = 'title' | 'status' | 'createdAt';
-type SortDir = 'asc' | 'desc';
-const STATUS_ORDER = { draft: 0, running: 1, completed: 2, failed: 3 };
-
-const STATUS_COLORS: Record<ABTestStatus, { bg: string; text: string }> = {
-  draft: { bg: 'var(--color-raised)', text: 'var(--color-text-lo)' },
-  running: { bg: 'var(--color-accent-dim)', text: 'var(--color-accent)' },
-  completed: { bg: 'var(--color-win-b-dim, rgba(201,151,79,0.15))', text: 'var(--color-win-b)' },
-  failed: { bg: 'var(--color-danger-dim, rgba(214,69,69,0.15))', text: 'var(--color-danger)' },
+const STATUS_COLORS: Record<ABTestStatus, string> = {
+  draft: '#5B616B',
+  running: '#6E78D9',
+  completed: '#54B587',
+  failed: '#E06A6A',
 };
 
-function StatusChip({ status }: { status: ABTestStatus }) {
-  const { bg, text } = STATUS_COLORS[status];
-  return (
-    <span className="inline-block rounded-full px-2.5 py-0.5 font-sans text-xs font-medium" style={{ background: bg, color: text }}>
-      {ABTEST_STATUS_LABELS[status]}
-    </span>
-  );
-}
-
-function WinnerThumb({ test }: { test: ABTest }) {
-  const winner = (test as ABTest & { summary?: { winner?: string } }).summary?.winner;
-  const input = winner === 'B' ? test.designBInput : test.designAInput;
-  const src = input?.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
-  return (
-    <div className="overflow-hidden rounded flex-shrink-0" style={{ width: 48, height: 32, background: 'var(--color-raised)' }}>
-      {src ? (
-        <img src={src} alt="サムネイル" className="w-full h-full object-cover" />
-      ) : (
-        <div className="flex items-center justify-center w-full h-full">
-          <Image size={14} className="text-text-lo" />
-        </div>
-      )}
-    </div>
-  );
+function relativeDate(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (minutes < 1) return 'たった今';
+  if (minutes < 60) return `${minutes} 分前`;
+  if (hours < 24) return `${hours} 時間前`;
+  if (days < 30) return `${days} 日前`;
+  return new Date(dateStr).toLocaleDateString('ja-JP');
 }
 
 function restoreSide(input: ABTest['designAInput']): DesignSideData | null {
@@ -62,27 +44,20 @@ export function TestListPage() {
   const navigate = useNavigate();
   const { tests, isLoading, deleteTest, deleteTests } = useABTests();
 
-  const [sortKey, setSortKey] = useState<SortKey>('createdAt');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
-  const sorted = useMemo(() => {
-    return [...tests].sort((a, b) => {
-      let cmp = 0;
-      if (sortKey === 'title') cmp = a.title.localeCompare(b.title, 'ja');
-      else if (sortKey === 'status') cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-      else cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [tests, sortKey, sortDir]);
-
-  function toggleSort(col: SortKey) {
-    if (sortKey === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else { setSortKey(col); setSortDir('asc'); }
-  }
+  const filtered = useMemo(() => {
+    const sorted = [...tests].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    if (!searchQuery.trim()) return sorted;
+    const q = searchQuery.toLowerCase();
+    return sorted.filter((t) => t.title.toLowerCase().includes(q));
+  }, [tests, searchQuery]);
 
   function toggleOne(id: string) {
     setSelected((prev) => {
@@ -101,11 +76,6 @@ export function TestListPage() {
   function requestBulkDelete() {
     if (selected.size === 0) return;
     setPendingDelete({ type: 'bulk' });
-  }
-
-  function requestSingleDelete(e: React.MouseEvent, id: string) {
-    e.stopPropagation();
-    setPendingDelete({ type: 'single', id });
   }
 
   async function confirmDelete() {
@@ -127,6 +97,7 @@ export function TestListPage() {
   }
 
   function handleRowClick(test: ABTest) {
+    if (selectionMode) { toggleOne(test.testId); return; }
     if (test.status === 'running') navigate(`/tests/${test.testId}/running`);
     else if (test.status === 'completed' || test.status === 'failed') navigate(`/tests/${test.testId}/report`);
     else if (test.status === 'draft') {
@@ -146,151 +117,142 @@ export function TestListPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-8 pb-10">
+    <div className="flex flex-col" style={{ padding: '48px 128px', gap: 32, height: '100%' }}>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-text-hi font-sans text-xl font-semibold">A/Bテスト</h1>
-          <span className="text-text-mid font-mono text-sm">全 {sorted.length} 件</span>
+        <div className="flex items-baseline" style={{ gap: 12 }}>
+          <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>A/Bテスト</h1>
+          <span className="text-text-mid font-mono text-sm">全 {tests.length} 件</span>
         </div>
-        <Link
-          to="/tests/new"
-          className="flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-white font-sans text-sm font-semibold transition-opacity hover:opacity-90"
-        >
-          <Plus size={16} />
-          新規テスト
-        </Link>
-      </div>
-
-      {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        {selectionMode ? (
-          <>
-            <span className="text-text-lo font-sans text-sm">{selected.size}件を選択中</span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={exitSelectionMode}
-                className="rounded-md bg-raised border border-hairline px-3 py-1.5 text-text-mid font-sans text-sm transition-colors hover:bg-surface"
-              >
-                キャンセル
-              </button>
-              <button
-                type="button"
-                disabled={selected.size === 0 || isDeleting}
-                onClick={requestBulkDelete}
-                className="flex items-center gap-1.5 rounded-md px-3 py-1.5 font-sans text-sm font-medium transition-opacity disabled:opacity-40"
-                style={{ background: 'var(--color-danger-dim, rgba(214,69,69,0.15))', color: 'var(--color-danger)' }}
-              >
-                <Trash2 size={13} />
-                {selected.size}件を削除
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="flex-1" />
-        )}
-        {!selectionMode && (
+        <div className="flex items-center" style={{ gap: 8 }}>
           <button
             type="button"
-            onClick={() => setSelectionMode(true)}
-            className="flex items-center gap-1.5 rounded-md bg-raised border border-hairline px-3 py-1.5 text-text-lo font-sans text-sm transition-colors hover:bg-surface"
+            className="flex items-center border transition-colors hover:bg-raised"
+            style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
           >
-            <Trash2 size={13} />
-            一括削除
+            <span className="font-sans" style={{ fontSize: 13, color: '#9BA1AC' }}>絞り込み</span>
+            <span className="font-sans font-semibold" style={{ fontSize: 13, color: '#F2F4F7' }}>すべて</span>
+            <ChevronDown size={14} style={{ color: '#5B616B' }} />
           </button>
-        )}
-      </div>
-
-      {tests.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <p className="text-text-lo font-sans text-sm">テストがありません</p>
-          <Link to="/tests/new" className="mt-3 text-accent font-sans text-sm font-medium">
-            最初のテストを作成する
+          <button
+            type="button"
+            onClick={() => { if (selectionMode) exitSelectionMode(); else setSelectionMode(true); }}
+            className="flex items-center border transition-colors hover:bg-raised"
+            style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
+          >
+            <span className="font-sans font-medium" style={{ fontSize: 13, color: '#F2F4F7' }}>テストを選択</span>
+          </button>
+          <Link
+            to="/tests/new"
+            className="flex items-center border transition-colors hover:bg-raised"
+            style={{ gap: 8, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
+          >
+            <Plus size={14} style={{ color: '#F2F4F7' }} />
+            <span className="font-sans font-semibold" style={{ fontSize: 13, color: '#F2F4F7' }}>新規テスト</span>
           </Link>
         </div>
-      ) : (
-        <div>
-          {/* Header row */}
-          <div className="flex items-center gap-8 py-2.5 px-4 border-b border-hairline">
-            {selectionMode && <div style={{ width: 32 }} />}
-            <div style={{ width: 72 }}>
-              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>プレビュー</span>
-            </div>
-            <div style={{ width: 360 }}>
-              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>テスト名</span>
-            </div>
-            <div style={{ width: 72 }}>
-              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>ペルソナ</span>
-            </div>
-            <div style={{ width: 90 }}>
-              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>ステータス</span>
-            </div>
-            <div className="flex-1">
-              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>日時</span>
-            </div>
-            {!selectionMode && <div style={{ width: 40 }} />}
-          </div>
+      </div>
 
-          {/* Rows */}
-          {sorted.map((test, i) => {
+      {/* Selection toolbar */}
+      {selectionMode && (
+        <div className="flex items-center justify-between">
+          <span className="font-mono" style={{ fontSize: 13, color: '#9BA1AC' }}>{selected.size}件を選択中</span>
+          <div className="flex items-center" style={{ gap: 12 }}>
+            <button
+              type="button"
+              onClick={exitSelectionMode}
+              className="flex items-center border transition-colors hover:bg-raised"
+              style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14', color: '#9BA1AC' }}
+            >
+              <span className="font-sans" style={{ fontSize: 13 }}>キャンセル</span>
+            </button>
+            <button
+              type="button"
+              disabled={selected.size === 0 || isDeleting}
+              onClick={requestBulkDelete}
+              className="flex items-center border transition-colors disabled:opacity-40"
+              style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#E06A6A', color: '#E06A6A' }}
+            >
+              <Trash2 size={14} />
+              <span className="font-sans" style={{ fontSize: 13 }}>{selected.size}件を削除</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Search bar */}
+      <div
+        className="flex items-center"
+        style={{ gap: 8, borderRadius: 10, padding: '12px 16px', background: '#1C1F23' }}
+      >
+        <Search size={16} style={{ color: '#5B616B', flexShrink: 0 }} />
+        <input
+          type="text"
+          placeholder="テストを検索..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 bg-transparent border-0 outline-none font-sans"
+          style={{ fontSize: 14, color: '#F2F4F7' }}
+        />
+      </div>
+
+      {/* List */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-text-lo font-sans text-sm">
+            {tests.length === 0 ? 'テストがありません' : '一致するテストがありません'}
+          </p>
+          {tests.length === 0 && (
+            <Link to="/tests/new" className="mt-3 text-accent font-sans text-sm font-medium">
+              最初のテストを作成する
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          <div className="flex items-center" style={{ gap: 32, padding: '10px 8px', borderBottom: '1px solid #FFFFFF14' }}>
+            {selectionMode && <div style={{ width: 16 }} />}
+            <span className="font-mono text-text-lo flex-1" style={{ fontSize: 10, letterSpacing: 0.5 }}>テスト名</span>
+            <span className="font-mono text-text-lo" style={{ fontSize: 10, letterSpacing: 0.5, width: 72, textAlign: 'center' }}>人数</span>
+            <span className="font-mono text-text-lo" style={{ fontSize: 10, letterSpacing: 0.5, width: 80 }}>ステータス</span>
+            <span className="font-mono text-text-lo" style={{ fontSize: 10, letterSpacing: 0.5, width: 96, textAlign: 'right' }}>日時</span>
+          </div>
+          {filtered.map((test) => {
             const isChecked = selected.has(test.testId);
+            const statusColor = STATUS_COLORS[test.status] ?? '#5B616B';
             return (
               <div
                 key={test.testId}
                 role="button"
                 tabIndex={0}
-                onClick={() => { if (selectionMode) toggleOne(test.testId); else handleRowClick(test); }}
-                onKeyDown={(e) => { if (e.key === 'Enter') { if (selectionMode) toggleOne(test.testId); else handleRowClick(test); } }}
-                className="flex items-center gap-8 w-full text-left py-4 px-4 transition-colors hover:bg-raised cursor-pointer border-b border-hairline"
+                onClick={() => handleRowClick(test)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleRowClick(test); }}
+                className="flex items-center cursor-pointer transition-colors hover:bg-raised"
                 style={{
-                  background: isChecked ? 'var(--color-accent-dim)' : 'transparent',
+                  gap: 32,
+                  padding: '16px 8px',
+                  borderBottom: '1px solid #FFFFFF14',
+                  background: isChecked ? '#6E78D926' : 'transparent',
                 }}
               >
                 {selectionMode && (
-                  <div className="flex items-center justify-center flex-shrink-0" style={{ width: 32 }}>
-                    <div
-                      className="flex items-center justify-center w-4 h-4 rounded"
-                      style={{
-                        background: isChecked ? 'var(--color-accent)' : 'transparent',
-                        border: isChecked ? 'none' : '1.5px solid var(--color-text-lo)',
-                      }}
-                    >
-                      {isChecked && <Check size={10} color="#FFFFFF" />}
-                    </div>
+                  <div
+                    className="flex items-center justify-center flex-shrink-0"
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 3,
+                      background: isChecked ? '#6E78D9' : 'transparent',
+                      border: isChecked ? 'none' : '1px solid #5B616B',
+                    }}
+                  >
+                    {isChecked && <Check size={10} color="#FFFFFF" />}
                   </div>
                 )}
-                <div style={{ width: 72 }}>
-                  <WinnerThumb test={test} />
-                </div>
-                <div style={{ width: 360 }} className="min-w-0">
-                  <span className="block truncate text-text-hi font-sans text-base font-medium">{test.title}</span>
-                </div>
-                <div style={{ width: 72 }}>
-                  <span className="text-text-mid font-mono text-sm">{test.personaIds.length}人</span>
-                </div>
-                <div style={{ width: 90 }}>
-                  <StatusChip status={test.status} />
-                </div>
-                <div className="flex-1">
-                  <span className="text-text-lo font-mono text-sm">
-                    {new Date(test.createdAt).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                {!selectionMode && (
-                  <div style={{ width: 40 }} className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      disabled={isDeleting}
-                      onClick={(e) => requestSingleDelete(e, test.testId)}
-                      className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md border border-hairline disabled:opacity-30"
-                      style={{ width: 28, height: 28 }}
-                      title="削除"
-                    >
-                      <Trash2 size={13} className="text-danger" />
-                    </button>
-                  </div>
-                )}
+                <span className="font-sans font-medium flex-1 min-w-0 truncate" style={{ fontSize: 14, color: '#F2F4F7' }}>{test.title}</span>
+                <span className="font-mono text-text-mid flex-shrink-0" style={{ fontSize: 13, width: 72, textAlign: 'center' }}>{test.personaIds?.length ?? 0}</span>
+                <span className="font-mono flex-shrink-0" style={{ fontSize: 12, width: 80, color: statusColor }}>{ABTEST_STATUS_LABELS[test.status]}</span>
+                <span className="font-mono text-text-lo flex-shrink-0" style={{ fontSize: 13, width: 96, textAlign: 'right' }}>{relativeDate(test.createdAt)}</span>
               </div>
             );
           })}

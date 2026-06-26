@@ -17,15 +17,14 @@ test('/tests/new: タイトル「新しい A/B テスト」', async ({ page }) =
   await expect(page.getByText('新しい A/B テスト')).toBeVisible();
 });
 
-test('/results: タイトル「A/Bテスト」とカウント', async ({ page }) => {
+test('/results: タイトル「A/Bテスト」とアクション', async ({ page }) => {
   await page.goto('/results');
   await expect(page.getByRole('heading', { name: 'A/Bテスト' })).toBeVisible();
-  await expect(page.locator('span', { hasText: /全 \d+ 件/ })).toBeVisible();
+  await expect(page.locator('span', { hasText: '新規テスト' })).toBeVisible();
+  await expect(page.locator('span', { hasText: 'テストを選択' })).toBeVisible();
 });
 
-test('/results: テーブルヘッダーにカラム名が表示される', async ({ page }) => {
+test('/results: 検索バーが表示される', async ({ page }) => {
   await page.goto('/results');
-  await expect(page.locator('span', { hasText: 'プレビュー' })).toBeVisible();
-  await expect(page.locator('span', { hasText: 'テスト名' })).toBeVisible();
-  await expect(page.locator('span', { hasText: 'ステータス' })).toBeVisible();
+  await expect(page.getByPlaceholder('テストを検索...')).toBeVisible();
 });

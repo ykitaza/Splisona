@@ -1,6 +1,7 @@
 import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { getUserId, type ApiGatewayEvent } from "../shared/auth.js";
 import { getItem, putItem, abtestKey, evaluationKey, queryByPK } from "../shared/dynamo.js";
+import { getAdditionalInstruction } from "../settings/prompts.js";
 import { errorResponse } from "../shared/errors.js";
 import { bedrockClient, MODEL_ID } from "../shared/bedrock.js";
 import { generateReasonSummaryFields } from "../report/handler.js";
@@ -94,6 +95,7 @@ async function evaluateOnePersona(
 
   const personaDisplayName = persona?.displayName ?? personaId;
   const imageBucket = process.env.IMAGE_BUCKET ?? "chorus-images";
+  const additional = await getAdditionalInstruction(userId, "evaluation");
   const prompt = [
     `あなたは「${personaDisplayName}」というペルソナです。`,
     `タイプ: ${persona?.type ?? "consumer"}`,
@@ -103,6 +105,7 @@ async function evaluateOnePersona(
     "最初の画像がデザインA、次の画像がデザインBです。",
     "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。",
     "scoresA と scoresB に、A案・B案それぞれの各軸スコア（0〜100）を採点してください。reason は必ず日本語で記述してください。",
+    additional ? `\n追加指示:\n${additional}` : null,
   ].filter((l) => l !== null).join("\n");
 
   const command = new ConverseCommand({

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Eye, Copy, Trash2 } from 'lucide-react';
 import { PERSONA_TYPE_LABELS } from '../../types';
 import type { Persona, PersonaType } from '../../types';
 import { PersonaNode, getNodeColor } from './PersonaNode';
@@ -47,42 +47,47 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
 
   const isDefault = persona.source === 'default';
 
-  const menuItems = [
+  type MenuItem = { label: string; icon: typeof Eye; onClick: () => void; danger?: boolean; separator?: boolean };
+  const menuItems: MenuItem[] = [
     {
-      label: '詳細・インタビュー',
+      label: '詳細',
+      icon: Eye,
       onClick: () => { navigate(`/personas/${persona.personaId}`); setMenuOpen(false); },
     },
-    ...(!isDefault
-      ? [{
-          label: '編集',
-          onClick: () => { navigate(`/personas/${persona.personaId}/edit`); setMenuOpen(false); },
-        }]
-      : []),
     ...(onDuplicate
       ? [{
-          label: '複製して編集',
+          label: '複製',
+          icon: Copy,
           onClick: () => { setMenuOpen(false); onDuplicate(persona); },
-        }]
+        } as MenuItem]
       : []),
     ...(onDelete && !isDefault
       ? [{
           label: '削除',
+          icon: Trash2,
           danger: true,
+          separator: true,
           onClick: () => { setMenuOpen(false); onDelete(persona.personaId); },
-        }]
+        } as MenuItem]
       : []),
   ];
 
   const demographics = [
-    persona.age != null ? String(persona.age) : null,
-    persona.gender || null,
-    persona.occupation || null,
-  ].filter(Boolean).join('  ·  ');
+    persona.age != null ? String(persona.age) : '—',
+    persona.gender || '—',
+    persona.occupation || '—',
+  ].join('  ·  ');
 
   return (
     <div
-      className="flex flex-col gap-4 bg-surface"
-      style={{ borderRadius: 14, padding: 24, border: '1px solid #FFFFFF0F', width: '100%', flex: 1 }}
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/personas/${persona.personaId}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/personas/${persona.personaId}`); }}
+      className="flex flex-col gap-4 bg-surface cursor-pointer group"
+      style={{ borderRadius: 14, padding: 24, border: '1px solid var(--card-border, #FFFFFF0F)', width: '100%', flex: 1, transition: 'background 150ms, border-color 150ms', ['--card-border' as string]: '#FFFFFF0F' }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = '#1C1F23'; e.currentTarget.style.borderColor = '#FFFFFF29'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = ''; e.currentTarget.style.borderColor = '#FFFFFF0F'; }}
     >
       {/* Top */}
       <div className="flex items-center gap-4">
@@ -121,25 +126,40 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
             className="flex items-center justify-center rounded-md transition-colors hover:bg-raised outline-none"
             style={{ width: 30, height: 30 }}
           >
-            <MoreHorizontal size={18} className="text-text-lo" />
+            <MoreHorizontal size={18} className="text-text-lo group-hover:text-text-mid transition-colors" />
           </button>
 
           {menuOpen && (
             <div
-              className="absolute right-0 top-full mt-1 z-50 rounded-md overflow-hidden bg-surface border border-hairline"
-              style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.4)', minWidth: 160 }}
+              className="absolute right-0 top-full mt-1 z-50 flex flex-col"
+              style={{
+                width: 200,
+                borderRadius: 10,
+                background: '#1C1F23',
+                border: '1px solid #FFFFFF14',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.8)',
+                overflow: 'hidden',
+              }}
             >
-              {menuItems.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={item.onClick}
-                  className="w-full text-left px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised outline-none"
-                  style={{ color: item.danger ? 'var(--color-danger)' : 'var(--color-text-hi)' }}
-                >
-                  {item.label}
-                </button>
-              ))}
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                const color = item.danger ? '#E06A6A' : '#F2F4F7';
+                const iconColor = item.danger ? '#E06A6A' : '#9BA1AC';
+                return (
+                  <div key={item.label}>
+                    {item.separator && <div style={{ height: 1, background: '#FFFFFF14' }} />}
+                    <button
+                      type="button"
+                      onClick={item.onClick}
+                      className="flex items-center w-full font-sans transition-colors hover:bg-raised outline-none"
+                      style={{ gap: 10, padding: '10px 14px', fontSize: 14, color }}
+                    >
+                      <Icon size={16} style={{ color: iconColor }} />
+                      {item.label}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

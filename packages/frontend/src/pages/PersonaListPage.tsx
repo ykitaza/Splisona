@@ -47,7 +47,7 @@ export function PersonaListPage() {
   });
 
   return (
-    <div className="flex flex-col gap-5 p-6" style={{ padding: 32 }}>
+    <div className="flex flex-col" style={{ padding: '48px 128px', gap: 32 }}>
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-2">
@@ -80,10 +80,10 @@ export function PersonaListPage() {
           </div>
           <Link
             to="/personas/new"
-            className="flex items-center gap-2 text-white font-sans text-sm font-semibold"
-            style={{ borderRadius: 10, background: 'var(--color-accent)', padding: '8px 16px' }}
+            className="flex items-center gap-2 text-text-hi font-sans text-sm font-semibold border border-hairline transition-colors hover:bg-raised"
+            style={{ borderRadius: 6, padding: '8px 14px' }}
           >
-            <Plus size={16} />
+            <Plus size={14} className="text-text-hi" />
             新規ペルソナ
           </Link>
         </div>

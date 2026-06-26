@@ -46,6 +46,10 @@ export function executeTest(id: string): Promise<{ started: true }> {
   return apiRequest(`/tests/${id}/execute`, { method: 'POST' });
 }
 
+export function abortTest(id: string): Promise<{ aborted: boolean }> {
+  return apiRequest(`/tests/${id}/abort`, { method: 'POST' });
+}
+
 export function getProgress(id: string): Promise<ProgressResponse> {
   return apiRequest(`/tests/${id}/progress`);
 }

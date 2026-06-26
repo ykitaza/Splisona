@@ -12,3 +12,11 @@ export async function putSettings(section: SettingsSection, data: unknown): Prom
     body: JSON.stringify({ section, data }),
   });
 }
+
+export interface AppConfig {
+  modelId: string;
+}
+
+export async function getConfig(): Promise<AppConfig> {
+  return apiRequest('/config');
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type FormEvent, type KeyboardEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Check, Sparkles, Camera, Send, RotateCcw, Trash2, ChevronDown, Copy } from 'lucide-react';
+import { Check, Sparkles, Camera, Send, RotateCcw, Trash2, ChevronDown, Copy, ArrowLeft } from 'lucide-react';
 import { getPersona, updatePersona, deletePersona, generateDraft, sendInterviewMessage, uploadPersonaAvatar, getAvatarUrl } from '../api/personas';
 import { getApiErrorMessage } from '../api/client';
 import { PERSONA_TYPE_LABELS, type PersonaType, type Persona, type ConversationMessage } from '../types';
@@ -8,6 +8,7 @@ import { PersonaNode } from '../components/persona/PersonaNode';
 import { ChatBubble } from '../components/ui/ChatBubble';
 import { FieldSlider } from '../components/ui/FieldSlider';
 import { SegmentControl } from '../components/ui/SegmentControl';
+import { FieldSelect } from '../components/ui/FieldSelect';
 
 const PERSONA_TYPES = Object.entries(PERSONA_TYPE_LABELS) as [PersonaType, string][];
 
@@ -31,7 +32,7 @@ function buildPromptPreview(fields: { displayName: string; type: string; age: st
   return lines.join('\n');
 }
 
-type Tab = 'edit' | 'interview';
+type Tab = 'detail' | 'edit' | 'interview';
 
 function PromptPreview({ fields }: { fields: { displayName: string; type: string; age: string; gender: string; occupation: string; deviationScore: string; freeText: string } }) {
   const [open, setOpen] = useState(false);
@@ -237,41 +238,56 @@ export function PersonaUnifiedPage() {
   }
 
   const isDefault = persona.source === 'default';
+  const isReadOnly = isDefault || tab === 'detail';
 
   return (
     <div className="flex h-full overflow-hidden">
       {/* Main area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header + tabs */}
-        <div className="flex flex-col px-6 pt-6 pb-0 flex-shrink-0 border-b border-hairline">
-          <div className="flex flex-col gap-1 mb-6">
-            <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '0.3px' }}>ペルソナ</span>
+        <div className="flex flex-col pb-0 flex-shrink-0 border-b border-hairline" style={{ paddingTop: 48, paddingLeft: 128, paddingRight: 128 }}>
+          <div className="flex flex-col mb-6" style={{ gap: 4 }}>
+            <button
+              type="button"
+              onClick={() => navigate('/personas')}
+              className="flex items-center transition-colors hover:text-text-mid"
+              style={{ gap: 4, color: '#9BA1AC' }}
+            >
+              <ArrowLeft size={14} />
+              <span className="font-sans" style={{ fontSize: 13 }}>ペルソナ一覧</span>
+            </button>
             <h1 className="text-text-hi font-sans text-xl font-semibold">{displayName || persona.displayName}</h1>
           </div>
-          <div className="flex gap-6">
-            {(['edit', 'interview'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTab(t)}
-                className="px-4 py-2 font-sans text-sm transition-colors"
-                style={{
-                  fontWeight: tab === t ? 600 : 400,
-                  color: tab === t ? 'var(--color-accent)' : 'var(--color-text-lo)',
-                  borderBottom: tab === t ? '2px solid var(--color-accent)' : '2px solid transparent',
-                  marginBottom: -1,
-                }}
-              >
-                {t === 'edit' ? '編集' : 'インタビュー'}
-              </button>
-            ))}
+          <div className="flex" style={{ gap: 24 }}>
+            {(['detail', 'edit', 'interview'] as const).map((t) => {
+              const label = t === 'detail' ? '詳細' : t === 'edit' ? '編集' : 'インタビュー';
+              const isActive = tab === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTab(t)}
+                  className="font-sans transition-colors"
+                  style={{
+                    fontSize: 14,
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? 'var(--color-text-hi)' : 'var(--color-text-mid)',
+                    borderBottom: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
+                    paddingBottom: isActive ? 4 : 4,
+                    marginBottom: -1,
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Tab content */}
-        {tab === 'edit' ? (
+        {(tab === 'edit' || tab === 'detail') ? (
           <form onSubmit={handleSave} noValidate className="flex flex-col flex-1 overflow-y-auto">
-            <div className="flex flex-col gap-6 p-6 pb-24">
+            <div className="flex flex-col gap-6 pb-24" style={{ padding: '48px 128px', paddingBottom: 96 }}>
               {error && (
                 <div role="alert" className="rounded-md bg-danger/10 text-danger px-4 py-3 font-sans text-sm">
                   {error}
@@ -289,33 +305,26 @@ export function PersonaUnifiedPage() {
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    disabled={isDefault}
+                    disabled={isReadOnly}
                     placeholder="例: せっかちなビジネスマン"
                     className="bg-transparent text-text-hi font-sans text-base outline-none disabled:opacity-50"
                   />
                   {validationError && <p className="text-danger font-sans text-xs">{validationError}</p>}
                 </div>
 
-                <div className="flex flex-col gap-1 pb-2 border-b border-hairline">
+                <div className="flex flex-col gap-1">
                   <label htmlFor="type" className="text-text-mid font-sans text-sm">タイプ</label>
-                  <div className="relative">
-                    <select
-                      id="type"
-                      value={type}
-                      onChange={(e) => setType(e.target.value as PersonaType)}
-                      disabled={isDefault}
-                      className="w-full bg-transparent text-text-hi font-sans text-base outline-none appearance-none disabled:opacity-50 pr-6"
-                    >
-                      {PERSONA_TYPES.map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={15} className="absolute right-0 top-1/2 -translate-y-1/2 text-text-lo pointer-events-none" />
-                  </div>
+                  <FieldSelect
+                    id="type"
+                    value={type}
+                    onChange={(v) => setType(v as PersonaType)}
+                    disabled={isReadOnly}
+                    options={PERSONA_TYPES.map(([value, label]) => ({ value, label }))}
+                  />
                 </div>
 
                 {/* Avatar */}
-                {!isDefault && (
+                {!isReadOnly && (
                   <div className="flex items-center gap-4">
                     <div className="relative flex-shrink-0">
                       <div className="flex items-center justify-center rounded-full overflow-hidden bg-raised" style={{ width: 56, height: 56 }}>
@@ -351,7 +360,7 @@ export function PersonaUnifiedPage() {
                   min={18}
                   max={80}
                   value={age !== '' ? Number(age) : 18}
-                  disabled={isDefault}
+                  disabled={isReadOnly}
                   onChange={(v) => setAge(String(v))}
                 />
 
@@ -359,7 +368,7 @@ export function PersonaUnifiedPage() {
                   label="性別"
                   options={GENDER_OPTIONS}
                   selected={gender}
-                  disabled={isDefault}
+                  disabled={isReadOnly}
                   onChange={setGender}
                 />
 
@@ -368,44 +377,30 @@ export function PersonaUnifiedPage() {
                   min={30}
                   max={80}
                   value={deviationScore !== '' ? Number(deviationScore) : 30}
-                  disabled={isDefault}
+                  disabled={isReadOnly}
                   onChange={(v) => setDeviationScore(String(v))}
                 />
 
-                <div className="flex flex-col gap-1 pb-2 border-b border-hairline">
+                <div className="flex flex-col gap-1">
                   <span className="text-text-mid font-sans text-sm">年収</span>
-                  <div className="relative">
-                    <select
-                      value={annualIncome}
-                      onChange={(e) => setAnnualIncome(e.target.value)}
-                      disabled={isDefault}
-                      className="w-full bg-transparent text-text-hi font-sans text-base outline-none appearance-none disabled:opacity-50 pr-6"
-                    >
-                      <option value="">選択</option>
-                      {[200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500, 2000].map((v) => (
-                        <option key={v} value={v}>{v}万円</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={15} className="absolute right-0 top-1/2 -translate-y-1/2 text-text-lo pointer-events-none" />
-                  </div>
+                  <FieldSelect
+                    value={annualIncome}
+                    onChange={setAnnualIncome}
+                    disabled={isReadOnly}
+                    placeholder="選択"
+                    options={[200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500, 2000].map((v) => ({ value: String(v), label: `${v}万円` }))}
+                  />
                 </div>
 
-                <div className="flex flex-col gap-1 pb-2 border-b border-hairline">
+                <div className="flex flex-col gap-1">
                   <span className="text-text-mid font-sans text-sm">学歴</span>
-                  <div className="relative">
-                    <select
-                      value={education}
-                      onChange={(e) => setEducation(e.target.value)}
-                      disabled={isDefault}
-                      className="w-full bg-transparent text-text-hi font-sans text-base outline-none appearance-none disabled:opacity-50 pr-6"
-                    >
-                      <option value="">選択</option>
-                      {['中卒', '高卒', '専門卒', '短大卒', '大卒', '院卒'].map((v) => (
-                        <option key={v} value={v}>{v}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={15} className="absolute right-0 top-1/2 -translate-y-1/2 text-text-lo pointer-events-none" />
-                  </div>
+                  <FieldSelect
+                    value={education}
+                    onChange={setEducation}
+                    disabled={isReadOnly}
+                    placeholder="選択"
+                    options={['中卒', '高卒', '専門卒', '短大卒', '大卒', '院卒'].map((v) => ({ value: v, label: v }))}
+                  />
                 </div>
 
                 <div className="flex flex-col gap-1 pb-2 border-b border-hairline">
@@ -414,7 +409,7 @@ export function PersonaUnifiedPage() {
                     type="text"
                     value={occupation}
                     onChange={(e) => setOccupation(e.target.value)}
-                    disabled={isDefault}
+                    disabled={isReadOnly}
                     placeholder="営業職"
                     className="bg-transparent text-text-hi font-sans text-base outline-none disabled:opacity-50"
                   />
@@ -427,7 +422,7 @@ export function PersonaUnifiedPage() {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '0.5px' }}>自由記述</span>
-                  {!isDefault && (
+                  {!isReadOnly && (
                     <button
                       type="button"
                       onClick={handleGenerateDraft}
@@ -443,7 +438,7 @@ export function PersonaUnifiedPage() {
                   <textarea
                     value={freeText}
                     onChange={(e) => setFreeText(e.target.value)}
-                    disabled={isDefault}
+                    disabled={isReadOnly}
                     rows={4}
                     placeholder="このペルソナの性格や行動特性を記述してください"
                     className="w-full bg-transparent text-text-mid font-sans text-base outline-none resize-none disabled:opacity-50"
@@ -457,7 +452,7 @@ export function PersonaUnifiedPage() {
             </div>
 
             {/* Sticky footer */}
-            {!isDefault && (
+            {!isReadOnly && (
               <div className="sticky bottom-0 flex items-center justify-between px-6 pt-4 pb-4 border-t border-hairline bg-base">
                 <button
                   type="button"
@@ -478,7 +473,7 @@ export function PersonaUnifiedPage() {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-white font-sans text-sm font-semibold disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-md border border-hairline px-4 py-2 text-text-hi font-sans text-sm font-semibold transition-colors hover:bg-raised disabled:opacity-50"
                   >
                     <Check size={14} />
                     {isSaving ? '保存中...' : '保存する'}
@@ -490,7 +485,7 @@ export function PersonaUnifiedPage() {
         ) : (
           /* Interview tab */
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto px-8 py-5 flex flex-col gap-3">
+            <div className="flex-1 overflow-y-auto flex flex-col gap-3" style={{ padding: '48px 128px' }}>
               {messages.length === 0 && !isSending && !chatError && (
                 <div className="flex flex-col items-center justify-center flex-1 py-16">
                   <p className="text-text-lo font-sans text-sm">{persona.displayName}に話しかけてみましょう</p>
@@ -521,7 +516,7 @@ export function PersonaUnifiedPage() {
               )}
               <div ref={bottomRef} />
             </div>
-            <div className="flex-shrink-0 px-6 py-4">
+            <div className="flex-shrink-0" style={{ padding: '16px 128px' }}>
               <div className="flex items-center gap-3 rounded-md bg-base border border-hairline py-2 pl-4 pr-2">
                 <input
                   type="text"
