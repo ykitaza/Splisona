@@ -1,6 +1,6 @@
 import { fetchAuthSession } from 'aws-amplify/auth';
 
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ?? 'http://localhost:3001';
+export const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ?? 'http://localhost:3001';
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -8,15 +8,38 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+export function getApiErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    switch (err.status) {
+      case 401: return '認証が必要です。再度サインインしてください';
+      case 404: return 'リソースが見つかりませんでした';
+      case 409: return '操作が重複しています。少し待ってから再試行してください';
+      case 503: return 'AIサービスが一時的に利用できません。しばらく後でお試しください';
+      default: return err.message;
+    }
+  }
+  if (err instanceof Error) return err.message;
+  return '予期しないエラーが発生しました';
+}
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const localUserId = import.meta.env?.VITE_LOCAL_USER_ID as string | undefined;
+  if (localUserId) {
+    return { 'x-local-user-id': localUserId };
+  }
   const session = await fetchAuthSession();
   const token = session.tokens?.accessToken?.toString();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const authHeaders = await getAuthHeaders();
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...authHeaders,
       ...(options.headers as Record<string, string> ?? {}),
     },
   });
@@ -30,14 +53,13 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 }
 
 export async function apiStream(path: string, options: RequestInit = {}): Promise<ReadableStream<Uint8Array> | null> {
-  const session = await fetchAuthSession();
-  const token = session.tokens?.accessToken?.toString();
+  const authHeaders = await getAuthHeaders();
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...authHeaders,
       ...(options.headers as Record<string, string> ?? {}),
     },
   });

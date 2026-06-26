@@ -53,3 +53,18 @@ export function getReport(id: string): Promise<ReportResponse> {
 export function exportTest(id: string): Promise<string> {
   return apiRequest(`/tests/${id}/export`);
 }
+
+export interface CaptureRequest {
+  side: 'A' | 'B';
+  inputType: 'figma_url' | 'site_url';
+  url: string;
+}
+
+export interface CaptureResponse {
+  imageKey: string;
+  previewUrl: string;
+}
+
+export function captureUrl(testId: string, req: CaptureRequest): Promise<CaptureResponse> {
+  return apiRequest(`/tests/${testId}/capture`, { method: 'POST', body: JSON.stringify(req) });
+}

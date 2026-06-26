@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { fetchAuthSession } from 'aws-amplify/auth';
 
 export function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const localUserId = import.meta.env?.VITE_LOCAL_USER_ID as string | undefined;
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localUserId);
+  const [isLoading, setIsLoading] = useState(!localUserId);
 
   useEffect(() => {
+    if (localUserId) return;
+
     fetchAuthSession()
       .then((session) => {
         setIsAuthenticated(!!session.tokens);
@@ -16,7 +19,7 @@ export function useAuth() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [localUserId]);
 
   return { isAuthenticated, isLoading };
 }

@@ -1,5 +1,6 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { AppLayout } from '../AppLayout';
 
 export function AuthGuard() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -16,5 +17,5 @@ export function AuthGuard() {
     return <Navigate to="/signin" replace />;
   }
 
-  return <Outlet />;
+  return <AppLayout />;
 }

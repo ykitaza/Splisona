@@ -10,6 +10,7 @@ import { TestPersonaSelectPage } from './pages/TestPersonaSelectPage';
 import { TestConfirmPage } from './pages/TestConfirmPage';
 import { TestRunningPage } from './pages/TestRunningPage';
 import { TestReportPage } from './pages/TestReportPage';
+import { TestListPage } from './pages/TestListPage';
 
 export const router = createBrowserRouter([
   { path: '/signin', element: <SignInPage /> },
@@ -27,6 +28,8 @@ export const router = createBrowserRouter([
       { path: '/tests/new/confirm', element: <TestConfirmPage /> },
       { path: '/tests/:id/running', element: <TestRunningPage /> },
       { path: '/tests/:id/report', element: <TestReportPage /> },
+      { path: '/settings', element: <div className="p-8"><h1 className="text-2xl font-bold" style={{fontFamily:'Geist,sans-serif'}}>設定</h1><p className="mt-2 text-sm" style={{color:'#9A9A9F'}}>準備中</p></div> },
+      { path: '/results', element: <TestListPage /> },
     ],
   },
 ]);

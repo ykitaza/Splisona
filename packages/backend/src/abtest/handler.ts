@@ -23,14 +23,16 @@ export async function createTest(
 
     const testId = crypto.randomUUID();
     const now = new Date().toISOString();
+    const dA = input.designAInput ?? {};
+    const dB = input.designBInput ?? {};
     const record: ABTestRecord = {
       ...abtestKey(userId, testId),
       title: input.title,
       status: "draft",
-      designAInputType: input.designAInputType ?? "image_upload",
-      designBInputType: input.designBInputType ?? "image_upload",
-      designAImageKey: input.designAImageKey,
-      designBImageKey: input.designBImageKey,
+      designAInputType: dA.inputType ?? input.designAInputType ?? "image_upload",
+      designBInputType: dB.inputType ?? input.designBInputType ?? "image_upload",
+      designAImageKey: dA.imageKey ?? input.designAImageKey,
+      designBImageKey: dB.imageKey ?? input.designBImageKey,
       personaIds: input.personaIds ?? [],
       createdAt: now,
       updatedAt: now,
@@ -78,15 +80,17 @@ export async function updateTest(
     if (!existing) return json(404, { error: "NOT_FOUND" });
 
     const now = new Date().toISOString();
+    const dA = input.designAInput ?? {};
+    const dB = input.designBInput ?? {};
     const updated: ABTestRecord = {
       ...existing,
       ...Object.fromEntries(
         Object.entries({
           title: input.title,
-          designAInputType: input.designAInputType,
-          designBInputType: input.designBInputType,
-          designAImageKey: input.designAImageKey,
-          designBImageKey: input.designBImageKey,
+          designAInputType: dA.inputType ?? input.designAInputType,
+          designBInputType: dB.inputType ?? input.designBInputType,
+          designAImageKey: dA.imageKey ?? input.designAImageKey,
+          designBImageKey: dB.imageKey ?? input.designBImageKey,
           personaIds: input.personaIds,
         }).filter(([, v]) => v !== undefined)
       ),

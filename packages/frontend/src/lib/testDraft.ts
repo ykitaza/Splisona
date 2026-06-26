@@ -1,14 +1,19 @@
+export type DesignSideData =
+  | { inputType: 'image_upload'; file: File; imageKey: string }
+  | { inputType: 'figma_url'; url: string; imageKey: string }
+  | { inputType: 'site_url'; url: string; imageKey: string };
+
 export interface TestDraftData {
   title: string;
-  fileA: File | null;
-  fileB: File | null;
+  sideA: DesignSideData | null;
+  sideB: DesignSideData | null;
   personaIds: string[];
 }
 
 const _draft: TestDraftData = {
   title: '',
-  fileA: null,
-  fileB: null,
+  sideA: null,
+  sideB: null,
   personaIds: [],
 };
 
@@ -19,17 +24,17 @@ export const testDraft = {
   setTitle(title: string) {
     _draft.title = title;
   },
-  setFile(side: 'A' | 'B', file: File | null) {
-    if (side === 'A') _draft.fileA = file;
-    else _draft.fileB = file;
+  setSide(side: 'A' | 'B', data: DesignSideData | null) {
+    if (side === 'A') _draft.sideA = data;
+    else _draft.sideB = data;
   },
   setPersonaIds(ids: string[]) {
     _draft.personaIds = ids;
   },
   reset() {
     _draft.title = '';
-    _draft.fileA = null;
-    _draft.fileB = null;
+    _draft.sideA = null;
+    _draft.sideB = null;
     _draft.personaIds = [];
   },
 };
