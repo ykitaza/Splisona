@@ -10,7 +10,7 @@ export interface PersonaRecord {
   SK: `PERSONA#${string}`;
   displayName: string;
   type: string;
-  source?: "preset" | "ai";
+  source?: "preset" | "ai" | "default";
   age?: number;
   gender?: string;
   occupation?: string;

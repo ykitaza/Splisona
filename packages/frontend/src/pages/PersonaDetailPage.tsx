@@ -95,14 +95,16 @@ export function PersonaDetailPage() {
             <h1 style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 20, fontWeight: 600 }}>
               {persona.displayName}
             </h1>
-            <Link
-              to={`/personas/${id}/edit`}
-              className="flex items-center gap-1.5 rounded-md px-3 py-1.5"
-              style={{ border: '1px solid #E6E6E8', borderRadius: 6, color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 12, fontWeight: 500 }}
-            >
-              <PencilLine size={13} color="#666666" />
-              編集
-            </Link>
+            {persona.source !== 'default' && (
+              <Link
+                to={`/personas/${id}/edit`}
+                className="flex items-center gap-1.5 rounded-md px-3 py-1.5"
+                style={{ border: '1px solid #E6E6E8', borderRadius: 6, color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 12, fontWeight: 500 }}
+              >
+                <PencilLine size={13} color="#666666" />
+                編集
+              </Link>
+            )}
           </div>
         </div>
 

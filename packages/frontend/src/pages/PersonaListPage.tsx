@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Sparkles, Plus, Layers2, ChevronDown } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, Plus, Layers2, ChevronDown } from 'lucide-react';
 import { PersonaCard } from '../components/persona/PersonaCard';
+import { SourceFilterDropdown } from '../components/persona/SourceFilterDropdown';
 import { usePersonas } from '../hooks/usePersonas';
-import type { PersonaType } from '../types';
+import { categoryOf, type SourceFilterKey } from '../lib/personaFilter';
+import type { Persona, PersonaType } from '../types';
 
 const PERSONA_PRESETS: {
   displayName: string;
@@ -65,7 +67,9 @@ const PERSONA_PRESETS: {
 
 export function PersonaListPage() {
   const { personas, isLoading, createPersona, deletePersona } = usePersonas();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilterKey>('all');
   const [presetOpen, setPresetOpen] = useState(false);
   const [addingPreset, setAddingPreset] = useState<string | null>(null);
   const presetRef = useRef<HTMLDivElement>(null);
@@ -91,6 +95,23 @@ export function PersonaListPage() {
     }
   }
 
+  async function handleDuplicate(persona: Persona) {
+    const copy = await createPersona({
+      displayName: `${persona.displayName}のコピー`,
+      type: persona.type,
+      // デフォルトの複製は編集可能な自分用ペルソナにする（ロックを引き継がない）
+      source: persona.source === 'default' ? undefined : persona.source,
+      age: persona.age,
+      gender: persona.gender,
+      occupation: persona.occupation,
+      deviationScore: persona.deviationScore,
+      annualIncome: persona.annualIncome,
+      education: persona.education,
+      freeText: persona.freeText,
+    });
+    navigate(`/personas/${copy.personaId}/edit`);
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -99,14 +120,16 @@ export function PersonaListPage() {
     );
   }
 
-  const filtered = query.trim()
-    ? personas.filter(
-        (p) =>
-          p.displayName.includes(query) ||
-          (p.occupation ?? '').includes(query) ||
-          (p.freeText ?? '').includes(query),
-      )
-    : personas;
+  const q = query.trim();
+  const filtered = personas.filter((p) => {
+    const matchQuery =
+      !q ||
+      p.displayName.includes(q) ||
+      (p.occupation ?? '').includes(q) ||
+      (p.freeText ?? '').includes(q);
+    const matchSource = sourceFilter === 'all' || categoryOf(p) === sourceFilter;
+    return matchQuery && matchSource;
+  });
 
   const rows: (typeof filtered)[] = [];
   for (let i = 0; i < filtered.length; i += 3) rows.push(filtered.slice(i, i + 3));
@@ -124,13 +147,6 @@ export function PersonaListPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* AI一括生成: 近日公開 */}
-          <div className="relative flex items-center gap-1.5 rounded-md px-4 py-2.5" style={{ background: '#F7F7F8', border: '1px solid #E6E6E8', borderRadius: 6, cursor: 'not-allowed' }}>
-            <Sparkles size={16} color="#C0C0C5" />
-            <span style={{ color: '#C0C0C5', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500 }}>AI一括生成</span>
-            <span className="rounded-full px-1.5 py-0.5" style={{ background: '#E6E6E8', color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 10, fontWeight: 600 }}>近日公開</span>
-          </div>
-
           {/* プリセットから追加 */}
           <div className="relative" ref={presetRef}>
             <button
@@ -194,19 +210,22 @@ export function PersonaListPage() {
 
       {/* Toolbar */}
       <div className="flex items-center justify-between">
-        <div
-          className="flex items-center gap-2 rounded-md px-3 py-2.5"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, width: 300 }}
-        >
-          <Search size={16} color="#9A9A9F" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="ペルソナを検索"
-            className="flex-1 bg-transparent text-sm outline-none"
-            style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14 }}
-          />
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex items-center gap-2 rounded-md px-3 py-2.5"
+            style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, width: 300 }}
+          >
+            <Search size={16} color="#9A9A9F" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="ペルソナを検索"
+              className="flex-1 bg-transparent text-sm outline-none"
+              style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14 }}
+            />
+          </div>
+          <SourceFilterDropdown value={sourceFilter} onChange={setSourceFilter} />
         </div>
         <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
           {filtered.length}人のペルソナ
@@ -231,7 +250,7 @@ export function PersonaListPage() {
             <div key={ri} className="flex gap-5">
               {row.map((persona) => (
                 <div key={persona.personaId} style={{ flex: '1 1 0', minWidth: 0, display: 'flex' }}>
-                  <PersonaCard persona={persona} onDelete={deletePersona} />
+                  <PersonaCard persona={persona} onDelete={deletePersona} onDuplicate={handleDuplicate} />
                 </div>
               ))}
               {row.length < 3 &&

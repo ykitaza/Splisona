@@ -22,7 +22,7 @@ export interface Persona {
   userId: string;
   displayName: string;
   type: PersonaType;
-  source?: "preset" | "ai";
+  source?: "preset" | "ai" | "default";
   age?: number;
   gender?: string;
   occupation?: string;
@@ -38,7 +38,7 @@ export interface Persona {
 export type CreatePersonaInput = {
   displayName: string;
   type: PersonaType;
-  source?: "preset" | "ai";
+  source?: "preset" | "ai" | "default";
   age?: number;
   gender?: string;
   occupation?: string;

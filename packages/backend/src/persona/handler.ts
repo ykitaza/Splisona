@@ -2,6 +2,7 @@ import { getUserId, type ApiGatewayEvent } from "../shared/auth.js";
 import { queryByPK, putItem, getItem, deleteItem, personaKey } from "../shared/dynamo.js";
 import { badRequest, errorResponse } from "../shared/errors.js";
 import { type PersonaRecord } from "../shared/types.js";
+import { buildDefaultPersonaRecords } from "./defaults.js";
 import { bedrockClient, MODEL_ID } from "../shared/bedrock.js";
 import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -18,7 +19,16 @@ function json(statusCode: number, body: unknown): LambdaResponse {
 export async function listPersonas(event: ApiGatewayEvent): Promise<LambdaResponse> {
   try {
     const userId = getUserId(event);
-    const items = await queryByPK<PersonaRecord>(`USER#${userId}`, "PERSONA#");
+    let items = await queryByPK<PersonaRecord>(`USER#${userId}`, "PERSONA#");
+
+    // 初回ロード時にデフォルトペルソナ（20体）を自動シードする
+    if (!items.some((p) => p.source === "default")) {
+      const now = new Date().toISOString();
+      const defaults = buildDefaultPersonaRecords(userId, now);
+      await Promise.all(defaults.map((r) => putItem(r as unknown as Record<string, unknown>)));
+      items = [...defaults, ...items];
+    }
+
     const personas = items.map(toPersona);
     return json(200, personas);
   } catch (e) {
@@ -80,6 +90,9 @@ export async function updatePersona(event: ApiGatewayEvent & { pathParameters?: 
 
     const existing = await getItem<PersonaRecord>(personaKey(userId, personaId) as unknown as Record<string, string>);
     if (!existing) return json(404, { error: "NOT_FOUND" });
+    if (existing.source === "default") {
+      return errorResponse(403, "FORBIDDEN", "デフォルトペルソナは編集できません") as LambdaResponse;
+    }
 
     const now = new Date().toISOString();
     const updated: PersonaRecord = {
@@ -115,6 +128,9 @@ export async function deletePersona(event: ApiGatewayEvent & { pathParameters?: 
     const personaId = event.pathParameters?.id ?? "";
     const existing = await getItem<PersonaRecord>(personaKey(userId, personaId) as unknown as Record<string, string>);
     if (!existing) return json(404, { error: "NOT_FOUND" });
+    if (existing.source === "default") {
+      return errorResponse(403, "FORBIDDEN", "デフォルトペルソナは削除できません") as LambdaResponse;
+    }
     await deleteItem(personaKey(userId, personaId) as unknown as Record<string, string>);
     return json(200, { deleted: true });
   } catch (e) {

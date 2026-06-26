@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, PencilLine, MoreHorizontal, Layers2 } from 'lucide-react';
+import { Sparkles, PencilLine, MoreHorizontal, Layers2, ShieldCheck } from 'lucide-react';
 import { PERSONA_TYPE_LABELS } from '../../types';
 import type { Persona } from '../../types';
 import { getAvatarUrl } from '../../api/personas';
+import { GeneratedAvatar } from './GeneratedAvatar';
 
 const AVATAR_COLORS: { bg: string; text: string }[] = [
   { bg: '#E8F0FB', text: '#3B7DD8' },
@@ -24,9 +25,10 @@ function initials(name: string) {
 interface Props {
   persona: Persona;
   onDelete?: (id: string) => void;
+  onDuplicate?: (persona: Persona) => void;
 }
 
-export function PersonaCard({ persona, onDelete }: Props) {
+export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
   const color = getAvatarColor(persona.displayName);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -43,16 +45,26 @@ export function PersonaCard({ persona, onDelete }: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
 
+  const isDefault = persona.source === 'default';
+
   const menuItems = [
     {
       label: '詳細・インタビュー',
       onClick: () => { navigate(`/personas/${persona.personaId}`); setMenuOpen(false); },
     },
-    {
-      label: '編集',
-      onClick: () => { navigate(`/personas/${persona.personaId}/edit`); setMenuOpen(false); },
-    },
-    ...(onDelete
+    ...(!isDefault
+      ? [{
+          label: '編集',
+          onClick: () => { navigate(`/personas/${persona.personaId}/edit`); setMenuOpen(false); },
+        }]
+      : []),
+    ...(onDuplicate
+      ? [{
+          label: '複製して編集',
+          onClick: () => { setMenuOpen(false); onDuplicate(persona); },
+        }]
+      : []),
+    ...(onDelete && !isDefault
       ? [{
           label: '削除',
           danger: true,
@@ -78,6 +90,8 @@ export function PersonaCard({ persona, onDelete }: Props) {
               alt={persona.displayName}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
+          ) : isDefault ? (
+            <GeneratedAvatar seed={persona.personaId} size={44} />
           ) : (
             <span style={{ color: color.text, fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>
               {initials(persona.displayName)}
@@ -99,10 +113,10 @@ export function PersonaCard({ persona, onDelete }: Props) {
           {(() => {
             const isPreset = persona.source === 'preset';
             const isAi = persona.source === 'ai' || (!persona.source && !!persona.freeText);
-            const bg = isPreset ? '#EDE9FE' : isAi ? '#E8F0FB' : '#F0F1F3';
-            const color = isPreset ? '#7C3AED' : isAi ? '#3B7DD8' : '#666666';
-            const label = isPreset ? 'プリセット' : isAi ? 'AI生成' : '手動作成';
-            const Icon = isPreset ? Layers2 : isAi ? Sparkles : PencilLine;
+            const bg = isDefault ? '#E0F2FE' : isPreset ? '#EDE9FE' : isAi ? '#E8F0FB' : '#F0F1F3';
+            const color = isDefault ? '#0284C7' : isPreset ? '#7C3AED' : isAi ? '#3B7DD8' : '#666666';
+            const label = isDefault ? 'デフォルト' : isPreset ? 'プリセット' : isAi ? 'AI生成' : '手動作成';
+            const Icon = isDefault ? ShieldCheck : isPreset ? Layers2 : isAi ? Sparkles : PencilLine;
             return (
               <div className="flex items-center gap-1 self-start rounded-full px-2 py-0.5" style={{ background: bg, borderRadius: 9999 }}>
                 <Icon size={11} color={color} />

@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, CheckCheck, Sparkles, PencilLine, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Search, CheckCheck, Sparkles, PencilLine, Check, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import { usePersonas } from '../hooks/usePersonas';
 import { testDraft } from '../lib/testDraft';
 import { updateTest } from '../api/tests';
 import { PERSONA_TYPE_LABELS } from '../types';
 import { Stepper } from '../components/Stepper';
+import { GeneratedAvatar } from '../components/persona/GeneratedAvatar';
+import { SourceFilterDropdown } from '../components/persona/SourceFilterDropdown';
+import { categoryOf, type SourceFilterKey } from '../lib/personaFilter';
 
 const AVATAR_COLORS = [
   { bg: '#E8F0FB', text: '#3B7DD8' },
@@ -25,6 +28,7 @@ export function TestPersonaSelectPage() {
     new Set(testDraft.get().personaIds),
   );
   const [query, setQuery] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilterKey>('all');
   const [isSaving, setIsSaving] = useState(false);
 
   if (isLoading) {
@@ -35,13 +39,13 @@ export function TestPersonaSelectPage() {
     );
   }
 
-  const filtered = query.trim()
-    ? personas.filter(
-        (p) =>
-          p.displayName.includes(query) ||
-          (p.occupation ?? '').includes(query),
-      )
-    : personas;
+  const q = query.trim();
+  const filtered = personas.filter((p) => {
+    const matchQuery =
+      !q || p.displayName.includes(q) || (p.occupation ?? '').includes(q);
+    const matchSource = sourceFilter === 'all' || categoryOf(p) === sourceFilter;
+    return matchQuery && matchSource;
+  });
 
   function toggle(id: string) {
     setSelectedIds((prev) => {
@@ -109,28 +113,8 @@ export function TestPersonaSelectPage() {
               style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14 }}
             />
           </div>
-          {/* Filter chips */}
-          <button
-            type="button"
-            className="rounded-full px-3.5 py-2 text-sm font-medium"
-            style={{ background: '#0A0A0A', color: '#FFFFFF', borderRadius: 9999, border: '1px solid #0A0A0A' }}
-          >
-            すべて
-          </button>
-          <button
-            type="button"
-            className="rounded-full px-3.5 py-2 text-sm"
-            style={{ background: '#FFFFFF', color: '#666666', borderRadius: 9999, border: '1px solid #E6E6E8' }}
-          >
-            AI生成
-          </button>
-          <button
-            type="button"
-            className="rounded-full px-3.5 py-2 text-sm"
-            style={{ background: '#FFFFFF', color: '#666666', borderRadius: 9999, border: '1px solid #E6E6E8' }}
-          >
-            手動作成
-          </button>
+          {/* 出自フィルタ */}
+          <SourceFilterDropdown value={sourceFilter} onChange={setSourceFilter} />
         </div>
         <div className="flex items-center gap-3.5">
           <span style={{ color: '#3B7DD8', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 500 }}>
@@ -166,7 +150,8 @@ export function TestPersonaSelectPage() {
           {filtered.map((persona, i) => {
             const checked = selectedIds.has(persona.personaId);
             const color = getAvatarColor(persona.displayName);
-            const isAI = !!persona.freeText;
+            const isDefault = persona.source === 'default';
+            const isAI = !isDefault && !!persona.freeText;
             return (
               <button
                 key={persona.personaId}
@@ -194,12 +179,16 @@ export function TestPersonaSelectPage() {
                 </div>
                 {/* Avatar */}
                 <div
-                  className="flex items-center justify-center rounded-full flex-shrink-0"
+                  className="flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden"
                   style={{ width: 32, height: 32, background: color.bg, borderRadius: 9999 }}
                 >
-                  <span style={{ color: color.text, fontFamily: 'Geist, sans-serif', fontSize: 12, fontWeight: 600 }}>
-                    {persona.displayName.charAt(0)}
-                  </span>
+                  {isDefault ? (
+                    <GeneratedAvatar seed={persona.personaId} size={32} />
+                  ) : (
+                    <span style={{ color: color.text, fontFamily: 'Geist, sans-serif', fontSize: 12, fontWeight: 600 }}>
+                      {persona.displayName.charAt(0)}
+                    </span>
+                  )}
                 </div>
                 {/* Name + attrs */}
                 <div className="flex flex-col flex-1" style={{ gap: 2 }}>
@@ -216,15 +205,17 @@ export function TestPersonaSelectPage() {
                 {/* Badge */}
                 <div
                   className="flex items-center gap-1 rounded-full px-2 py-0.5 flex-shrink-0"
-                  style={{ background: isAI ? '#E8F0FB' : '#F0F1F3', borderRadius: 9999 }}
+                  style={{ background: isDefault ? '#E0F2FE' : isAI ? '#E8F0FB' : '#F0F1F3', borderRadius: 9999 }}
                 >
-                  {isAI ? (
+                  {isDefault ? (
+                    <ShieldCheck size={11} color="#0284C7" />
+                  ) : isAI ? (
                     <Sparkles size={11} color="#3B7DD8" />
                   ) : (
                     <PencilLine size={11} color="#666666" />
                   )}
-                  <span style={{ color: isAI ? '#3B7DD8' : '#666666', fontFamily: 'Geist, sans-serif', fontSize: 11, fontWeight: 500 }}>
-                    {isAI ? 'AI生成' : '手動作成'}
+                  <span style={{ color: isDefault ? '#0284C7' : isAI ? '#3B7DD8' : '#666666', fontFamily: 'Geist, sans-serif', fontSize: 11, fontWeight: 500 }}>
+                    {isDefault ? 'デフォルト' : isAI ? 'AI生成' : '手動作成'}
                   </span>
                 </div>
               </button>
