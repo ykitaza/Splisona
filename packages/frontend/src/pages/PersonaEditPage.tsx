@@ -1,39 +1,17 @@
-import { useState, useEffect, useRef, type FormEvent } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Check, Sparkles, Camera } from 'lucide-react';
-import { getPersona, createPersona, updatePersona, deletePersona, generateDraft, uploadPersonaAvatar, getAvatarUrl } from '../api/personas';
+import { useState, useRef, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Check, Sparkles, Camera, X, Trash2 } from 'lucide-react';
+import { createPersona, generateDraft, uploadPersonaAvatar, updatePersona, getAvatarUrl } from '../api/personas';
 import { getApiErrorMessage } from '../api/client';
-import { PERSONA_TYPE_LABELS, type PersonaType, type Persona } from '../types';
-import { PersonaCard } from '../components/persona/PersonaCard';
+import { PERSONA_TYPE_LABELS, type PersonaType } from '../types';
+import { PersonaNode, getNodeColor } from '../components/persona/PersonaNode';
 
 const PERSONA_TYPES = Object.entries(PERSONA_TYPE_LABELS) as [PersonaType, string][];
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <label className="block text-sm font-medium" style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-      {children}
-    </label>
-  );
-}
-
-function TextInput({ id, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { id: string }) {
-  return (
-    <input
-      id={id}
-      {...props}
-      className="block w-full rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#3B7DD8]"
-      style={{ border: '1px solid #E6E6E8', borderRadius: 6, fontFamily: 'Geist, sans-serif', fontSize: 14 }}
-    />
-  );
-}
-
 export function PersonaEditPage() {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [personaId, setPersonaId] = useState<string | undefined>(id);
-  const isEdit = !!id;
-
+  const [personaId, setPersonaId] = useState<string | undefined>(undefined);
   const [displayName, setDisplayName] = useState('');
   const [type, setType] = useState<PersonaType>('action_oriented');
   const [age, setAge] = useState('');
@@ -43,35 +21,14 @@ export function PersonaEditPage() {
   const [annualIncome, setAnnualIncome] = useState('');
   const [education, setEducation] = useState('');
   const [freeText, setFreeText] = useState('');
-
   const [avatarImageKey, setAvatarImageKey] = useState<string | undefined>(undefined);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [isLoading, setIsLoading] = useState(isEdit);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isEdit) return;
-    getPersona(id)
-      .then((p) => {
-        setDisplayName(p.displayName);
-        setType(p.type);
-        setAge(p.age?.toString() ?? '');
-        setGender(p.gender ?? '');
-        setOccupation(p.occupation ?? '');
-        setDeviationScore(p.deviationScore?.toString() ?? '');
-        setAnnualIncome(p.annualIncome?.toString() ?? '');
-        setEducation(p.education ?? '');
-        setFreeText(p.freeText ?? '');
-        setAvatarImageKey(p.avatarImageKey);
-      })
-      .catch(() => setError('ペルソナの読み込みに失敗しました'))
-      .finally(() => setIsLoading(false));
-  }, [id, isEdit]);
 
   async function ensureSaved(): Promise<string> {
     if (!displayName.trim()) {
@@ -96,7 +53,6 @@ export function PersonaEditPage() {
     }
     const created = await createPersona(input);
     setPersonaId(created.personaId);
-    navigate(`/personas/${created.personaId}/edit`, { replace: true });
     return created.personaId;
   }
 
@@ -116,23 +72,6 @@ export function PersonaEditPage() {
     }
   }
 
-  const previewPersona: Persona = {
-    personaId: id ?? 'preview',
-    userId: '',
-    displayName: displayName || '（名前未入力）',
-    type,
-    age: age ? parseInt(age, 10) : undefined,
-    gender: gender || undefined,
-    occupation: occupation || undefined,
-    deviationScore: deviationScore ? parseInt(deviationScore, 10) : undefined,
-    annualIncome: annualIncome ? parseInt(annualIncome, 10) : undefined,
-    education: education || undefined,
-    freeText: freeText || undefined,
-    avatarImageKey,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!displayName.trim()) {
@@ -142,28 +81,13 @@ export function PersonaEditPage() {
     setValidationError(null);
     setIsSaving(true);
     setError(null);
-
-    const input = {
-      displayName: displayName.trim(),
-      type,
-      age: age ? parseInt(age, 10) : undefined,
-      gender: gender || undefined,
-      occupation: occupation || undefined,
-      deviationScore: deviationScore ? parseInt(deviationScore, 10) : undefined,
-      annualIncome: annualIncome ? parseInt(annualIncome, 10) : undefined,
-      education: education || undefined,
-      freeText: freeText || undefined,
-    };
-
     try {
-      if (personaId) {
-        await updatePersona(personaId, input);
-      } else {
-        await createPersona(input);
-      }
+      await ensureSaved();
       navigate('/personas');
     } catch (err) {
-      setError(getApiErrorMessage(err));
+      if (err instanceof Error && err.message !== 'displayName required') {
+        setError(getApiErrorMessage(err));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -184,119 +108,104 @@ export function PersonaEditPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!isEdit) return;
-    if (!window.confirm('このペルソナを削除しますか？')) return;
-    try {
-      await deletePersona(id);
-      navigate('/personas');
-    } catch (err) {
-      setError(getApiErrorMessage(err));
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div role="status" className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-      </div>
-    );
-  }
+  const glowColor = getNodeColor(personaId ?? 'preview');
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div className="flex flex-col gap-5 p-8 pb-10">
-        {/* Page Header */}
-        <div className="flex flex-col gap-1.5">
-          <Link
-            to="/personas"
-            className="flex items-center gap-1"
-            style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 12 }}
+      <div className="flex flex-col" style={{ padding: 32, gap: 32 }}>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.5 }}>
+              新規ペルソナ
+            </span>
+            <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>
+              ペルソナを作成
+            </h1>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/personas')}
+            className="flex items-center justify-center rounded-md hover:bg-raised transition-colors"
+            style={{ width: 32, height: 32 }}
+            aria-label="閉じる"
           >
-            <ChevronLeft size={14} color="#9A9A9F" />
-            ペルソナ一覧
-          </Link>
-          <h1 style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 28, fontWeight: 600 }}>
-            {isEdit ? 'ペルソナを編集' : '新規ペルソナ作成'}
-          </h1>
+            <X size={18} className="text-text-lo" />
+          </button>
         </div>
 
         {error && (
-          <div role="alert" className="rounded-md px-4 py-3 text-sm" style={{ background: '#FDEAEA', color: '#D64545', borderRadius: 6 }}>
+          <div role="alert" className="rounded-md px-4 py-3 text-sm bg-danger-dim text-danger" style={{ borderRadius: 10 }}>
             {error}
           </div>
         )}
 
-        {/* Content Row */}
-        <div className="flex gap-6">
-          {/* Form Col */}
-          <div className="flex flex-col gap-5" style={{ width: 680 }}>
-            {/* Basic Card */}
-            <div className="flex flex-col gap-4 rounded-md p-5" style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}>
-              <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>基本情報</span>
-
-              {/* Avatar Upload */}
-              <div className="flex items-center gap-4">
-                <div className="relative flex-shrink-0">
-                  <div
-                    className="flex items-center justify-center rounded-full overflow-hidden"
-                    style={{ width: 64, height: 64, background: '#F0F1F3', borderRadius: 9999 }}
-                  >
-                    {avatarImageKey ? (
-                      <img src={getAvatarUrl(avatarImageKey)} alt="アバター" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <span style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 600 }}>
-                        {displayName ? displayName.charAt(0) : '?'}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingAvatar}
-                    className="absolute bottom-0 right-0 flex items-center justify-center rounded-full transition-opacity disabled:opacity-50"
-                    style={{ width: 22, height: 22, background: '#0A0A0A', borderRadius: 9999, border: '2px solid #FFFFFF' }}
-                  >
-                    <Camera size={11} color="#FFFFFF" />
-                  </button>
+        <div className="flex" style={{ gap: 48 }}>
+          {/* Form */}
+          <div className="flex flex-col flex-1" style={{ gap: 32 }}>
+            {/* Avatar + Name */}
+            <div className="flex items-center gap-5">
+              <div className="relative flex-shrink-0">
+                <div
+                  className="flex items-center justify-center bg-raised"
+                  style={{
+                    width: 64, height: 64, borderRadius: 16,
+                    border: '1px solid #FFFFFF1F',
+                    boxShadow: `0 0 12px ${glowColor}40`,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {avatarImageKey ? (
+                    <img src={getAvatarUrl(avatarImageKey)} alt="アバター" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <PersonaNode seed={personaId ?? 'preview'} size={38} />
+                  )}
                 </div>
-                <div>
-                  <p style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 500 }}>プロフィール写真</p>
-                  <p style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 12, marginTop: 2 }}>
-                    カメラアイコンをクリックして{personaId ? '変更' : '設定'}
-                  </p>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  style={{ display: 'none' }}
-                  onChange={handleAvatarChange}
-                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full transition-opacity disabled:opacity-50 bg-accent"
+                  style={{ width: 22, height: 22, border: '2px solid var(--color-bg-base)' }}
+                >
+                  <Camera size={10} color="#FFFFFF" />
+                </button>
               </div>
-
-              <div className="flex flex-col gap-1.5">
-                <FieldLabel>ペルソナ名 <span style={{ color: '#D64545' }}>*</span></FieldLabel>
-                <TextInput
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                style={{ display: 'none' }}
+                onChange={handleAvatarChange}
+              />
+              <div className="flex flex-col gap-1 flex-1">
+                <span className="text-text-mid font-sans text-sm">表示名</span>
+                <input
                   id="displayName"
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="例: せっかちなビジネスマン"
+                  className="bg-transparent text-text-hi font-sans text-base border-b border-hairline pb-2 outline-none focus:border-accent"
+                  aria-label="表示名"
                 />
                 {validationError && (
-                  <p className="text-xs" style={{ color: '#D64545' }}>{validationError}</p>
+                  <p className="text-danger text-xs">{validationError}</p>
                 )}
               </div>
+            </div>
 
-              <div className="flex flex-col gap-1.5">
-                <FieldLabel>タイプ</FieldLabel>
+            {/* Section: 基本情報 */}
+            <div className="flex flex-col" style={{ gap: 16 }}>
+              <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 0.5 }}>基本情報</span>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-text-mid font-sans text-sm">タイプ</span>
                 <select
                   id="type"
                   value={type}
                   onChange={(e) => setType(e.target.value as PersonaType)}
-                  className="block w-full rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#3B7DD8]"
-                  style={{ border: '1px solid #E6E6E8', borderRadius: 6, fontFamily: 'Geist, sans-serif', fontSize: 14 }}
+                  className="bg-transparent text-text-hi font-sans text-base border-b border-hairline pb-2 outline-none focus:border-accent"
                 >
                   {PERSONA_TYPES.map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
@@ -305,19 +214,14 @@ export function PersonaEditPage() {
               </div>
             </div>
 
-            {/* Attrs Card */}
-            <div className="flex flex-col gap-5 rounded-md p-5" style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}>
-              <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>属性（任意）</span>
+            {/* Section: 属性 */}
+            <div className="flex flex-col" style={{ gap: 16 }}>
+              <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 0.5 }}>属性</span>
 
-              {/* 年齢 スライダー */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <FieldLabel>年齢</FieldLabel>
-                  {age && (
-                    <span style={{ color: '#3B7DD8', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600 }}>
-                      {age}歳
-                    </span>
-                  )}
+                  <span className="text-text-mid font-sans text-sm">年齢</span>
+                  {age && <span className="text-accent font-mono text-sm">{age}歳</span>}
                 </div>
                 <input
                   id="age"
@@ -328,14 +232,13 @@ export function PersonaEditPage() {
                   value={age !== '' ? Number(age) : 18}
                   onChange={(e) => setAge(e.target.value)}
                   className="w-full"
-                  style={{ accentColor: '#3B7DD8', cursor: 'pointer' }}
+                  style={{ accentColor: 'var(--color-accent)' }}
                 />
               </div>
 
-              {/* 性別 セグメント */}
               <div className="flex flex-col gap-2">
-                <FieldLabel>性別</FieldLabel>
-                <div className="flex gap-1.5">
+                <span className="text-text-mid font-sans text-sm">性別</span>
+                <div className="flex gap-2">
                   {['男性', '女性', 'その他', '指定なし'].map((g) => {
                     const val = g === '指定なし' ? '' : g;
                     const selected = gender === val;
@@ -344,16 +247,14 @@ export function PersonaEditPage() {
                         key={g}
                         type="button"
                         onClick={() => setGender(val)}
-                        className="flex-1 rounded-md py-2 text-sm transition-colors"
+                        className="flex-1 font-sans text-sm transition-colors"
                         style={{
-                          border: `1px solid ${selected ? '#3B7DD8' : '#E6E6E8'}`,
-                          background: selected ? '#E8F0FB' : '#FFFFFF',
-                          color: selected ? '#3B7DD8' : '#666666',
-                          fontFamily: 'Geist, sans-serif',
-                          fontSize: 13,
+                          borderRadius: 10,
+                          padding: '8px 0',
+                          border: selected ? '1px solid var(--color-accent)' : '1px solid var(--color-hairline)',
+                          background: selected ? 'var(--color-accent-dim)' : 'transparent',
+                          color: selected ? 'var(--color-accent)' : 'var(--color-text-lo)',
                           fontWeight: selected ? 600 : 400,
-                          cursor: 'pointer',
-                          borderRadius: 6,
                         }}
                       >
                         {g}
@@ -363,160 +264,128 @@ export function PersonaEditPage() {
                 </div>
               </div>
 
-              {/* 偏差値 スライダー */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <FieldLabel>偏差値</FieldLabel>
-                  {deviationScore && (
-                    <span style={{ color: '#3B7DD8', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600 }}>
-                      {deviationScore}
-                    </span>
-                  )}
-                </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-text-mid font-sans text-sm">職業</span>
                 <input
-                  id="deviationScore"
-                  type="range"
-                  min="30"
-                  max="80"
-                  step="1"
-                  value={deviationScore !== '' ? Number(deviationScore) : 30}
-                  onChange={(e) => setDeviationScore(e.target.value)}
-                  className="w-full"
-                  style={{ accentColor: '#3B7DD8', cursor: 'pointer' }}
+                  id="occupation"
+                  type="text"
+                  value={occupation}
+                  onChange={(e) => setOccupation(e.target.value)}
+                  placeholder="営業職"
+                  className="bg-transparent text-text-hi font-sans text-base border-b border-hairline pb-2 outline-none focus:border-accent"
                 />
               </div>
 
-              {/* 年収 / 学歴 / 職業 */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <FieldLabel>年収</FieldLabel>
-                  <select
-                    id="annualIncome"
-                    value={annualIncome}
-                    onChange={(e) => setAnnualIncome(e.target.value)}
-                    className="block w-full rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#3B7DD8]"
-                    style={{ border: '1px solid #E6E6E8', borderRadius: 6, fontFamily: 'Geist, sans-serif', fontSize: 13, color: annualIncome ? '#1A1A1A' : '#9A9A9F' }}
-                  >
-                    <option value="">選択</option>
-                    {[200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500, 2000].map((v) => (
-                      <option key={v} value={v}>{v}万円</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <FieldLabel>学歴</FieldLabel>
-                  <select
-                    id="education"
-                    value={education}
-                    onChange={(e) => setEducation(e.target.value)}
-                    className="block w-full rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#3B7DD8]"
-                    style={{ border: '1px solid #E6E6E8', borderRadius: 6, fontFamily: 'Geist, sans-serif', fontSize: 13, color: education ? '#1A1A1A' : '#9A9A9F' }}
-                  >
-                    <option value="">選択</option>
-                    {['中卒', '高卒', '専門卒', '短大卒', '大卒', '院卒'].map((v) => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <FieldLabel>職業</FieldLabel>
-                  <TextInput
-                    id="occupation"
-                    type="text"
-                    value={occupation}
-                    onChange={(e) => setOccupation(e.target.value)}
-                    placeholder="営業職"
-                  />
-                </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-text-mid font-sans text-sm">年収</span>
+                <select
+                  id="annualIncome"
+                  value={annualIncome}
+                  onChange={(e) => setAnnualIncome(e.target.value)}
+                  className="bg-transparent text-text-hi font-sans text-base border-b border-hairline pb-2 outline-none focus:border-accent"
+                >
+                  <option value="">選択</option>
+                  {[200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500, 2000].map((v) => (
+                    <option key={v} value={v}>{v}万円</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-text-mid font-sans text-sm">学歴</span>
+                <select
+                  id="education"
+                  value={education}
+                  onChange={(e) => setEducation(e.target.value)}
+                  className="bg-transparent text-text-hi font-sans text-base border-b border-hairline pb-2 outline-none focus:border-accent"
+                >
+                  <option value="">選択</option>
+                  {['中卒', '高卒', '専門卒', '短大卒', '大卒', '院卒'].map((v) => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {/* Free text Card */}
-            <div className="flex flex-col gap-2 rounded-md p-5" style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}>
-              <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>自由記述（性格・行動特性）</span>
+            {/* Section: 自由記述 */}
+            <div className="flex flex-col" style={{ gap: 16 }}>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 0.5 }}>自由記述</span>
+                <button
+                  type="button"
+                  onClick={handleGenerateDraft}
+                  disabled={isGenerating}
+                  className="flex items-center gap-1.5 text-accent font-sans text-xs font-medium transition-opacity disabled:opacity-50"
+                >
+                  <Sparkles size={13} />
+                  {isGenerating ? '生成中...' : 'AIで下書き'}
+                </button>
+              </div>
               <textarea
                 id="freeText"
                 value={freeText}
                 onChange={(e) => setFreeText(e.target.value)}
                 rows={5}
                 placeholder="このペルソナの性格や行動特性を記述してください"
-                className="block w-full rounded-md px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#3B7DD8] resize-none"
-                style={{ border: '1px solid #E6E6E8', borderRadius: 6, fontFamily: 'Geist, sans-serif', fontSize: 14, lineHeight: 1.6 }}
+                className="bg-transparent text-text-hi font-sans text-base border-b border-hairline pb-2 outline-none focus:border-accent resize-none"
+                style={{ lineHeight: 1.6 }}
               />
             </div>
           </div>
 
-          {/* Side Col */}
-          <div className="flex flex-col gap-5 flex-1">
-            {/* AI Assist */}
-            <div
-              className="flex flex-col gap-3 rounded-md p-5"
-              style={{ background: '#E8F0FB', borderRadius: 10 }}
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles size={16} color="#3B7DD8" />
-                <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 600 }}>
-                  AIアシスト
-                </span>
-              </div>
-              <p style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13, lineHeight: 1.5 }}>
-                入力した属性をもとに、人物像と自由記述を自動で下書きします。
-              </p>
-              <button
-                type="button"
-                onClick={handleGenerateDraft}
-                disabled={isGenerating}
-                className="flex items-center justify-center gap-2 rounded-md py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-                style={{ background: '#3B7DD8', borderRadius: 6 }}
+          {/* Preview column */}
+          <div className="flex flex-col gap-4" style={{ width: 320 }}>
+            <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 0.5 }}>プレビュー</span>
+            <div className="flex flex-col items-center gap-4">
+              <div
+                className="flex items-center justify-center bg-raised"
+                style={{
+                  width: 96, height: 96, borderRadius: 24,
+                  border: '1px solid #FFFFFF1F',
+                  boxShadow: `0 0 16px ${glowColor}40`,
+                  overflow: 'hidden',
+                }}
               >
-                <Sparkles size={14} color="#FFFFFF" />
-                {isGenerating ? '生成中...' : 'AIで下書きを生成'}
-              </button>
-            </div>
-
-            {/* Preview */}
-            <div className="flex flex-col gap-2.5">
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>
-                プレビュー
+                {avatarImageKey ? (
+                  <img src={getAvatarUrl(avatarImageKey)} alt="アバター" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <PersonaNode seed={personaId ?? 'preview'} size={56} />
+                )}
+              </div>
+              <span className="text-text-hi font-sans font-semibold" style={{ fontSize: 18 }}>
+                {displayName || '（名前未入力）'}
               </span>
-              <PersonaCard persona={previewPersona} isAiGenerated={!!freeText} />
+              <span className="text-text-mid font-sans text-sm">
+                {PERSONA_TYPE_LABELS[type]}
+              </span>
+              {freeText && (
+                <p className="text-text-mid font-sans text-sm text-center" style={{ lineHeight: 1.6 }}>
+                  {freeText}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Action Bar */}
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-3">
-            {isEdit && (
-              <button
-                type="button"
-                onClick={handleDelete}
-                className="rounded-md px-4 py-2.5 text-sm font-medium transition-colors hover:bg-red-50"
-                style={{ border: '1px solid #D64545', color: '#D64545', borderRadius: 6 }}
-              >
-                削除
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/personas')}
-              className="rounded-md px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50"
-              style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, color: '#666666' }}
-            >
-              キャンセル
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-              style={{ background: '#0A0A0A', borderRadius: 6 }}
-            >
-              <Check size={16} color="#FFFFFF" />
-              {isSaving ? '保存中...' : '保存する'}
-            </button>
-          </div>
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3" style={{ borderTop: '1px solid var(--color-hairline)', paddingTop: 16 }}>
+          <button
+            type="button"
+            onClick={() => navigate('/personas')}
+            className="text-text-mid font-sans text-sm font-medium transition-colors hover:text-text-hi"
+            style={{ borderRadius: 10, border: '1px solid var(--color-hairline)', padding: '10px 16px' }}
+          >
+            キャンセル
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="flex items-center gap-2 text-white font-sans text-sm font-semibold transition-opacity disabled:opacity-50"
+            style={{ borderRadius: 10, background: 'var(--color-accent)', padding: '10px 24px' }}
+          >
+            <Check size={16} />
+            {isSaving ? '保存中...' : '保存する'}
+          </button>
         </div>
       </div>
     </form>

@@ -4,7 +4,6 @@ import { ArrowLeft, Play } from 'lucide-react';
 import { testDraft } from '../lib/testDraft';
 import { API_BASE } from '../api/client';
 import { createTest, getUploadUrl, uploadToS3, updateTest, executeTest, captureUrl } from '../api/tests';
-import { Stepper } from '../components/Stepper';
 import { usePersonas } from '../hooks/usePersonas';
 
 export function TestConfirmPage() {
@@ -97,52 +96,49 @@ export function TestConfirmPage() {
   function getSideBadgeLabel(side: 'A' | 'B'): string {
     const sideData = side === 'A' ? draft.sideA : draft.sideB;
     if (!sideData) return '—';
-    if (sideData.inputType === 'image_upload') return '画像アップロード';
-    if (sideData.inputType === 'figma_url') return 'Figma URL';
-    return 'サイトURL';
+    if (sideData.inputType === 'image_upload') return '画像';
+    if (sideData.inputType === 'figma_url') return 'Figma';
+    return 'URL';
   }
 
   return (
-    <div className="flex flex-col gap-6 p-8 pb-10">
-      <div className="flex flex-col gap-1">
-        <h1 style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 28, fontWeight: 600 }}>
+    <div className="flex flex-col gap-6" style={{ padding: 32 }}>
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.5 }}>
+          確認
+        </span>
+        <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>
           内容を確認
         </h1>
-        <p style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 14 }}>
+        <p className="text-text-mid font-sans text-sm">
           この設定でA/Bテストを実行します
         </p>
       </div>
 
-      <Stepper
-        steps={[
-          { label: '比較対象', state: 'done' },
-          { label: 'ペルソナ選択', state: 'done' },
-          { label: '確認', state: 'active' },
-        ]}
-      />
-
       {error && (
-        <div role="alert" className="rounded-md px-4 py-3 text-sm" style={{ background: '#FDEAEA', color: '#D64545', borderRadius: 6 }}>
+        <div role="alert" className="rounded-md px-4 py-3 text-sm bg-danger-dim text-danger" style={{ borderRadius: 10 }}>
           {error}
         </div>
       )}
 
+      {/* Designs */}
       <div className="flex flex-col gap-3">
-        <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>
+        <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 0.5 }}>
           比較対象
         </span>
         <div className="flex gap-5">
           {(['A', 'B'] as const).map((side) => {
-            const dotColor = side === 'A' ? '#3B7DD8' : '#E0883A';
+            const dotColor = side === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)';
             return (
               <div
                 key={side}
-                className="flex items-center gap-3.5 rounded-md p-4 flex-1 min-w-0 overflow-hidden"
-                style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
+                className="flex items-center gap-3.5 flex-1 min-w-0 overflow-hidden"
+                style={{ borderRadius: 10, border: '1px solid var(--color-hairline)', padding: 16 }}
               >
                 <div
-                  className="flex-shrink-0 rounded-md overflow-hidden flex items-center justify-center"
-                  style={{ width: 72, height: 54, background: '#F0F1F3', borderRadius: 6 }}
+                  className="flex-shrink-0 overflow-hidden flex items-center justify-center bg-raised"
+                  style={{ width: 72, height: 54, borderRadius: 6 }}
                 >
                   {(() => {
                     const sideData = side === 'A' ? draft.sideA : draft.sideB;
@@ -156,23 +152,11 @@ export function TestConfirmPage() {
                 </div>
                 <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <div style={{ width: 8, height: 8, borderRadius: 9999, background: dotColor, flexShrink: 0 }} />
-                    <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600 }}>
-                      {side}案
-                    </span>
-                    <span
-                      className="rounded-full px-2 py-0.5 text-xs"
-                      style={{ background: '#E6F4EC', color: '#2E9E5B', fontFamily: 'Geist, sans-serif', fontSize: 11 }}
-                    >
-                      {getSideBadgeLabel(side)}
-                    </span>
+                    <div className="flex-shrink-0 rounded-full" style={{ width: 8, height: 8, background: dotColor }} />
+                    <span className="text-text-hi font-sans text-sm font-semibold">{side}案</span>
+                    <span className="text-text-lo font-mono text-xs">{getSideBadgeLabel(side)}</span>
                   </div>
-                  <span
-                    className="truncate"
-                    style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11 }}
-                  >
-                    {getSideLabel(side)}
-                  </span>
+                  <span className="text-text-lo font-mono text-xs truncate">{getSideLabel(side)}</span>
                 </div>
               </div>
             );
@@ -180,86 +164,73 @@ export function TestConfirmPage() {
         </div>
       </div>
 
+      {/* Personas */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>
+          <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 0.5 }}>
             選択したペルソナ
           </span>
-          <span style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-            {draft.personaIds.length}人
-          </span>
+          <span className="text-text-mid font-mono text-xs">{draft.personaIds.length}体</span>
         </div>
-        <div
-          className="rounded-md p-5 flex flex-col gap-4"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
-        >
+        <div className="flex flex-wrap gap-2">
           {selectedPersonas.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {selectedPersonas.map((p) => (
-                <span
-                  key={p.personaId}
-                  className="rounded-full px-3 py-1 text-sm"
-                  style={{ background: '#F0F1F3', color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13 }}
-                >
-                  {p.displayName}
-                </span>
-              ))}
-            </div>
+            selectedPersonas.map((p) => (
+              <span
+                key={p.personaId}
+                className="text-text-hi font-sans text-sm"
+                style={{ borderRadius: 999, background: 'var(--color-bg-raised)', padding: '6px 14px' }}
+              >
+                {p.displayName}
+              </span>
+            ))
           ) : (
-            <p style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-              {draft.personaIds.length}人を選択中
-            </p>
+            <span className="text-text-lo font-sans text-sm">{draft.personaIds.length}体を選択中</span>
           )}
         </div>
       </div>
 
+      {/* Settings */}
       <div className="flex flex-col gap-3">
-        <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>
+        <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 0.5 }}>
           実行設定
         </span>
-        <div
-          className="overflow-hidden rounded-md"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
-        >
+        <div className="flex flex-col">
           {[
             { label: 'AIモデル', value: 'Amazon Nova Lite (Bedrock)' },
-            { label: '評価ペルソナ数', value: `${draft.personaIds.length}人` },
+            { label: '評価ペルソナ数', value: `${draft.personaIds.length}体` },
             { label: '推定所要時間', value: `約${estimatedSeconds}秒` },
-          ].map(({ label, value }, i) => (
+          ].map(({ label, value }) => (
             <div
               key={label}
-              className="flex items-center justify-between"
-              style={{
-                padding: '14px 18px',
-                borderTop: i > 0 ? '1px solid #E6E6E8' : 'none',
-              }}
+              className="flex items-center justify-between py-3 border-b border-hairline"
             >
-              <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>{label}</span>
-              <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 500 }}>{value}</span>
+              <span className="text-text-mid font-sans text-sm">{label}</span>
+              <span className="text-text-hi font-mono text-sm">{value}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-2">
+      {/* Footer */}
+      <div className="flex items-center justify-between" style={{ borderTop: '1px solid var(--color-hairline)', paddingTop: 16 }}>
         <button
           type="button"
           disabled={isExecuting}
           onClick={() => navigate('/tests/new/personas')}
-          className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium disabled:opacity-40"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, color: '#1A1A1A' }}
+          className="flex items-center gap-2 text-text-mid font-sans text-sm font-medium transition-colors hover:text-text-hi disabled:opacity-40"
+          style={{ borderRadius: 10, border: '1px solid var(--color-hairline)', padding: '10px 16px' }}
         >
-          <ArrowLeft size={16} color="#1A1A1A" />
+          <ArrowLeft size={16} />
           戻る
         </button>
         <button
           type="button"
           disabled={isExecuting}
           onClick={handleExecute}
-          className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
-          style={{ background: '#0A0A0A', borderRadius: 6 }}
+          className="flex items-center gap-2 text-white font-sans text-sm font-semibold transition-opacity disabled:opacity-40"
+          style={{ borderRadius: 10, background: 'var(--color-accent)', padding: '10px 24px' }}
         >
-          <Play size={16} color="#FFFFFF" />
+          <Play size={16} />
           {isExecuting ? '実行中...' : 'テストを実行'}
         </button>
       </div>

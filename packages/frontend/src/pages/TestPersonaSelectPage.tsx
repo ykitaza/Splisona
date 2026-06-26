@@ -1,25 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, CheckCheck, Sparkles, PencilLine, Check, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Search, Check, ArrowLeft, ArrowRight, CheckCheck } from 'lucide-react';
 import { usePersonas } from '../hooks/usePersonas';
 import { testDraft } from '../lib/testDraft';
 import { updateTest } from '../api/tests';
 import { PERSONA_TYPE_LABELS } from '../types';
-import { Stepper } from '../components/Stepper';
-import { GeneratedAvatar } from '../components/persona/GeneratedAvatar';
-import { SourceFilterDropdown } from '../components/persona/SourceFilterDropdown';
-import { categoryOf, type SourceFilterKey } from '../lib/personaFilter';
-
-const AVATAR_COLORS = [
-  { bg: '#E8F0FB', text: '#3B7DD8' },
-  { bg: '#FBF0E4', text: '#E0883A' },
-  { bg: '#E6F4EC', text: '#2E9E5B' },
-  { bg: '#F0F1F3', text: '#666666' },
-];
-
-function getAvatarColor(name: string) {
-  return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
-}
+import { PersonaNode, getNodeColor } from '../components/persona/PersonaNode';
 
 export function TestPersonaSelectPage() {
   const navigate = useNavigate();
@@ -28,23 +14,19 @@ export function TestPersonaSelectPage() {
     new Set(testDraft.get().personaIds),
   );
   const [query, setQuery] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<SourceFilterKey>('all');
   const [isSaving, setIsSaving] = useState(false);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div role="status" className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+        <div role="status" className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
       </div>
     );
   }
 
   const q = query.trim();
   const filtered = personas.filter((p) => {
-    const matchQuery =
-      !q || p.displayName.includes(q) || (p.occupation ?? '').includes(q);
-    const matchSource = sourceFilter === 'all' || categoryOf(p) === sourceFilter;
-    return matchQuery && matchSource;
+    return !q || p.displayName.includes(q) || (p.occupation ?? '').includes(q);
   });
 
   function toggle(id: string) {
@@ -76,57 +58,48 @@ export function TestPersonaSelectPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 p-8 pb-10">
+    <div className="flex flex-col gap-6" style={{ padding: 32 }}>
       {/* Header */}
-      <div className="flex flex-col gap-1">
-        <h1 style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 28, fontWeight: 600 }}>
-          ペルソナを選択
-        </h1>
-        <p style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 14 }}>
-          このA/Bテストでレビューさせるペルソナを選びます
-        </p>
+      <div className="flex flex-col gap-2">
+        <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.5 }}>
+          ペルソナ選択
+        </span>
+        <div className="flex items-center justify-between">
+          <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>
+            ペルソナを選択
+          </h1>
+          <span className="text-text-mid font-sans text-sm">
+            このA/Bテストでレビューさせるペルソナを選びます
+          </span>
+        </div>
       </div>
-
-      <Stepper
-        steps={[
-          { label: '比較対象', state: 'done' },
-          { label: 'ペルソナ選択', state: 'active' },
-          { label: '確認', state: 'pending' },
-        ]}
-      />
 
       {/* Toolbar */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          {/* Search */}
-          <div
-            className="flex items-center gap-2 rounded-md px-3 py-2.5"
-            style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, width: 280 }}
-          >
-            <Search size={16} color="#9A9A9F" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="ペルソナを検索"
-              className="flex-1 bg-transparent text-sm outline-none"
-              style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14 }}
-            />
-          </div>
-          {/* 出自フィルタ */}
-          <SourceFilterDropdown value={sourceFilter} onChange={setSourceFilter} />
+        <div
+          className="flex items-center gap-2"
+          style={{ width: 280, borderRadius: 10, background: 'var(--color-bg-surface)', border: '1px solid var(--color-hairline)', padding: '8px 12px' }}
+        >
+          <Search size={15} className="text-text-lo flex-shrink-0" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="ペルソナを検索"
+            className="flex-1 bg-transparent text-text-hi font-sans text-sm outline-none"
+          />
         </div>
-        <div className="flex items-center gap-3.5">
-          <span style={{ color: '#3B7DD8', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 500 }}>
-            {selectedIds.size}人を選択中 / 全{personas.length}人
+        <div className="flex items-center gap-4">
+          <span className="text-accent font-mono text-sm">
+            {selectedIds.size} / {personas.length} 体
           </span>
           <button
             type="button"
             onClick={selectAll}
-            className="flex items-center gap-1.5 rounded-md px-3 py-2"
-            style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 500 }}
+            className="flex items-center gap-2 text-text-mid font-sans text-sm transition-colors hover:text-text-hi"
+            style={{ borderRadius: 10, border: '1px solid var(--color-hairline)', padding: '8px 14px' }}
           >
-            <CheckCheck size={15} color="#1A1A1A" />
+            <CheckCheck size={15} />
             全選択
           </button>
         </div>
@@ -134,88 +107,65 @@ export function TestPersonaSelectPage() {
 
       {/* List */}
       {personas.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center py-16 rounded-md"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
-        >
-          <p style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 14 }}>
+        <div className="flex flex-col items-center justify-center py-16">
+          <p className="text-text-lo font-sans text-sm">
             ペルソナがありません。先にペルソナを作成してください。
           </p>
         </div>
       ) : (
-        <div
-          className="overflow-hidden rounded-md"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
-        >
-          {filtered.map((persona, i) => {
+        <div className="flex flex-col">
+          {filtered.map((persona) => {
             const checked = selectedIds.has(persona.personaId);
-            const color = getAvatarColor(persona.displayName);
-            const isDefault = persona.source === 'default';
-            const isAI = !isDefault && !!persona.freeText;
+            const glowColor = getNodeColor(persona.personaId);
+            const attrs = [
+              PERSONA_TYPE_LABELS[persona.type],
+              persona.age ? `${persona.age}歳` : null,
+              persona.gender,
+              persona.occupation,
+            ].filter(Boolean).join(' · ');
+
             return (
               <button
                 key={persona.personaId}
                 type="button"
                 onClick={() => toggle(persona.personaId)}
-                className="flex items-center gap-3.5 w-full text-left transition-colors"
+                className="flex items-center gap-3 w-full text-left transition-colors"
                 style={{
-                  padding: '12px 16px',
-                  borderTop: i > 0 ? '1px solid #E6E6E8' : 'none',
-                  background: checked ? '#E8F0FB' : '#FFFFFF',
+                  padding: 12,
+                  borderRadius: 10,
+                  background: checked ? 'var(--color-accent-dim)' : 'transparent',
                 }}
               >
                 {/* Checkbox */}
                 <div
-                  className="flex items-center justify-center rounded-md flex-shrink-0"
+                  className="flex items-center justify-center flex-shrink-0"
                   style={{
                     width: 18,
                     height: 18,
                     borderRadius: 4,
-                    background: checked ? '#3B7DD8' : '#FFFFFF',
-                    border: checked ? '1px solid #3B7DD8' : '1.5px solid #D4D4D8',
+                    background: checked ? 'var(--color-accent)' : 'transparent',
+                    border: checked ? 'none' : '1.5px solid var(--color-text-lo)',
                   }}
                 >
                   {checked && <Check size={12} color="#FFFFFF" />}
                 </div>
                 {/* Avatar */}
                 <div
-                  className="flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden"
-                  style={{ width: 32, height: 32, background: color.bg, borderRadius: 9999 }}
+                  className="flex items-center justify-center flex-shrink-0 bg-raised"
+                  style={{
+                    width: 32, height: 32, borderRadius: 10,
+                    boxShadow: checked ? `0 0 8px ${glowColor}40` : 'none',
+                  }}
                 >
-                  {isDefault ? (
-                    <GeneratedAvatar seed={persona.personaId} size={32} />
-                  ) : (
-                    <span style={{ color: color.text, fontFamily: 'Geist, sans-serif', fontSize: 12, fontWeight: 600 }}>
-                      {persona.displayName.charAt(0)}
-                    </span>
-                  )}
+                  <PersonaNode seed={persona.personaId} size={20} />
                 </div>
                 {/* Name + attrs */}
-                <div className="flex flex-col flex-1" style={{ gap: 2 }}>
-                  <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500 }}>
+                <div className="flex flex-col flex-1 min-w-0" style={{ gap: 2 }}>
+                  <span className="text-text-hi font-sans text-sm font-medium truncate">
                     {persona.displayName}
                   </span>
-                  <span style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 12 }}>
-                    {PERSONA_TYPE_LABELS[persona.type]}
-                    {persona.age ? ` ・ ${persona.age}歳` : ''}
-                    {persona.gender ? `・${persona.gender}` : ''}
-                    {persona.occupation ? ` ・ ${persona.occupation}` : ''}
-                  </span>
-                </div>
-                {/* Badge */}
-                <div
-                  className="flex items-center gap-1 rounded-full px-2 py-0.5 flex-shrink-0"
-                  style={{ background: isDefault ? '#E0F2FE' : isAI ? '#E8F0FB' : '#F0F1F3', borderRadius: 9999 }}
-                >
-                  {isDefault ? (
-                    <ShieldCheck size={11} color="#0284C7" />
-                  ) : isAI ? (
-                    <Sparkles size={11} color="#3B7DD8" />
-                  ) : (
-                    <PencilLine size={11} color="#666666" />
-                  )}
-                  <span style={{ color: isDefault ? '#0284C7' : isAI ? '#3B7DD8' : '#666666', fontFamily: 'Geist, sans-serif', fontSize: 11, fontWeight: 500 }}>
-                    {isDefault ? 'デフォルト' : isAI ? 'AI生成' : '手動作成'}
+                  <span className="text-text-lo font-mono text-xs truncate">
+                    {attrs}
                   </span>
                 </div>
               </button>
@@ -224,27 +174,32 @@ export function TestPersonaSelectPage() {
         </div>
       )}
 
-      {/* Action Bar */}
-      <div className="flex items-center justify-between pt-2">
+      {/* Footer */}
+      <div className="flex items-center justify-between" style={{ borderTop: '1px solid var(--color-hairline)', paddingTop: 16 }}>
         <button
           type="button"
           onClick={() => navigate('/tests/new')}
-          className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, color: '#1A1A1A' }}
+          className="flex items-center gap-2 text-text-mid font-sans text-sm font-medium transition-colors hover:text-text-hi"
+          style={{ borderRadius: 10, border: '1px solid var(--color-hairline)', padding: '10px 16px' }}
         >
-          <ArrowLeft size={16} color="#1A1A1A" />
+          <ArrowLeft size={16} />
           戻る
         </button>
-        <button
-          type="button"
-          disabled={selectedIds.size === 0 || isSaving}
-          onClick={handleNext}
-          className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
-          style={{ background: '#0A0A0A', borderRadius: 6 }}
-        >
-          {isSaving ? '保存中...' : '次へ: 確認'}
-          <ArrowRight size={16} color="#FFFFFF" />
-        </button>
+        <div className="flex items-center gap-4">
+          <span className="text-text-lo font-mono text-sm">
+            {selectedIds.size} / {personas.length} 体
+          </span>
+          <button
+            type="button"
+            disabled={selectedIds.size === 0 || isSaving}
+            onClick={handleNext}
+            className="flex items-center gap-2 text-white font-sans text-sm font-semibold transition-opacity disabled:opacity-40"
+            style={{ borderRadius: 10, background: 'var(--color-accent)', padding: '10px 24px' }}
+          >
+            {isSaving ? '保存中...' : '確定して次へ'}
+            <ArrowRight size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
