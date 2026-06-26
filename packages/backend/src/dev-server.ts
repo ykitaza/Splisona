@@ -132,18 +132,19 @@ app.delete("/tests/:id", async (c) => {
 // URL キャプチャ: Figma/サイトURLから画像を取得してローカル保存
 app.post("/tests/:id/capture", async (c) => {
   const testId = c.req.param("id");
-  const { side, inputType, url } = await c.req.json<{ side: string; inputType: string; url: string }>();
+  const { side, inputType, url, figmaToken: reqToken } = await c.req.json<{ side: string; inputType: string; url: string; figmaToken?: string }>();
+  const figmaToken = reqToken || process.env.FIGMA_TOKEN;
   const imageKey = `local/${testId}-${side}-capture-${Date.now()}.png`;
   const filePath = imageKeyToPath(imageKey);
 
-  if (inputType === "figma_url" && process.env.FIGMA_TOKEN) {
+  if (inputType === "figma_url" && figmaToken) {
     try {
       const match = url.match(/figma\.com\/(?:design|file)\/([^/?]+)/) ;
       const nodeId = new URL(url).searchParams.get("node-id") ?? "";
       const fileKey = match?.[1];
       if (fileKey) {
         const apiUrl = `https://api.figma.com/v1/images/${fileKey}?ids=${encodeURIComponent(nodeId)}&format=png`;
-        const apiRes = await fetch(apiUrl, { headers: { "X-Figma-Token": process.env.FIGMA_TOKEN } });
+        const apiRes = await fetch(apiUrl, { headers: { "X-Figma-Token": figmaToken } });
         const data = await apiRes.json() as { images?: Record<string, string> };
         const imgUrl = data.images?.[nodeId];
         if (imgUrl) {

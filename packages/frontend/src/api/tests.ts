@@ -70,5 +70,9 @@ export interface CaptureResponse {
 }
 
 export function captureUrl(testId: string, req: CaptureRequest): Promise<CaptureResponse> {
-  return apiRequest(`/tests/${testId}/capture`, { method: 'POST', body: JSON.stringify(req) });
+  const figmaToken = localStorage.getItem('chorus_figma_token') ?? undefined;
+  return apiRequest(`/tests/${testId}/capture`, {
+    method: 'POST',
+    body: JSON.stringify(figmaToken ? { ...req, figmaToken } : req),
+  });
 }

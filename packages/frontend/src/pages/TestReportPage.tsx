@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Trophy } from 'lucide-react';
+import { ImageLightbox } from '../components/ImageLightbox';
 import { getReport, executeTest, exportTest } from '../api/tests';
 import { API_BASE } from '../api/client';
 import type { ReportResponse, EvaluationScores, DesignInput } from '../types';
@@ -109,6 +110,7 @@ function DesignCard({
   supportCount: number;
   totalCount: number;
 }) {
+  const [lightbox, setLightbox] = useState(false);
   const accentColor = side === 'A' ? '#3B7DD8' : '#E0883A';
   const softColor = side === 'A' ? '#E8F0FB' : '#FBF0E4';
   const borderColor = isWinner ? accentColor : '#E6E6E8';
@@ -117,13 +119,16 @@ function DesignCard({
   const imageUrl = input.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
 
   return (
+    <>
+      {lightbox && imageUrl && <ImageLightbox src={imageUrl} alt={`${side}案`} onClose={() => setLightbox(false)} />}
     <div
       className="flex flex-col overflow-hidden flex-1"
       style={{ borderRadius: 10, border: `${borderWidth}px solid ${borderColor}`, background: '#FFFFFF' }}
     >
       <div
         className="flex items-center justify-center overflow-hidden flex-shrink-0"
-        style={{ height: 240, background: '#F0F1F3' }}
+        style={{ height: 240, background: '#F0F1F3', cursor: imageUrl ? 'zoom-in' : 'default' }}
+        onClick={() => { if (imageUrl) setLightbox(true); }}
       >
         {imageUrl ? (
           <img src={imageUrl} alt={`${side}案`} className="w-full h-full object-cover" />
@@ -158,6 +163,7 @@ function DesignCard({
         </span>
       </div>
     </div>
+    </>
   );
 }
 

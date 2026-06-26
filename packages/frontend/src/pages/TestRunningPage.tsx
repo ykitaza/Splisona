@@ -4,6 +4,7 @@ import { getProgress, getTest } from '../api/tests';
 import { ArrowRight } from 'lucide-react';
 import { usePersonas } from '../hooks/usePersonas';
 import { API_BASE } from '../api/client';
+import { ImageLightbox } from '../components/ImageLightbox';
 import type { ProgressResponse, ABTest } from '../types';
 
 const AVATAR_COLORS = [
@@ -31,34 +32,39 @@ const SCATTER_POSITIONS = [
 ];
 
 function DesignThumb({ label, imageKey, dotColor }: { label: string; imageKey?: string; dotColor: string }) {
+  const [lightbox, setLightbox] = useState(false);
+  const src = imageKey ? `${API_BASE}/stub-upload/${imageKey}` : null;
+
   return (
-    <div
-      className="flex flex-col gap-2 flex-1"
-      style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10, overflow: 'hidden' }}
-    >
+    <>
+      {lightbox && src && <ImageLightbox src={src} alt={`${label}プレビュー`} onClose={() => setLightbox(false)} />}
       <div
-        className="flex items-center gap-2 px-4 pt-3 pb-0"
+        className="flex flex-col gap-2 flex-1"
+        style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10, overflow: 'hidden' }}
       >
-        <div style={{ width: 8, height: 8, borderRadius: 9999, background: dotColor, flexShrink: 0 }} />
-        <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600 }}>
-          {label}
-        </span>
+        <div className="flex items-center gap-2 px-4 pt-3 pb-0">
+          <div style={{ width: 8, height: 8, borderRadius: 9999, background: dotColor, flexShrink: 0 }} />
+          <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600 }}>
+            {label}
+          </span>
+        </div>
+        <div
+          className="mx-3 mb-3 overflow-hidden rounded-md flex items-center justify-center"
+          style={{ height: 120, background: '#F7F7F8', borderRadius: 6, cursor: src ? 'zoom-in' : 'default' }}
+          onClick={() => { if (src) setLightbox(true); }}
+        >
+          {src ? (
+            <img
+              src={src}
+              alt={`${label}プレビュー`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span style={{ color: '#C4C4C8', fontFamily: 'Geist, sans-serif', fontSize: 12 }}>画像なし</span>
+          )}
+        </div>
       </div>
-      <div
-        className="mx-3 mb-3 overflow-hidden rounded-md flex items-center justify-center"
-        style={{ height: 120, background: '#F7F7F8', borderRadius: 6 }}
-      >
-        {imageKey ? (
-          <img
-            src={`${API_BASE}/stub-upload/${imageKey}`}
-            alt={`${label}プレビュー`}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <span style={{ color: '#C4C4C8', fontFamily: 'Geist, sans-serif', fontSize: 12 }}>画像なし</span>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 
