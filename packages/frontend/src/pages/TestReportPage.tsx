@@ -312,7 +312,7 @@ export function TestReportPage() {
         <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 600 }}>
           比較したデザイン
         </span>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 min-w-0">
           <DesignCard
             side="A"
             input={abTest.designAInput}

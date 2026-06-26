@@ -137,7 +137,7 @@ export function TestConfirmPage() {
             return (
               <div
                 key={side}
-                className="flex items-center gap-3.5 rounded-md p-4 flex-1"
+                className="flex items-center gap-3.5 rounded-md p-4 flex-1 min-w-0 overflow-hidden"
                 style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
               >
                 <div
