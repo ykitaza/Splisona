@@ -4,7 +4,7 @@ import { Image, Info, ArrowRight, Link2, Camera, Maximize2 } from 'lucide-react'
 import { ImageLightbox } from '../components/ImageLightbox';
 import { testDraft, sideToDesignInput, type DesignSideData } from '../lib/testDraft';
 import { captureUrl, createTest, updateTest } from '../api/tests';
-import { API_BASE } from '../api/client';
+import { API_BASE, ApiError } from '../api/client';
 import { Stepper } from '../components/Stepper';
 
 type TabType = 'image' | 'figma_url' | 'site_url';
@@ -79,9 +79,9 @@ function DesignSidePanel({
     try {
       const { imageKey } = await captureUrl('preview', { side, inputType, url: urlInput.trim() });
       onSideChange({ inputType, url: urlInput.trim(), imageKey });
-    } catch {
-      setCaptureError('スクリーンショットの取得に失敗しました。URLを確認してください。');
-      // URL は残しつつ imageKey なし = 未完了状態
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : 'スクリーンショットの取得に失敗しました';
+      setCaptureError(msg);
       onSideChange({ inputType, url: urlInput.trim(), imageKey: '' });
     } finally {
       setIsCapturing(false);
