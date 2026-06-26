@@ -1,4 +1,4 @@
-import { apiRequest, apiStream } from './client';
+import { apiRequest } from './client';
 import type { Persona, CreatePersonaInput, UpdatePersonaInput, PersonaDraft, ConversationMessage } from '../types';
 
 export function listPersonas(): Promise<Persona[]> {
@@ -28,9 +28,9 @@ export function generateDraft(id: string): Promise<PersonaDraft> {
 export function sendInterviewMessage(
   id: string,
   messages: ConversationMessage[]
-): Promise<ReadableStream<Uint8Array> | null> {
-  return apiStream(`/personas/${id}/interview`, {
+): Promise<string> {
+  return apiRequest<{ content: string }>(`/personas/${id}/interview`, {
     method: 'POST',
     body: JSON.stringify({ messages }),
-  });
+  }).then((res) => res.content);
 }

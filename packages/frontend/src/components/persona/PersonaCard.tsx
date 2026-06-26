@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, PencilLine, MoreHorizontal } from 'lucide-react';
+import { Sparkles, PencilLine, MoreHorizontal, Layers2 } from 'lucide-react';
+import { PERSONA_TYPE_LABELS } from '../../types';
 import type { Persona } from '../../types';
 
 const AVATAR_COLORS: { bg: string; text: string }[] = [
@@ -21,11 +22,10 @@ function initials(name: string) {
 
 interface Props {
   persona: Persona;
-  isAiGenerated?: boolean;
   onDelete?: (id: string) => void;
 }
 
-export function PersonaCard({ persona, isAiGenerated, onDelete }: Props) {
+export function PersonaCard({ persona, onDelete }: Props) {
   const color = getAvatarColor(persona.displayName);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,7 +63,7 @@ export function PersonaCard({ persona, isAiGenerated, onDelete }: Props) {
   return (
     <div
       className="flex flex-col gap-4 rounded-md p-5"
-      style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10, width: '100%' }}
+      style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10, width: '100%', flex: 1 }}
     >
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -84,27 +84,23 @@ export function PersonaCard({ persona, isAiGenerated, onDelete }: Props) {
           >
             {persona.displayName}
           </Link>
-          {persona.occupation && (
-            <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 12 }}>
-              {persona.occupation}
-            </span>
-          )}
-          <div
-            className="flex items-center gap-1 self-start rounded-full px-2 py-0.5"
-            style={{ background: isAiGenerated ? '#E8F0FB' : '#F0F1F3', borderRadius: 9999 }}
-          >
-            {isAiGenerated ? <Sparkles size={11} color="#3B7DD8" /> : <PencilLine size={11} color="#666666" />}
-            <span
-              style={{
-                color: isAiGenerated ? '#3B7DD8' : '#666666',
-                fontFamily: 'Geist, sans-serif',
-                fontSize: 11,
-                fontWeight: 500,
-              }}
-            >
-              {isAiGenerated ? 'AI生成' : '手動作成'}
-            </span>
-          </div>
+          <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 12 }}>
+            {(PERSONA_TYPE_LABELS as Record<string, string>)[persona.type] ?? persona.type}
+          </span>
+          {(() => {
+            const isPreset = persona.source === 'preset';
+            const isAi = persona.source === 'ai' || (!persona.source && !!persona.freeText);
+            const bg = isPreset ? '#EDE9FE' : isAi ? '#E8F0FB' : '#F0F1F3';
+            const color = isPreset ? '#7C3AED' : isAi ? '#3B7DD8' : '#666666';
+            const label = isPreset ? 'プリセット' : isAi ? 'AI生成' : '手動作成';
+            const Icon = isPreset ? Layers2 : isAi ? Sparkles : PencilLine;
+            return (
+              <div className="flex items-center gap-1 self-start rounded-full px-2 py-0.5" style={{ background: bg, borderRadius: 9999 }}>
+                <Icon size={11} color={color} />
+                <span style={{ color, fontFamily: 'Geist, sans-serif', fontSize: 11, fontWeight: 500 }}>{label}</span>
+              </div>
+            );
+          })()}
         </div>
 
         {/* ⋯ menu */}

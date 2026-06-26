@@ -10,6 +10,7 @@ export interface PersonaRecord {
   SK: `PERSONA#${string}`;
   displayName: string;
   type: string;
+  source?: "preset" | "ai";
   age?: number;
   gender?: string;
   occupation?: string;
@@ -30,6 +31,8 @@ export interface ABTestRecord {
   designBImageKey?: string;
   designAInputType: "image_upload" | "figma_url" | "site_url";
   designBInputType: "image_upload" | "figma_url" | "site_url";
+  designAUrl?: string;
+  designBUrl?: string;
   personaIds: string[];
   createdAt: string;
   updatedAt: string;
@@ -38,7 +41,7 @@ export interface ABTestRecord {
 export interface EvaluationRecord {
   PK: `ABTEST#${string}`;
   SK: `EVAL#${string}`;
-  winner: "A" | "B";
+  winner: "A" | "B" | "none";
   confidence: number;
   reason: string;
   scores: {

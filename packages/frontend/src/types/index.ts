@@ -1,11 +1,19 @@
-export type PersonaType = "consumer" | "business" | "expert" | "elderly" | "youth" | "other";
+export type PersonaType =
+  | "action_oriented"
+  | "cautious"
+  | "info_savvy"
+  | "efficiency"
+  | "cost_conscious"
+  | "trend_sensitive"
+  | "other";
 
 export const PERSONA_TYPE_LABELS: Record<PersonaType, string> = {
-  consumer: "一般消費者",
-  business: "ビジネスパーソン",
-  expert: "専門家",
-  elderly: "シニア",
-  youth: "若年層",
+  action_oriented: "行動重視型",
+  cautious: "慎重型",
+  info_savvy: "情報感度型",
+  efficiency: "効率主義型",
+  cost_conscious: "コスパ重視型",
+  trend_sensitive: "トレンド敏感型",
   other: "その他",
 };
 
@@ -14,6 +22,7 @@ export interface Persona {
   userId: string;
   displayName: string;
   type: PersonaType;
+  source?: "preset" | "ai";
   age?: number;
   gender?: string;
   occupation?: string;
@@ -28,6 +37,7 @@ export interface Persona {
 export type CreatePersonaInput = {
   displayName: string;
   type: PersonaType;
+  source?: "preset" | "ai";
   age?: number;
   gender?: string;
   occupation?: string;
@@ -113,7 +123,7 @@ export interface EvaluationScores {
 export interface EvaluationResult {
   personaId: string;
   personaDisplayName: string;
-  winner: "A" | "B";
+  winner: "A" | "B" | "none";
   confidence: number;
   reason: string;
   scores: EvaluationScores;
@@ -124,6 +134,7 @@ export interface ReportSummary {
   winner: "A" | "B" | "tie";
   supportRateA: number;
   supportRateB: number;
+  supportRateNone: number;
   totalPersonas: number;
   completedPersonas: number;
   avgScores: {

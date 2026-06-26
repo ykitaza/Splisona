@@ -11,8 +11,7 @@ export function PersonaDetailPage() {
 
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [streamingText, setStreamingText] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [lastUserMessage, setLastUserMessage] = useState('');
 
@@ -27,7 +26,7 @@ export function PersonaDetailPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView?.({ behavior: 'smooth' });
-  }, [messages, streamingText]);
+  }, [messages, isLoading]);
 
   async function sendMessage(text: string) {
     if (!id || !text.trim()) return;
@@ -37,32 +36,16 @@ export function PersonaDetailPage() {
     setMessages(newMessages);
     setInputText('');
     setLastUserMessage(text.trim());
-    setIsStreaming(true);
-    setStreamingText('');
+    setIsLoading(true);
     setChatError(null);
 
     try {
-      const stream = await sendInterviewMessage(id, newMessages);
-      if (!stream) throw new Error('ストリームが取得できませんでした');
-
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        accumulated += chunk;
-        setStreamingText(accumulated);
-      }
-
-      setMessages((prev) => [...prev, { role: 'assistant', content: accumulated }]);
-      setStreamingText('');
+      const content = await sendInterviewMessage(id, newMessages);
+      setMessages((prev) => [...prev, { role: 'assistant', content }]);
     } catch (err) {
       setChatError(err instanceof Error ? err.message : '生成に失敗しました');
     } finally {
-      setIsStreaming(false);
+      setIsLoading(false);
     }
   }
 
@@ -121,16 +104,11 @@ export function PersonaDetailPage() {
               編集
             </Link>
           </div>
-          <span
-            className="self-start rounded-full px-2.5 py-1"
-            style={{ background: '#F0F1F3', color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 12 }}
-          >
-            {PERSONA_TYPE_LABELS[persona.type]}
-          </span>
         </div>
 
         <div className="flex flex-col gap-3">
           {[
+            { label: '行動タイプ', value: (PERSONA_TYPE_LABELS as Record<string, string>)[persona.type] ?? persona.type },
             { label: '年齢', value: persona.age != null ? `${persona.age}歳` : '—' },
             { label: '性別', value: persona.gender ?? '—' },
             { label: '職業', value: persona.occupation ?? '—' },
@@ -176,7 +154,7 @@ export function PersonaDetailPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-6 py-5" style={{ gap: 16, display: 'flex', flexDirection: 'column' }}>
-          {messages.length === 0 && !isStreaming && !chatError && (
+          {messages.length === 0 && !isLoading && !chatError && (
             <div className="flex flex-col items-center justify-center flex-1 py-16">
               <p style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 14 }}>
                 {persona.displayName}に話しかけてみましょう
@@ -202,23 +180,9 @@ export function PersonaDetailPage() {
             </div>
           ))}
 
-          {streamingText && (
+          {isLoading && (
             <div className="flex justify-start">
-              <div
-                className="max-w-md rounded-xl px-4 py-3 text-sm"
-                style={{ background: '#FFFFFF', color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, lineHeight: 1.6, border: '1px solid #E6E6E8' }}
-              >
-                {streamingText}
-              </div>
-            </div>
-          )}
-
-          {isStreaming && !streamingText && (
-            <div className="flex justify-start">
-              <div
-                className="rounded-xl px-4 py-3"
-                style={{ background: '#FFFFFF', border: '1px solid #E6E6E8' }}
-              >
+              <div className="rounded-xl px-4 py-3" style={{ background: '#FFFFFF', border: '1px solid #E6E6E8' }}>
                 <div role="status" className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderColor: '#9A9A9F' }} />
               </div>
             </div>
@@ -250,7 +214,7 @@ export function PersonaDetailPage() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isStreaming}
+            disabled={isLoading}
             placeholder="メッセージを入力（Enter で送信、Shift+Enter で改行）"
             rows={2}
             className="flex-1 rounded-md px-3 py-2.5 text-sm resize-none outline-none focus:ring-2 focus:ring-[#3B7DD8]"
@@ -258,7 +222,7 @@ export function PersonaDetailPage() {
           />
           <button
             onClick={() => sendMessage(inputText)}
-            disabled={isStreaming || !inputText.trim()}
+            disabled={isLoading || !inputText.trim()}
             className="flex items-center justify-center rounded-md flex-shrink-0 transition-opacity disabled:opacity-40"
             style={{ background: '#0A0A0A', width: 40, height: 40, borderRadius: 8 }}
           >

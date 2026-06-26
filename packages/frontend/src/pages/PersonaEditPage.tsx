@@ -33,7 +33,7 @@ export function PersonaEditPage() {
   const isEdit = !!id;
 
   const [displayName, setDisplayName] = useState('');
-  const [type, setType] = useState<PersonaType>('consumer');
+  const [type, setType] = useState<PersonaType>('action_oriented');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [occupation, setOccupation] = useState('');
@@ -232,7 +232,7 @@ export function PersonaEditPage() {
                   min="18"
                   max="80"
                   step="1"
-                  value={age || 30}
+                  value={age !== '' ? Number(age) : 18}
                   onChange={(e) => setAge(e.target.value)}
                   className="w-full"
                   style={{ accentColor: '#3B7DD8', cursor: 'pointer' }}
@@ -286,7 +286,7 @@ export function PersonaEditPage() {
                   min="30"
                   max="80"
                   step="1"
-                  value={deviationScore || 50}
+                  value={deviationScore !== '' ? Number(deviationScore) : 30}
                   onChange={(e) => setDeviationScore(e.target.value)}
                   className="w-full"
                   style={{ accentColor: '#3B7DD8', cursor: 'pointer' }}

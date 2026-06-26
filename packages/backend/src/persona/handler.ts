@@ -42,6 +42,7 @@ export async function createPersona(event: ApiGatewayEvent & { body?: string }):
       annualIncome: input.annualIncome,
       education: input.education,
       freeText: input.freeText,
+      source: input.source,
       createdAt: now,
       updatedAt: now,
     };
@@ -91,6 +92,7 @@ export async function updatePersona(event: ApiGatewayEvent & { pathParameters?: 
           annualIncome: input.annualIncome,
           education: input.education,
           freeText: input.freeText,
+          source: input.source,
         }).filter(([, v]) => v !== undefined)
       ),
       updatedAt: now,
@@ -170,5 +172,5 @@ export async function generateDraft(event: ApiGatewayEvent & { pathParameters?: 
 function toPersona(r: PersonaRecord) {
   const personaId = r.SK.replace("PERSONA#", "");
   const userId = r.PK.replace("USER#", "");
-  return { personaId, userId, displayName: r.displayName, type: r.type, age: r.age, gender: r.gender, occupation: r.occupation, deviationScore: r.deviationScore, annualIncome: r.annualIncome, education: r.education, freeText: r.freeText, createdAt: r.createdAt, updatedAt: r.updatedAt };
+  return { personaId, userId, displayName: r.displayName, type: r.type, source: r.source, age: r.age, gender: r.gender, occupation: r.occupation, deviationScore: r.deviationScore, annualIncome: r.annualIncome, education: r.education, freeText: r.freeText, createdAt: r.createdAt, updatedAt: r.updatedAt };
 }

@@ -85,15 +85,18 @@
                   "letterSpacing": 0.5
                 }
               ]
+            },
+            {
+              "type": "icon",
+              "id": "rr4Zo",
+              "name": "Toggle Icon",
+              "width": 16,
+              "height": 16,
+              "icon": "panel-left-close",
+              "library": "lucide",
+              "fill": "$ink-muted"
             }
           ]
-        },
-        {
-          "type": "frame",
-          "id": "bKWBD",
-          "name": "Spacer",
-          "width": "fill_container",
-          "height": 16
         },
         {
           "type": "frame",
@@ -442,7 +445,7 @@
                   "fill": "$ink-secondary",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "せっかちなビジネスマン",
+                  "content": "行動重視型",
                   "fontFamily": "$font-body",
                   "fontSize": 12,
                   "fontWeight": "normal"
@@ -1455,7 +1458,7 @@
               "strokeWidth": 1,
               "layout": "vertical",
               "gap": 24,
-              "padding": 28,
+              "padding": 24,
               "children": [
                 {
                   "type": "frame",
@@ -1488,7 +1491,7 @@
                           "type": "frame",
                           "id": "OHMil",
                           "name": "Verdict Head",
-                          "gap": 10,
+                          "gap": 8,
                           "alignItems": "center",
                           "children": [
                             {
@@ -1604,7 +1607,7 @@
                   "width": "fill_container",
                   "fill": "$accent-soft",
                   "cornerRadius": "$radius-sm",
-                  "gap": 10,
+                  "gap": 8,
                   "padding": [
                     12,
                     16
@@ -1634,310 +1637,293 @@
                       "fontWeight": "normal"
                     }
                   ]
-                }
-              ]
-            },
-            {
-              "type": "text",
-              "id": "F07V6M",
-              "name": "Comp Title",
-              "fill": "$ink-primary",
-              "content": "比較したデザイン",
-              "fontFamily": "$font-heading",
-              "fontSize": 16,
-              "fontWeight": "600"
-            },
-            {
-              "type": "frame",
-              "id": "dpFSK",
-              "name": "Design Compare",
-              "width": "fill_container",
-              "gap": 16,
-              "alignItems": "center",
-              "children": [
+                },
                 {
                   "type": "frame",
-                  "id": "U5ZV10",
-                  "name": "Design Card A案",
-                  "clip": true,
+                  "id": "gqXsp",
+                  "name": "Divider",
                   "width": "fill_container",
-                  "fill": "$surface-card",
-                  "cornerRadius": "$radius-md",
-                  "stroke": "$variant-a",
-                  "strokeWidth": 2,
-                  "strokeAlignment": "inner",
-                  "layout": "vertical",
+                  "height": 1,
+                  "fill": "$border"
+                },
+                {
+                  "type": "text",
+                  "id": "F07V6M",
+                  "name": "Comp Title",
+                  "fill": "$ink-primary",
+                  "content": "比較したデザイン",
+                  "fontFamily": "$font-heading",
+                  "fontSize": 16,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "dpFSK",
+                  "name": "Design Compare",
+                  "width": "fill_container",
+                  "gap": 24,
+                  "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
-                      "id": "J6oHOD",
-                      "name": "Thumb A案",
+                      "id": "U5ZV10",
+                      "name": "Design Card A案",
+                      "clip": true,
                       "width": "fill_container",
-                      "height": 300,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "images/generated-1782310016655.png",
-                        "mode": "fill"
-                      }
-                    },
-                    {
-                      "type": "frame",
-                      "id": "q48DY",
-                      "name": "Footer A案",
-                      "width": "fill_container",
+                      "fill": "$surface-card",
+                      "cornerRadius": "$radius-md",
+                      "stroke": "$variant-a",
+                      "strokeWidth": 2,
+                      "strokeAlignment": "inner",
                       "layout": "vertical",
-                      "gap": 10,
-                      "padding": 16,
                       "children": [
                         {
                           "type": "frame",
-                          "id": "IBCZS",
-                          "name": "Head A案",
+                          "id": "J6oHOD",
+                          "name": "Thumb A案",
                           "width": "fill_container",
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
+                          "height": 300,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "images/generated-1782310016655.png",
+                            "mode": "fill"
+                          }
+                        },
+                        {
+                          "type": "frame",
+                          "id": "q48DY",
+                          "name": "Footer A案",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 12,
+                          "padding": 16,
                           "children": [
                             {
                               "type": "frame",
-                              "id": "HAXW8",
-                              "name": "Chip A案",
-                              "fill": "$variant-a-soft",
-                              "cornerRadius": "$radius-full",
-                              "padding": [
-                                4,
-                                12
-                              ],
+                              "id": "IBCZS",
+                              "name": "Head A案",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "IsIK2",
-                                  "name": "Chip T",
+                                  "type": "frame",
+                                  "id": "HAXW8",
+                                  "name": "Chip A案",
+                                  "fill": "$variant-a-soft",
+                                  "cornerRadius": "$radius-full",
+                                  "padding": [
+                                    4,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "IsIK2",
+                                      "name": "Chip T",
+                                      "fill": "$variant-a",
+                                      "content": "A案",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 13,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "LcsBP",
+                                  "name": "Win Badge",
                                   "fill": "$variant-a",
-                                  "content": "A案",
-                                  "fontFamily": "$font-body",
-                                  "fontSize": 13,
-                                  "fontWeight": "600"
+                                  "cornerRadius": "$radius-full",
+                                  "gap": 5,
+                                  "padding": [
+                                    4,
+                                    10
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon",
+                                      "id": "w3Ixt",
+                                      "name": "Trophy",
+                                      "width": 13,
+                                      "height": 13,
+                                      "icon": "trophy",
+                                      "library": "lucide",
+                                      "fill": "$ink-inverse"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "f06u4",
+                                      "name": "Win T",
+                                      "fill": "$ink-inverse",
+                                      "content": "勝者",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
                                 }
                               ]
                             },
                             {
                               "type": "frame",
-                              "id": "LcsBP",
-                              "name": "Win Badge",
-                              "fill": "$variant-a",
-                              "cornerRadius": "$radius-full",
-                              "gap": 5,
-                              "padding": [
-                                4,
-                                10
-                              ],
+                              "id": "NM13s",
+                              "name": "Src A案",
+                              "width": "fill_container",
+                              "gap": 8,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "icon",
-                                  "id": "w3Ixt",
-                                  "name": "Trophy",
-                                  "width": 13,
-                                  "height": 13,
-                                  "icon": "trophy",
+                                  "id": "JLGme",
+                                  "name": "Src Icon",
+                                  "width": 14,
+                                  "height": 14,
+                                  "icon": "figma",
                                   "library": "lucide",
-                                  "fill": "$ink-inverse"
+                                  "fill": "$ink-muted"
                                 },
                                 {
                                   "type": "text",
-                                  "id": "f06u4",
-                                  "name": "Win T",
-                                  "fill": "$ink-inverse",
-                                  "content": "勝者",
-                                  "fontFamily": "$font-body",
+                                  "id": "HalzX",
+                                  "name": "Src T",
+                                  "fill": "$ink-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "Figma ・ 改修案フレーム",
+                                  "fontFamily": "$font-mono",
                                   "fontSize": 12,
-                                  "fontWeight": "600"
+                                  "fontWeight": "normal"
                                 }
                               ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "NM13s",
-                          "name": "Src A案",
-                          "width": "fill_container",
-                          "gap": 6,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "JLGme",
-                              "name": "Src Icon",
-                              "width": 14,
-                              "height": 14,
-                              "icon": "figma",
-                              "library": "lucide",
-                              "fill": "$ink-muted"
                             },
                             {
                               "type": "text",
-                              "id": "HalzX",
-                              "name": "Src T",
-                              "fill": "$ink-secondary",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "Figma ・ 改修案フレーム",
-                              "fontFamily": "$font-mono",
-                              "fontSize": 12,
-                              "fontWeight": "normal"
+                              "id": "BFMcK",
+                              "name": "Stat A案",
+                              "fill": "$ink-primary",
+                              "content": "6人中4人が支持 ・ 67%",
+                              "fontFamily": "$font-body",
+                              "fontSize": 13,
+                              "fontWeight": "500"
                             }
                           ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "BFMcK",
-                          "name": "Stat A案",
-                          "fill": "$ink-primary",
-                          "content": "6人中4人が支持 ・ 67%",
-                          "fontFamily": "$font-body",
-                          "fontSize": 13,
-                          "fontWeight": "500"
                         }
                       ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "yFFow",
-                  "name": "VS",
-                  "width": 40,
-                  "height": 40,
-                  "fill": "$surface-card",
-                  "cornerRadius": "$radius-full",
-                  "stroke": "$border-strong",
-                  "strokeWidth": 1,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "aTcQy",
-                      "name": "VS T",
-                      "fill": "$ink-muted",
-                      "content": "VS",
-                      "fontFamily": "$font-mono",
-                      "fontSize": 12,
-                      "fontWeight": "600"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "r4ea6",
-                  "name": "Design Card B案",
-                  "clip": true,
-                  "width": "fill_container",
-                  "fill": "$surface-card",
-                  "cornerRadius": "$radius-md",
-                  "stroke": "$border",
-                  "strokeWidth": 1,
-                  "strokeAlignment": "inner",
-                  "layout": "vertical",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "o4SiKD",
-                      "name": "Thumb B案",
-                      "width": "fill_container",
-                      "height": 300,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "images/generated-1782310018803.png",
-                        "mode": "fill"
-                      }
                     },
                     {
                       "type": "frame",
-                      "id": "wKTaI",
-                      "name": "Footer B案",
+                      "id": "r4ea6",
+                      "name": "Design Card B案",
+                      "clip": true,
                       "width": "fill_container",
+                      "fill": "$surface-card",
+                      "cornerRadius": "$radius-md",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
                       "layout": "vertical",
-                      "gap": 10,
-                      "padding": 16,
                       "children": [
                         {
                           "type": "frame",
-                          "id": "h3RGoK",
-                          "name": "Head B案",
+                          "id": "o4SiKD",
+                          "name": "Thumb B案",
                           "width": "fill_container",
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "XGC2e",
-                              "name": "Chip B案",
-                              "fill": "$variant-b-soft",
-                              "cornerRadius": "$radius-full",
-                              "padding": [
-                                4,
-                                12
-                              ],
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "ElGAe",
-                                  "name": "Chip T",
-                                  "fill": "$variant-b",
-                                  "content": "B案",
-                                  "fontFamily": "$font-body",
-                                  "fontSize": 13,
-                                  "fontWeight": "600"
-                                }
-                              ]
-                            }
-                          ]
+                          "height": 300,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "images/generated-1782310018803.png",
+                            "mode": "fill"
+                          }
                         },
                         {
                           "type": "frame",
-                          "id": "g8Hzpk",
-                          "name": "Src B案",
+                          "id": "wKTaI",
+                          "name": "Footer B案",
                           "width": "fill_container",
-                          "gap": 6,
-                          "alignItems": "center",
+                          "layout": "vertical",
+                          "gap": 12,
+                          "padding": 16,
                           "children": [
                             {
-                              "type": "icon",
-                              "id": "g94g2",
-                              "name": "Src Icon",
-                              "width": 14,
-                              "height": 14,
-                              "icon": "globe",
-                              "library": "lucide",
-                              "fill": "$ink-muted"
+                              "type": "frame",
+                              "id": "h3RGoK",
+                              "name": "Head B案",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "XGC2e",
+                                  "name": "Chip B案",
+                                  "fill": "$variant-b-soft",
+                                  "cornerRadius": "$radius-full",
+                                  "padding": [
+                                    4,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "ElGAe",
+                                      "name": "Chip T",
+                                      "fill": "$variant-b",
+                                      "content": "B案",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 13,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "g8Hzpk",
+                              "name": "Src B案",
+                              "width": "fill_container",
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "g94g2",
+                                  "name": "Src Icon",
+                                  "width": 14,
+                                  "height": 14,
+                                  "icon": "globe",
+                                  "library": "lucide",
+                                  "fill": "$ink-muted"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "h4Cno",
+                                  "name": "Src T",
+                                  "fill": "$ink-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "現行サイト ・ example.com",
+                                  "fontFamily": "$font-mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
                             },
                             {
                               "type": "text",
-                              "id": "h4Cno",
-                              "name": "Src T",
-                              "fill": "$ink-secondary",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "現行サイト ・ example.com",
-                              "fontFamily": "$font-mono",
-                              "fontSize": 12,
-                              "fontWeight": "normal"
+                              "id": "bZiRN",
+                              "name": "Stat B案",
+                              "fill": "$ink-primary",
+                              "content": "6人中2人が支持 ・ 33%",
+                              "fontFamily": "$font-body",
+                              "fontSize": 13,
+                              "fontWeight": "500"
                             }
                           ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "bZiRN",
-                          "name": "Stat B案",
-                          "fill": "$ink-primary",
-                          "content": "6人中2人が支持 ・ 33%",
-                          "fontFamily": "$font-body",
-                          "fontSize": 13,
-                          "fontWeight": "500"
                         }
                       ]
                     }
@@ -1950,19 +1936,21 @@
               "id": "WtoZ0",
               "name": "Summary Row",
               "width": "fill_container",
-              "gap": 20,
+              "height": 285,
+              "gap": 24,
               "children": [
                 {
                   "type": "frame",
                   "id": "ihjNS",
                   "name": "Summary Card",
                   "width": "fill_container",
+                  "height": "fill_container",
                   "fill": "$surface-card",
                   "cornerRadius": "$radius-md",
                   "stroke": "$border",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 18,
+                  "gap": 16,
                   "padding": 24,
                   "children": [
                     {
@@ -2184,12 +2172,13 @@
                   "id": "Eeomu",
                   "name": "Criteria Card",
                   "width": "fill_container",
+                  "height": "fill_container",
                   "fill": "$surface-card",
                   "cornerRadius": "$radius-md",
                   "stroke": "$border",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 18,
+                  "gap": 16,
                   "padding": 24,
                   "children": [
                     {
@@ -2233,7 +2222,10 @@
                               "id": "MsHWs",
                               "name": "AxVal",
                               "fill": "$ink-muted",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
                               "content": "A 80 ・ B 20",
+                              "textAlign": "right",
                               "fontFamily": "$font-mono",
                               "fontSize": 11,
                               "fontWeight": "normal"
@@ -2245,7 +2237,7 @@
                           "id": "X2JI9",
                           "name": "Bar",
                           "clip": true,
-                          "width": 460,
+                          "width": "fill_container",
                           "height": 8,
                           "cornerRadius": "$radius-full",
                           "children": [
@@ -2253,7 +2245,7 @@
                               "type": "frame",
                               "id": "dDG5a",
                               "name": "SegA",
-                              "width": 368,
+                              "width": 400,
                               "height": "fill_container",
                               "fill": "$variant-a"
                             },
@@ -2261,7 +2253,7 @@
                               "type": "frame",
                               "id": "y6BaQ",
                               "name": "SegB",
-                              "width": 92,
+                              "width": "fill_container",
                               "height": "fill_container",
                               "fill": "$variant-b"
                             }
@@ -2300,7 +2292,10 @@
                               "id": "drL9q",
                               "name": "AxVal",
                               "fill": "$ink-muted",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
                               "content": "A 75 ・ B 25",
+                              "textAlign": "right",
                               "fontFamily": "$font-mono",
                               "fontSize": 11,
                               "fontWeight": "normal"
@@ -2312,7 +2307,7 @@
                           "id": "Djo7w",
                           "name": "Bar",
                           "clip": true,
-                          "width": 460,
+                          "width": "fill_container",
                           "height": 8,
                           "cornerRadius": "$radius-full",
                           "children": [
@@ -2320,7 +2315,7 @@
                               "type": "frame",
                               "id": "wvO1B",
                               "name": "SegA",
-                              "width": 345,
+                              "width": 375,
                               "height": "fill_container",
                               "fill": "$variant-a"
                             },
@@ -2328,7 +2323,7 @@
                               "type": "frame",
                               "id": "nCgw0",
                               "name": "SegB",
-                              "width": 115,
+                              "width": "fill_container",
                               "height": "fill_container",
                               "fill": "$variant-b"
                             }
@@ -2367,7 +2362,10 @@
                               "id": "ezQKQ",
                               "name": "AxVal",
                               "fill": "$ink-muted",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
                               "content": "A 35 ・ B 65",
+                              "textAlign": "right",
                               "fontFamily": "$font-mono",
                               "fontSize": 11,
                               "fontWeight": "normal"
@@ -2379,7 +2377,7 @@
                           "id": "abByw",
                           "name": "Bar",
                           "clip": true,
-                          "width": 460,
+                          "width": "fill_container",
                           "height": 8,
                           "cornerRadius": "$radius-full",
                           "children": [
@@ -2387,7 +2385,7 @@
                               "type": "frame",
                               "id": "cRvxa",
                               "name": "SegA",
-                              "width": 161,
+                              "width": 175,
                               "height": "fill_container",
                               "fill": "$variant-a"
                             },
@@ -2395,7 +2393,7 @@
                               "type": "frame",
                               "id": "R2KYdh",
                               "name": "SegB",
-                              "width": 299,
+                              "width": "fill_container",
                               "height": "fill_container",
                               "fill": "$variant-b"
                             }
@@ -2434,7 +2432,10 @@
                               "id": "O0fky",
                               "name": "AxVal",
                               "fill": "$ink-muted",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
                               "content": "A 85 ・ B 15",
+                              "textAlign": "right",
                               "fontFamily": "$font-mono",
                               "fontSize": 11,
                               "fontWeight": "normal"
@@ -2446,7 +2447,7 @@
                           "id": "y0xkl",
                           "name": "Bar",
                           "clip": true,
-                          "width": 460,
+                          "width": "fill_container",
                           "height": 8,
                           "cornerRadius": "$radius-full",
                           "children": [
@@ -2454,7 +2455,7 @@
                               "type": "frame",
                               "id": "yDhDV",
                               "name": "SegA",
-                              "width": 391,
+                              "width": 425,
                               "height": "fill_container",
                               "fill": "$variant-a"
                             },
@@ -2462,7 +2463,7 @@
                               "type": "frame",
                               "id": "TWq2H",
                               "name": "SegB",
-                              "width": 69,
+                              "width": "fill_container",
                               "height": "fill_container",
                               "fill": "$variant-b"
                             }
@@ -2504,7 +2505,7 @@
                   "fill": "$surface-subtle",
                   "padding": [
                     12,
-                    20
+                    16
                   ],
                   "alignItems": "center",
                   "children": [
@@ -2512,7 +2513,7 @@
                       "type": "frame",
                       "id": "kpQBr",
                       "name": "H ペルソナ",
-                      "width": 260,
+                      "width": 180,
                       "children": [
                         {
                           "type": "text",
@@ -2531,7 +2532,7 @@
                       "type": "frame",
                       "id": "abZ8G",
                       "name": "H 勝者",
-                      "width": 120,
+                      "width": 80,
                       "children": [
                         {
                           "type": "text",
@@ -2574,17 +2575,14 @@
                   "width": "fill_container",
                   "stroke": "$border",
                   "strokeAlignment": "inner",
-                  "padding": [
-                    16,
-                    20
-                  ],
+                  "padding": 16,
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "KAykV",
                       "name": "C1 せっかちなビジネスマン",
-                      "width": 260,
+                      "width": 180,
                       "gap": 10,
                       "alignItems": "center",
                       "children": [
@@ -2646,7 +2644,7 @@
                       "type": "frame",
                       "id": "PpH8t",
                       "name": "C2 せっかちなビジネスマン",
-                      "width": 120,
+                      "width": 80,
                       "children": [
                         {
                           "type": "frame",
@@ -2706,17 +2704,14 @@
                     "top": 1
                   },
                   "strokeAlignment": "inner",
-                  "padding": [
-                    16,
-                    20
-                  ],
+                  "padding": 16,
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "Nc00U",
                       "name": "C1 慎重派の主婦",
-                      "width": 260,
+                      "width": 180,
                       "gap": 10,
                       "alignItems": "center",
                       "children": [
@@ -2778,7 +2773,7 @@
                       "type": "frame",
                       "id": "IN7rQ",
                       "name": "C2 慎重派の主婦",
-                      "width": 120,
+                      "width": 80,
                       "children": [
                         {
                           "type": "frame",
@@ -2838,17 +2833,14 @@
                     "top": 1
                   },
                   "strokeAlignment": "inner",
-                  "padding": [
-                    16,
-                    20
-                  ],
+                  "padding": 16,
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "dOsv6",
                       "name": "C1 デジタルネイティブ学生",
-                      "width": 260,
+                      "width": 180,
                       "gap": 10,
                       "alignItems": "center",
                       "children": [
@@ -2910,7 +2902,7 @@
                       "type": "frame",
                       "id": "mzFur",
                       "name": "C2 デジタルネイティブ学生",
-                      "width": 120,
+                      "width": 80,
                       "children": [
                         {
                           "type": "frame",
@@ -2970,17 +2962,14 @@
                     "top": 1
                   },
                   "strokeAlignment": "inner",
-                  "padding": [
-                    16,
-                    20
-                  ],
+                  "padding": 16,
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "EGmlc",
                       "name": "C1 効率重視のマネージャー",
-                      "width": 260,
+                      "width": 180,
                       "gap": 10,
                       "alignItems": "center",
                       "children": [
@@ -3042,7 +3031,7 @@
                       "type": "frame",
                       "id": "QRAiI",
                       "name": "C2 効率重視のマネージャー",
-                      "width": 120,
+                      "width": 80,
                       "children": [
                         {
                           "type": "frame",
@@ -3102,17 +3091,14 @@
                     "top": 1
                   },
                   "strokeAlignment": "inner",
-                  "padding": [
-                    16,
-                    20
-                  ],
+                  "padding": 16,
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "qx6Fi",
                       "name": "C1 コスパ重視の若手社会人",
-                      "width": 260,
+                      "width": 180,
                       "gap": 10,
                       "alignItems": "center",
                       "children": [
@@ -3174,7 +3160,7 @@
                       "type": "frame",
                       "id": "wuT0R",
                       "name": "C2 コスパ重視の若手社会人",
-                      "width": 120,
+                      "width": 80,
                       "children": [
                         {
                           "type": "frame",
@@ -3234,17 +3220,14 @@
                     "top": 1
                   },
                   "strokeAlignment": "inner",
-                  "padding": [
-                    16,
-                    20
-                  ],
+                  "padding": 16,
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "M3KGL",
                       "name": "C1 流行に敏感な大学生",
-                      "width": 260,
+                      "width": 180,
                       "gap": 10,
                       "alignItems": "center",
                       "children": [
@@ -3306,7 +3289,7 @@
                       "type": "frame",
                       "id": "h96IZ",
                       "name": "C2 流行に敏感な大学生",
-                      "width": 120,
+                      "width": 80,
                       "children": [
                         {
                           "type": "frame",
@@ -9521,7 +9504,7 @@
                         },
                         {
                           "type": "frame",
-                          "id": "B2L7D",
+                          "id": "QJrz5",
                           "name": "Field タイプ",
                           "width": "fill_container",
                           "layout": "vertical",
@@ -9529,17 +9512,17 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "TK1QQ",
+                              "id": "ryfNO",
                               "name": "L タイプ",
                               "fill": "$ink-primary",
-                              "content": "タイプ",
+                              "content": "行動タイプ",
                               "fontFamily": "$font-body",
                               "fontSize": 13,
                               "fontWeight": "500"
                             },
                             {
                               "type": "frame",
-                              "id": "cEqcl",
+                              "id": "WMdqq",
                               "name": "Box タイプ",
                               "width": "fill_container",
                               "fill": "$surface-card",
@@ -9554,12 +9537,12 @@
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "AdxS5",
+                                  "id": "mPDp1",
                                   "name": "Val タイプ",
                                   "fill": "$ink-primary",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "せっかちなビジネスマン",
+                                  "content": "行動重視型",
                                   "fontFamily": "$font-body",
                                   "fontSize": 14,
                                   "fontWeight": "normal"
@@ -12035,6 +12018,1485 @@
                   "fontFamily": "$font-body",
                   "fontSize": 13,
                   "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "JO97Q",
+      "x": 14456,
+      "y": 0,
+      "name": "S1b ダッシュボード（についてモーダル開）",
+      "clip": true,
+      "width": 1440,
+      "height": 1024,
+      "fill": "$surface-page",
+      "layout": "none",
+      "children": [
+        {
+          "id": "r8H76H",
+          "type": "ref",
+          "ref": "mliWa",
+          "name": "Sidebar",
+          "height": 1024,
+          "descendants": {
+            "e8cV2k": {
+              "fill": "$accent-soft"
+            },
+            "Mdsor": {
+              "fill": "$accent"
+            },
+            "EBCKB": {
+              "fill": "$accent",
+              "fontWeight": "600"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "VSP6o",
+          "x": 240,
+          "y": 0,
+          "name": "Main",
+          "clip": true,
+          "width": 1200,
+          "height": 1024,
+          "layout": "vertical",
+          "gap": 24,
+          "padding": [
+            32,
+            40
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "VkF0f",
+              "name": "Page Header",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "IUG3D",
+                  "name": "Title Col",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "A803v",
+                      "name": "Title",
+                      "fill": "$ink-primary",
+                      "content": "ダッシュボード",
+                      "fontFamily": "$font-heading",
+                      "fontSize": 28,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "MwpSB",
+                      "name": "Subtitle",
+                      "fill": "$ink-secondary",
+                      "content": "おかえりなさい、山田さん",
+                      "fontFamily": "$font-body",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "id": "n23wK",
+                  "type": "ref",
+                  "ref": "OjDF3",
+                  "name": "New Test Btn",
+                  "descendants": {
+                    "pCKxb": {
+                      "content": "新しいA/Bテスト"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "kgNJn",
+              "name": "Metric Row",
+              "width": "fill_container",
+              "gap": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ttShP",
+                  "name": "Metric 実行したテスト",
+                  "width": "fill_container",
+                  "fill": "$surface-card",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": 20,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "PauVL",
+                      "name": "Metric Head 実行したテスト",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "S2zkUu",
+                          "name": "Metric Label 実行したテスト",
+                          "fill": "$ink-secondary",
+                          "content": "実行したテスト",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "vJ0So",
+                          "name": "Metric Icon 実行したテスト",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "flask-conical",
+                          "library": "lucide",
+                          "fill": "$ink-muted"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "B9ElaT",
+                      "name": "Metric Value 実行したテスト",
+                      "fill": "$ink-primary",
+                      "content": "24",
+                      "fontFamily": "$font-heading",
+                      "fontSize": 30,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "nOoxp",
+                      "name": "Metric Sub 実行したテスト",
+                      "fill": "$success",
+                      "content": "+3 今週",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "c39E6J",
+                  "name": "Metric 登録ペルソナ",
+                  "width": "fill_container",
+                  "fill": "$surface-card",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": 20,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "rNW0w",
+                      "name": "Metric Head 登録ペルソナ",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KqQVp",
+                          "name": "Metric Label 登録ペルソナ",
+                          "fill": "$ink-secondary",
+                          "content": "登録ペルソナ",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "HUupu",
+                          "name": "Metric Icon 登録ペルソナ",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "users",
+                          "library": "lucide",
+                          "fill": "$ink-muted"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "UpUyv",
+                      "name": "Metric Value 登録ペルソナ",
+                      "fill": "$ink-primary",
+                      "content": "6",
+                      "fontFamily": "$font-heading",
+                      "fontSize": 30,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "f68Yx",
+                      "name": "Metric Sub 登録ペルソナ",
+                      "fill": "$ink-muted",
+                      "content": "手動2 ・ AI4",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Vd7Go",
+                  "name": "Metric 平均支持率の差",
+                  "width": "fill_container",
+                  "fill": "$surface-card",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": 20,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "CIPoz",
+                      "name": "Metric Head 平均支持率の差",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Mjo2i",
+                          "name": "Metric Label 平均支持率の差",
+                          "fill": "$ink-secondary",
+                          "content": "平均支持率の差",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "o0Ronp",
+                          "name": "Metric Icon 平均支持率の差",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "scale",
+                          "library": "lucide",
+                          "fill": "$ink-muted"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "V73P0",
+                      "name": "Metric Value 平均支持率の差",
+                      "fill": "$ink-primary",
+                      "content": "18pt",
+                      "fontFamily": "$font-heading",
+                      "fontSize": 30,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "YmfEX",
+                      "name": "Metric Sub 平均支持率の差",
+                      "fill": "$ink-muted",
+                      "content": "A案が優勢傾向",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "GNjcG",
+                  "name": "Metric 今月のテスト",
+                  "width": "fill_container",
+                  "fill": "$surface-card",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": 20,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "a6sB1U",
+                      "name": "Metric Head 今月のテスト",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "LQduA",
+                          "name": "Metric Label 今月のテスト",
+                          "fill": "$ink-secondary",
+                          "content": "今月のテスト",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "C8NFX",
+                          "name": "Metric Icon 今月のテスト",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "calendar-check",
+                          "library": "lucide",
+                          "fill": "$ink-muted"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "lB07N",
+                      "name": "Metric Value 今月のテスト",
+                      "fill": "$ink-primary",
+                      "content": "8",
+                      "fontFamily": "$font-heading",
+                      "fontSize": 30,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "k7KAQ",
+                      "name": "Metric Sub 今月のテスト",
+                      "fill": "$ink-muted",
+                      "content": "目標 10件",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "EeBXY",
+              "name": "Recent Head",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "qukrx",
+                  "name": "Recent Title",
+                  "fill": "$ink-primary",
+                  "content": "最近のテスト",
+                  "fontFamily": "$font-heading",
+                  "fontSize": 16,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "Jkhvm",
+                  "name": "See All",
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "O2CSP",
+                      "name": "See All Text",
+                      "fill": "$accent",
+                      "content": "すべて見る",
+                      "fontFamily": "$font-body",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "UNSdP",
+                      "name": "See All Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "arrow-right",
+                      "library": "lucide",
+                      "fill": "$accent"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bAIP1",
+              "name": "Recent Table",
+              "clip": true,
+              "width": "fill_container",
+              "fill": "$surface-card",
+              "cornerRadius": "$radius-md",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "oLoqH",
+                  "name": "RT Header",
+                  "width": "fill_container",
+                  "fill": "$surface-subtle",
+                  "padding": [
+                    12,
+                    20
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "l4yLWU",
+                      "name": "RTH テスト名",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "FBumr",
+                          "name": "RTH Text テスト名",
+                          "fill": "$ink-muted",
+                          "content": "テスト名",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal",
+                          "letterSpacing": 0.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Y8YrZi",
+                      "name": "RTH タイプ",
+                      "width": 200,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "yxtda",
+                          "name": "RTH Text タイプ",
+                          "fill": "$ink-muted",
+                          "content": "タイプ",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal",
+                          "letterSpacing": 0.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "g4Hy4",
+                      "name": "RTH ペルソナ",
+                      "width": 90,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "SqsLN",
+                          "name": "RTH Text ペルソナ",
+                          "fill": "$ink-muted",
+                          "content": "ペルソナ",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal",
+                          "letterSpacing": 0.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "U9WQGo",
+                      "name": "RTH 結果",
+                      "width": 140,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nCGuv",
+                          "name": "RTH Text 結果",
+                          "fill": "$ink-muted",
+                          "content": "結果",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal",
+                          "letterSpacing": 0.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hNf9T",
+                      "name": "RTH 日付",
+                      "width": 96,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "muvx8",
+                          "name": "RTH Text 日付",
+                          "fill": "$ink-muted",
+                          "content": "日付",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal",
+                          "letterSpacing": 0.5
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "aPFHv",
+                  "name": "RT Row 0",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    15,
+                    20
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ZyjZk",
+                      "name": "RT C1 0",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jRafE",
+                          "name": "RT Name 0",
+                          "fill": "$ink-primary",
+                          "content": "LP改修案の比較",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "s3aatq",
+                      "name": "RT C2 0",
+                      "width": 200,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "n5pSKR",
+                          "name": "RT Type 0",
+                          "fill": "$ink-secondary",
+                          "content": "Figma 2案を比較",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GORIf",
+                      "name": "RT C3 0",
+                      "width": 90,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "eM2zy",
+                          "name": "RT NP 0",
+                          "fill": "$ink-secondary",
+                          "content": "3人",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ammgE",
+                      "name": "RT C4 0",
+                      "width": 140,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "ySrNt",
+                          "name": "RT Chip 0",
+                          "fill": "$variant-a-soft",
+                          "cornerRadius": "$radius-full",
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "zNmjF",
+                              "name": "RT ChipT 0",
+                              "fill": "$variant-a",
+                              "content": "A案 70%",
+                              "fontFamily": "$font-body",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "V7QQH",
+                      "name": "RT C5 0",
+                      "width": 96,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TKkQs",
+                          "name": "RT Date 0",
+                          "fill": "$ink-muted",
+                          "content": "06/24",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "OZK19",
+                  "name": "RT Row 1",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    15,
+                    20
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "FZOKA",
+                      "name": "RT C1 1",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GSQeT",
+                          "name": "RT Name 1",
+                          "fill": "$ink-primary",
+                          "content": "商品ページ リニューアル",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lO65w",
+                      "name": "RT C2 1",
+                      "width": 200,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "wDDkH",
+                          "name": "RT Type 1",
+                          "fill": "$ink-secondary",
+                          "content": "現行サイト vs Figma",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Q5h6AZ",
+                      "name": "RT C3 1",
+                      "width": 90,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "WHFtC",
+                          "name": "RT NP 1",
+                          "fill": "$ink-secondary",
+                          "content": "4人",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Z9wOK",
+                      "name": "RT C4 1",
+                      "width": 140,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "MEfun",
+                          "name": "RT Chip 1",
+                          "fill": "$variant-b-soft",
+                          "cornerRadius": "$radius-full",
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "NhcDV",
+                              "name": "RT ChipT 1",
+                              "fill": "$variant-b",
+                              "content": "B案 55%",
+                              "fontFamily": "$font-body",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AhBGv",
+                      "name": "RT C5 1",
+                      "width": 96,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "F4G0In",
+                          "name": "RT Date 1",
+                          "fill": "$ink-muted",
+                          "content": "06/22",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "U5iVj",
+                  "name": "RT Row 2",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    15,
+                    20
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "r1k4y",
+                      "name": "RT C1 2",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "hqitM",
+                          "name": "RT Name 2",
+                          "fill": "$ink-primary",
+                          "content": "申込フォーム 簡略化",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "QgPoM",
+                      "name": "RT C2 2",
+                      "width": 200,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ZgnER",
+                          "name": "RT Type 2",
+                          "fill": "$ink-secondary",
+                          "content": "Figma 2案を比較",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Z6Ntv",
+                      "name": "RT C3 2",
+                      "width": 90,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vfpXd",
+                          "name": "RT NP 2",
+                          "fill": "$ink-secondary",
+                          "content": "3人",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "s4RXO",
+                      "name": "RT C4 2",
+                      "width": 140,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "u2vVu5",
+                          "name": "RT Chip 2",
+                          "fill": "$variant-a-soft",
+                          "cornerRadius": "$radius-full",
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "NpBcV",
+                              "name": "RT ChipT 2",
+                              "fill": "$variant-a",
+                              "content": "A案 82%",
+                              "fontFamily": "$font-body",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "wL3Ju",
+                      "name": "RT C5 2",
+                      "width": 96,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nkDE3",
+                          "name": "RT Date 2",
+                          "fill": "$ink-muted",
+                          "content": "06/20",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "b5P8k8",
+                  "name": "RT Row 3",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    15,
+                    20
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "olrWH",
+                      "name": "RT C1 3",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "YAxt2",
+                          "name": "RT Name 3",
+                          "fill": "$ink-primary",
+                          "content": "トップ ヒーロー改善",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MKGu4",
+                      "name": "RT C2 3",
+                      "width": 200,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "n4RKa1",
+                          "name": "RT Type 3",
+                          "fill": "$ink-secondary",
+                          "content": "Figma 2案を比較",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "bCCUu",
+                      "name": "RT C3 3",
+                      "width": 90,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vVFdg",
+                          "name": "RT NP 3",
+                          "fill": "$ink-secondary",
+                          "content": "5人",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GOuvK",
+                      "name": "RT C4 3",
+                      "width": 140,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "c24Xf",
+                          "name": "RT Chip 3",
+                          "fill": "$surface-subtle",
+                          "cornerRadius": "$radius-full",
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "CR8GU",
+                              "name": "RT ChipT 3",
+                              "fill": "$ink-secondary",
+                              "content": "引き分け",
+                              "fontFamily": "$font-body",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VjUBf",
+                      "name": "RT C5 3",
+                      "width": 96,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "pTxFl",
+                          "name": "RT Date 3",
+                          "fill": "$ink-muted",
+                          "content": "06/18",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cbqXE",
+                  "name": "RT Row 4",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    15,
+                    20
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "c7YJHC",
+                      "name": "RT C1 4",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "FwryE",
+                          "name": "RT Name 4",
+                          "fill": "$ink-primary",
+                          "content": "価格表レイアウト",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lfUfc",
+                      "name": "RT C2 4",
+                      "width": 200,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "w84r5",
+                          "name": "RT Type 4",
+                          "fill": "$ink-secondary",
+                          "content": "現行サイト vs Figma",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "bItNC",
+                      "name": "RT C3 4",
+                      "width": 90,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "qa5Mt",
+                          "name": "RT NP 4",
+                          "fill": "$ink-secondary",
+                          "content": "2人",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "D2uQUf",
+                      "name": "RT C4 4",
+                      "width": 140,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "VjYes",
+                          "name": "RT Chip 4",
+                          "fill": "$variant-b-soft",
+                          "cornerRadius": "$radius-full",
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "IFLAI",
+                              "name": "RT ChipT 4",
+                              "fill": "$variant-b",
+                              "content": "B案 64%",
+                              "fontFamily": "$font-body",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TifgB",
+                      "name": "RT C5 4",
+                      "width": 96,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "zQ9Wa",
+                          "name": "RT Date 4",
+                          "fill": "$ink-muted",
+                          "content": "06/15",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "C3apGK",
+          "layoutPosition": "absolute",
+          "x": 0,
+          "y": 0,
+          "name": "Modal Overlay",
+          "width": 1440,
+          "height": 1024,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "o6BPQe",
+              "x": 0,
+              "y": 0,
+              "name": "Overlay Background",
+              "opacity": 0.3,
+              "fill": "#000000",
+              "width": 1440,
+              "height": 1024
+            },
+            {
+              "type": "frame",
+              "id": "f4j9NO",
+              "x": 501,
+              "y": 387,
+              "name": "About Modal",
+              "width": 440,
+              "height": 250,
+              "fill": "#FFFFFF",
+              "cornerRadius": 24,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#00000014",
+                "offset": {
+                  "x": 0,
+                  "y": 10
+                },
+                "blur": 40
+              },
+              "layout": "vertical",
+              "padding": 40,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "tfwvw",
+                  "layoutPosition": "absolute",
+                  "x": 392,
+                  "y": 24,
+                  "name": "Close Button",
+                  "width": 24,
+                  "height": 24,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "erlN6",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "x",
+                      "library": "lucide",
+                      "fill": "#9A9A9F"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "tdiqi",
+                  "name": "Logo",
+                  "width": 72,
+                  "height": 72,
+                  "fill": "#0A0A0A",
+                  "cornerRadius": 18,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "DXSbQ",
+                      "name": "Logo Letter",
+                      "fill": "#FFFFFF",
+                      "content": "C",
+                      "fontFamily": "$font-heading",
+                      "fontSize": 36,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "AEnN1",
+                  "name": "Spacer",
+                  "width": "fill_container",
+                  "height": 20
+                },
+                {
+                  "type": "text",
+                  "id": "c14LdE",
+                  "name": "AppName",
+                  "fill": "#1A1A1A",
+                  "content": "Chorus",
+                  "fontFamily": "$font-heading",
+                  "fontSize": 22,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "YYCEg",
+                  "name": "Spacer",
+                  "width": "fill_container",
+                  "height": 6
+                },
+                {
+                  "type": "text",
+                  "id": "KCgtq",
+                  "name": "AppTagline",
+                  "fill": "#9A9A9F",
+                  "content": "AI PERSONA REVIEW",
+                  "fontFamily": "$font-mono",
+                  "fontSize": 11,
+                  "fontWeight": "normal",
+                  "letterSpacing": 0.5
+                },
+                {
+                  "type": "frame",
+                  "id": "yy9nE",
+                  "name": "Spacer",
+                  "width": "fill_container",
+                  "height": 4
+                },
+                {
+                  "type": "text",
+                  "id": "OZilJ",
+                  "name": "AppVersion",
+                  "fill": "#9A9A9F",
+                  "content": "バージョン 0.0.1 (0f8b632)",
+                  "fontFamily": "$font-mono",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "o7MqC",
+      "x": 280,
+      "y": 0,
+      "name": "Sidebar Collapsed",
+      "reusable": true,
+      "clip": true,
+      "width": 64,
+      "height": 1024,
+      "fill": "$surface-card",
+      "stroke": "$border",
+      "strokeWidth": {
+        "right": 1
+      },
+      "strokeAlignment": "inner",
+      "layout": "vertical",
+      "gap": 8,
+      "padding": [
+        24,
+        8
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "W7iItW",
+          "name": "Brand Collapsed",
+          "width": "fill_container",
+          "padding": 8,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon",
+              "id": "JhB1u",
+              "name": "Toggle Icon",
+              "width": 16,
+              "height": 16,
+              "icon": "panel-left",
+              "library": "lucide",
+              "fill": "$ink-muted"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "SMXz4",
+          "name": "Nav Collapsed",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 2,
+          "children": [
+            {
+              "type": "frame",
+              "id": "cvOF0",
+              "name": "NavIcon ダッシュボード",
+              "width": "fill_container",
+              "cornerRadius": "$radius-sm",
+              "padding": 9,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "zWwmV",
+                  "name": "Icon",
+                  "width": 18,
+                  "height": 18,
+                  "icon": "layout-dashboard",
+                  "library": "lucide",
+                  "fill": "$ink-secondary"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Z9sSx",
+              "name": "NavIcon ペルソナ",
+              "width": "fill_container",
+              "fill": "$accent-soft",
+              "cornerRadius": "$radius-sm",
+              "padding": 9,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "V7T8m",
+                  "name": "Icon",
+                  "width": 18,
+                  "height": 18,
+                  "icon": "users",
+                  "library": "lucide",
+                  "fill": "$accent"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "wCFxb",
+              "name": "NavIcon A/Bテスト",
+              "width": "fill_container",
+              "cornerRadius": "$radius-sm",
+              "padding": 9,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "O7lKE",
+                  "name": "Icon",
+                  "width": 18,
+                  "height": 18,
+                  "icon": "columns-2",
+                  "library": "lucide",
+                  "fill": "$ink-secondary"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "M2jQC",
+              "name": "NavIcon 結果レポート",
+              "width": "fill_container",
+              "cornerRadius": "$radius-sm",
+              "padding": 9,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "Q3PtU",
+                  "name": "Icon",
+                  "width": 18,
+                  "height": 18,
+                  "icon": "chart-column",
+                  "library": "lucide",
+                  "fill": "$ink-secondary"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "NJBKo",
+          "name": "Grow",
+          "width": "fill_container",
+          "height": "fill_container"
+        },
+        {
+          "type": "frame",
+          "id": "sAlYP",
+          "name": "Profile Collapsed",
+          "width": "fill_container",
+          "padding": 8,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "wVEOQ",
+              "name": "Avatar",
+              "width": 32,
+              "height": 32,
+              "fill": "$surface-subtle",
+              "cornerRadius": "$radius-full",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "F3LCDS",
+                  "name": "Initials",
+                  "fill": "$ink-secondary",
+                  "content": "YK",
+                  "fontFamily": "$font-body",
+                  "fontSize": 12,
+                  "fontWeight": "600"
                 }
               ]
             }
