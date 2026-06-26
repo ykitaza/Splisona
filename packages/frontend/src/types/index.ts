@@ -128,7 +128,8 @@ export interface EvaluationResult {
   winner: "A" | "B" | "none";
   confidence: number;
   reason: string;
-  scores: EvaluationScores;
+  scoresA: EvaluationScores;
+  scoresB: EvaluationScores;
   status: "completed" | "failed";
 }
 
@@ -146,6 +147,7 @@ export interface ReportSummary {
   winnersReasonSummary: string;
   reasonSummaryA: string[];
   reasonSummaryB: string[];
+  reasonSummaryStatus?: "generating" | "ready";
 }
 
 export interface ReportResponse {

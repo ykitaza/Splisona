@@ -46,16 +46,22 @@ function computeSummary(evaluations: EvaluationRecord[], totalPersonas: number) 
   const winner: "A" | "B" | "tie" =
     countA > countB ? "A" : countB > countA ? "B" : "tie";
 
-  const sumScores = (items: EvaluationRecord[]) =>
-    items.reduce(
-      (acc, e) => ({
-        usability: acc.usability + e.scores.usability,
-        aesthetics: acc.aesthetics + e.scores.aesthetics,
-        clarity: acc.clarity + e.scores.clarity,
-        engagement: acc.engagement + e.scores.engagement,
-      }),
-      zeroScores()
-    );
+  // 旧データ（単一 scores）との後方互換: scoresA/scoresB が無ければ scores を流用
+  const scoresOf = (e: EvaluationRecord, side: "A" | "B") => {
+    const legacy = (e as unknown as { scores?: ReturnType<typeof zeroScores> }).scores;
+    return (side === "A" ? e.scoresA : e.scoresB) ?? legacy ?? zeroScores();
+  };
+
+  const sumScores = (side: "A" | "B") =>
+    completed.reduce((acc, e) => {
+      const s = scoresOf(e, side);
+      return {
+        usability: acc.usability + s.usability,
+        aesthetics: acc.aesthetics + s.aesthetics,
+        clarity: acc.clarity + s.clarity,
+        engagement: acc.engagement + s.engagement,
+      };
+    }, zeroScores());
 
   const avgOf = (sum: ReturnType<typeof zeroScores>, count: number) =>
     count > 0
@@ -67,9 +73,6 @@ function computeSummary(evaluations: EvaluationRecord[], totalPersonas: number) 
         }
       : zeroScores();
 
-  const completedA = completed.filter((e) => e.winner === "A");
-  const completedB = completed.filter((e) => e.winner === "B");
-
   return {
     winner,
     supportRateA,
@@ -77,13 +80,39 @@ function computeSummary(evaluations: EvaluationRecord[], totalPersonas: number) 
     supportRateNone,
     totalPersonas,
     completedPersonas,
+    // 全ペルソナのA案スコア平均 vs B案スコア平均（票の偏りに依らない真の軸比較）
     avgScores: {
-      A: avgOf(sumScores(completedA), completedA.length),
-      B: avgOf(sumScores(completedB), completedB.length),
+      A: avgOf(sumScores("A"), completedPersonas),
+      B: avgOf(sumScores("B"), completedPersonas),
     },
     winnersReasonSummary: "",
     reasonSummaryA: [] as string[],
     reasonSummaryB: [] as string[],
+    reasonSummaryStatus: undefined as "generating" | "ready" | undefined,
+  };
+}
+
+// 理由要約フィールドを生成する。テスト実行/再実行の完了時に一度だけ呼び、
+// 結果をテストレコードに保存する（レポート表示時には推論を走らせない）。
+export async function generateReasonSummaryFields(
+  completed: EvaluationRecord[]
+): Promise<{
+  reasonSummaryStatus: "ready";
+  reasonSummaryA: string[];
+  reasonSummaryB: string[];
+  winnersReasonSummary: string;
+}> {
+  const countA = completed.filter((e) => e.winner === "A").length;
+  const countB = completed.filter((e) => e.winner === "B").length;
+  const winner: "A" | "B" | "tie" = countA > countB ? "A" : countB > countA ? "B" : "tie";
+
+  const { reasonsA, reasonsB } = await summarizeReasons(completed);
+  const winnerReasons = winner === "A" ? reasonsA : winner === "B" ? reasonsB : [];
+  return {
+    reasonSummaryStatus: "ready",
+    reasonSummaryA: reasonsA,
+    reasonSummaryB: reasonsB,
+    winnersReasonSummary: winnerReasons.join("、"),
   };
 }
 
@@ -197,15 +226,12 @@ export async function getReport(
 
     const summary = computeSummary(evaluations, test.personaIds.length);
 
-    // 要約は完了時のみ生成（実行中のポーリングで毎回 Bedrock を呼ばない）
+    // 理由要約は実行/再実行の完了時に生成済み。ここでは保存済みキャッシュを読むだけ（推論なし）。
     if (test.status === "completed") {
-      const completed = evaluations.filter((e) => e.status === "completed");
-      const { reasonsA, reasonsB } = await summarizeReasons(completed);
-      summary.reasonSummaryA = reasonsA;
-      summary.reasonSummaryB = reasonsB;
-      const winnerReasons =
-        summary.winner === "A" ? reasonsA : summary.winner === "B" ? reasonsB : [];
-      summary.winnersReasonSummary = winnerReasons.join("、");
+      summary.reasonSummaryA = test.reasonSummaryA ?? [];
+      summary.reasonSummaryB = test.reasonSummaryB ?? [];
+      summary.winnersReasonSummary = test.winnersReasonSummary ?? "";
+      summary.reasonSummaryStatus = test.reasonSummaryStatus;
     }
 
     const evaluationResults = evaluations.map((e) => ({
@@ -214,7 +240,8 @@ export async function getReport(
       winner: e.winner,
       confidence: e.confidence,
       reason: e.reason,
-      scores: e.scores,
+      scoresA: e.scoresA,
+      scoresB: e.scoresB,
       status: e.status,
     }));
 
@@ -242,19 +269,26 @@ export async function exportReport(
 
     const evaluations = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
 
-    const header = "personaId,displayName,winner,confidence,reason,usability,aesthetics,clarity,engagement,status";
+    const header =
+      "personaId,displayName,winner,confidence,reason,A_usability,A_aesthetics,A_clarity,A_engagement,B_usability,B_aesthetics,B_clarity,B_engagement,status";
     const rows = evaluations.map((e) => {
       const personaId = e.SK.replace("EVAL#", "");
+      const a = e.scoresA ?? zeroScores();
+      const b = e.scoresB ?? zeroScores();
       const cols = [
         personaId,
         e.personaDisplayName,
         e.winner,
         String(e.confidence),
         `"${e.reason.replace(/"/g, '""')}"`,
-        String(e.scores.usability),
-        String(e.scores.aesthetics),
-        String(e.scores.clarity),
-        String(e.scores.engagement),
+        String(a.usability),
+        String(a.aesthetics),
+        String(a.clarity),
+        String(a.engagement),
+        String(b.usability),
+        String(b.aesthetics),
+        String(b.clarity),
+        String(b.engagement),
         e.status,
       ];
       return cols.join(",");

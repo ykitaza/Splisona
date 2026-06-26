@@ -45,7 +45,8 @@ async function seedEvaluation(testId: string, personaId: string, winner: "A" | "
     winner,
     confidence: 80,
     reason: "理由",
-    scores: { usability: 8, aesthetics: 7, clarity: 9, engagement: 6 },
+    scoresA: { usability: 8, aesthetics: 7, clarity: 9, engagement: 6 },
+    scoresB: { usability: 5, aesthetics: 6, clarity: 5, engagement: 7 },
     status: "completed",
     personaDisplayName: `ペルソナ${personaId}`,
     evaluatedAt: new Date().toISOString(),
@@ -115,23 +116,26 @@ describe("Report handler", () => {
       expect(res.statusCode).toBe(404);
     });
 
-    it("avgScores が completed な評価の平均を返す", async () => {
+    it("avgScores が全 completed 評価の A案/B案 平均を返す", async () => {
       const userId = "user-report-4";
       const testId = "test-report-4";
       await seedTest(userId, testId, { personaIds: ["p1", "p2"] });
       await seedEvaluation(testId, "p1", "A", {
-        scores: { usability: 8, aesthetics: 6, clarity: 9, engagement: 7 },
+        scoresA: { usability: 8, aesthetics: 6, clarity: 9, engagement: 7 },
+        scoresB: { usability: 4, aesthetics: 5, clarity: 3, engagement: 6 },
       });
       await seedEvaluation(testId, "p2", "B", {
-        scores: { usability: 6, aesthetics: 8, clarity: 7, engagement: 9 },
+        scoresA: { usability: 6, aesthetics: 8, clarity: 7, engagement: 9 },
+        scoresB: { usability: 2, aesthetics: 7, clarity: 5, engagement: 8 },
       });
 
       const res = await getReport(makeEvent(userId, testId));
       const body = JSON.parse(res.body);
       const avgA = body.summary.avgScores.A;
       const avgB = body.summary.avgScores.B;
-      expect(avgA.usability).toBe(8);
-      expect(avgB.usability).toBe(6);
+      // A案平均 = (8+6)/2 = 7, B案平均 = (4+2)/2 = 3
+      expect(avgA.usability).toBe(7);
+      expect(avgB.usability).toBe(3);
     });
   });
 
@@ -148,7 +152,7 @@ describe("Report handler", () => {
       expect(res.headers?.["Content-Type"]).toBe("text/csv");
 
       const lines = res.body.trim().split("\n");
-      expect(lines[0]).toBe("personaId,displayName,winner,confidence,reason,usability,aesthetics,clarity,engagement,status");
+      expect(lines[0]).toBe("personaId,displayName,winner,confidence,reason,A_usability,A_aesthetics,A_clarity,A_engagement,B_usability,B_aesthetics,B_clarity,B_engagement,status");
       expect(lines).toHaveLength(3);
     });
 

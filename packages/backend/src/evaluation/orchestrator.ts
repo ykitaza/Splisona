@@ -3,6 +3,7 @@ import { getUserId, type ApiGatewayEvent } from "../shared/auth.js";
 import { getItem, putItem, abtestKey, evaluationKey, queryByPK } from "../shared/dynamo.js";
 import { errorResponse } from "../shared/errors.js";
 import { bedrockClient, MODEL_ID } from "../shared/bedrock.js";
+import { generateReasonSummaryFields } from "../report/handler.js";
 import type { ABTestRecord, EvaluationRecord, PersonaRecord } from "../shared/types.js";
 
 type LambdaResponse = { statusCode: number; headers: Record<string, string>; body: string };
@@ -23,7 +24,7 @@ export function chunkArray<T>(arr: T[], size: number): T[][] {
 const evaluateDesignsTool: any = {
   toolSpec: {
     name: "evaluate_designs",
-    description: "デザインA/Bのどちらがペルソナ視点で優れているかを評価する",
+    description: "デザインA/Bのどちらがペルソナ視点で優れているかを評価し、各案を軸ごとに採点する",
     inputSchema: {
       json: {
         type: "object",
@@ -31,18 +32,30 @@ const evaluateDesignsTool: any = {
           winner: { type: "string", enum: ["A", "B", "none"] },
           confidence: { type: "number", minimum: 0, maximum: 100 },
           reason: { type: "string" },
-          scores: {
+          scoresA: {
             type: "object",
+            description: "デザインA案の各軸スコア（0〜100）",
             properties: {
-              usability: { type: "number" },
-              aesthetics: { type: "number" },
-              clarity: { type: "number" },
-              engagement: { type: "number" },
+              usability: { type: "number", minimum: 0, maximum: 100 },
+              aesthetics: { type: "number", minimum: 0, maximum: 100 },
+              clarity: { type: "number", minimum: 0, maximum: 100 },
+              engagement: { type: "number", minimum: 0, maximum: 100 },
+            },
+            required: ["usability", "aesthetics", "clarity", "engagement"],
+          },
+          scoresB: {
+            type: "object",
+            description: "デザインB案の各軸スコア（0〜100）",
+            properties: {
+              usability: { type: "number", minimum: 0, maximum: 100 },
+              aesthetics: { type: "number", minimum: 0, maximum: 100 },
+              clarity: { type: "number", minimum: 0, maximum: 100 },
+              engagement: { type: "number", minimum: 0, maximum: 100 },
             },
             required: ["usability", "aesthetics", "clarity", "engagement"],
           },
         },
-        required: ["winner", "reason", "scores"],
+        required: ["winner", "reason", "scoresA", "scoresB"],
       },
     },
   },
@@ -86,7 +99,8 @@ async function evaluateOnePersona(
     persona?.freeText ? `詳細: ${persona.freeText}` : null,
     "",
     "最初の画像がデザインA、次の画像がデザインBです。",
-    "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。reason は必ず日本語で記述してください。",
+    "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。",
+    "scoresA と scoresB に、A案・B案それぞれの各軸スコア（0〜100）を採点してください。reason は必ず日本語で記述してください。",
   ].filter((l) => l !== null).join("\n");
 
   const command = new ConverseCommand({
@@ -127,7 +141,8 @@ async function evaluateOnePersona(
       winner: "A" | "B";
       confidence?: number;
       reason: string;
-      scores: { usability: number; aesthetics: number; clarity: number; engagement: number };
+      scoresA: { usability: number; aesthetics: number; clarity: number; engagement: number };
+      scoresB: { usability: number; aesthetics: number; clarity: number; engagement: number };
     };
 
     const evalRecord: EvaluationRecord = {
@@ -135,7 +150,8 @@ async function evaluateOnePersona(
       winner: input.winner,
       confidence: input.confidence ?? 0,
       reason: input.reason,
-      scores: input.scores,
+      scoresA: input.scoresA,
+      scoresB: input.scoresB,
       status: "completed",
       personaDisplayName,
       evaluatedAt: new Date().toISOString(),
@@ -147,7 +163,8 @@ async function evaluateOnePersona(
       winner: "none",
       confidence: 0,
       reason: "",
-      scores: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
+      scoresA: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
+      scoresB: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
       status: "failed",
       personaDisplayName,
       evaluatedAt: new Date().toISOString(),
@@ -176,8 +193,11 @@ export async function executeTest(
       return json(400, { error: "VALIDATION_ERROR", message: "At least one persona must be selected" });
     }
 
+    // 再実行時は古い理由要約キャッシュを破棄する
+    const { reasonSummaryStatus: _s, reasonSummaryA: _a, reasonSummaryB: _b, winnersReasonSummary: _w, ...testBase } = test;
+    void _s; void _a; void _b; void _w;
     await putItem({
-      ...test,
+      ...testBase,
       status: "running",
       updatedAt: new Date().toISOString(),
     } as unknown as Record<string, unknown>);
@@ -191,9 +211,15 @@ export async function executeTest(
       );
     }
 
+    // 完了時に理由要約を生成してキャッシュ（レポート表示時には推論しない）
+    const evals = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
+    const completedEvals = evals.filter((e) => e.status === "completed");
+    const summaryFields = await generateReasonSummaryFields(completedEvals);
+
     await putItem({
-      ...test,
+      ...testBase,
       status: "completed",
+      ...summaryFields,
       updatedAt: new Date().toISOString(),
     } as unknown as Record<string, unknown>);
 
@@ -202,6 +228,3 @@ export async function executeTest(
     return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
   }
 }
-
-// テスト進捗の再利用（将来の参照用）
-void queryByPK;

@@ -35,8 +35,20 @@ export interface ABTestRecord {
   designAUrl?: string;
   designBUrl?: string;
   personaIds: string[];
+  // AIによる理由要約のキャッシュ（初回のレポート閲覧時に一度だけ生成）
+  reasonSummaryStatus?: "generating" | "ready";
+  reasonSummaryA?: string[];
+  reasonSummaryB?: string[];
+  winnersReasonSummary?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface EvaluationScores {
+  usability: number;
+  aesthetics: number;
+  clarity: number;
+  engagement: number;
 }
 
 export interface EvaluationRecord {
@@ -45,12 +57,9 @@ export interface EvaluationRecord {
   winner: "A" | "B" | "none";
   confidence: number;
   reason: string;
-  scores: {
-    usability: number;
-    aesthetics: number;
-    clarity: number;
-    engagement: number;
-  };
+  // A案・B案それぞれを各軸で採点したスコア（旧データは scores を持つ場合がある）
+  scoresA: EvaluationScores;
+  scoresB: EvaluationScores;
   status: "completed" | "failed";
   personaDisplayName: string;
   evaluatedAt: string;

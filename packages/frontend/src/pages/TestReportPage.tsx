@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Trophy, Check } from 'lucide-react';
+import { ChevronLeft, ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Trophy, Check } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { getReport, executeTest, exportTest } from '../api/tests';
 import { API_BASE } from '../api/client';
@@ -46,6 +46,9 @@ function DonutChart({ rateA, rateB, rateNone }: { rateA: number; rateB: number; 
 }
 
 function ScoreBar({ label, scoreA, scoreB }: { label: string; scoreA: number; scoreB: number }) {
+  const total = scoreA + scoreB;
+  const aRatio = total > 0 ? (scoreA / total) * 100 : 50;
+  const bRatio = total > 0 ? (scoreB / total) * 100 : 50;
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
@@ -59,13 +62,9 @@ function ScoreBar({ label, scoreA, scoreB }: { label: string; scoreA: number; sc
           </span>
         </div>
       </div>
-      <div className="flex gap-1" style={{ height: 6 }}>
-        <div className="overflow-hidden rounded-full flex-1" style={{ background: '#F0F1F3' }}>
-          <div style={{ width: `${(scoreA / 10) * 100}%`, height: '100%', background: '#3B7DD8', borderRadius: 9999 }} />
-        </div>
-        <div className="overflow-hidden rounded-full flex-1" style={{ background: '#F0F1F3' }}>
-          <div style={{ width: `${(scoreB / 10) * 100}%`, height: '100%', background: '#E0883A', borderRadius: 9999 }} />
-        </div>
+      <div className="flex overflow-hidden rounded-full" style={{ height: 6, background: '#F0F1F3' }}>
+        <div style={{ width: `${aRatio}%`, height: '100%', background: '#3B7DD8' }} />
+        <div style={{ width: `${bRatio}%`, height: '100%', background: '#E0883A' }} />
       </div>
     </div>
   );
@@ -86,6 +85,22 @@ function ReasonGroup({ caption, color, reasons }: { caption: string; color: stri
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function PersonaScoreRow({ label, scoreA, scoreB }: { label: string; scoreA: number; scoreB: number }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>{label}</span>
+      <div className="flex items-center gap-3">
+        <span style={{ color: '#3B7DD8', fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
+          A {scoreA.toFixed(1)}
+        </span>
+        <span style={{ color: '#E0883A', fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
+          B {scoreB.toFixed(1)}
+        </span>
+      </div>
     </div>
   );
 }
@@ -208,6 +223,7 @@ export function TestReportPage() {
   const navigate = useNavigate();
   const [report, setReport] = useState<ReportResponse | null>(null);
   const [isRerunning, setIsRerunning] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -445,46 +461,101 @@ export function TestReportPage() {
             <div className="flex-1">
               <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>コメント</span>
             </div>
+            <div style={{ width: 32 }} />
           </div>
           <div className="overflow-x-auto">
-            {evaluations.map((ev, i) => (
+            {evaluations.map((ev, i) => {
+              const isExpanded = expandedId === ev.personaId;
+              return (
               <div
                 key={ev.personaId}
-                className="flex items-start"
-                style={{
-                  padding: '16px 16px',
-                  borderTop: i > 0 ? '1px solid #E6E6E8' : 'none',
-                }}
+                style={{ borderTop: i > 0 ? '1px solid #E6E6E8' : 'none' }}
               >
-                <div style={{ width: 180 }}>
-                  <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500 }}>
-                    {ev.personaDisplayName}
-                  </span>
-                  {ev.status === 'failed' && (
-                    <span className="block text-xs mt-0.5" style={{ color: '#D64545' }}>失敗</span>
-                  )}
-                </div>
-                <div style={{ width: 80 }}>
-                  {ev.status !== 'failed' && (
-                    <span
-                      className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold"
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(isExpanded ? null : ev.personaId)}
+                  className="flex items-start w-full text-left transition-colors hover:bg-gray-50"
+                  style={{ padding: '16px 16px' }}
+                  aria-expanded={isExpanded}
+                >
+                  <div style={{ width: 180 }}>
+                    <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500 }}>
+                      {ev.personaDisplayName}
+                    </span>
+                    {ev.status === 'failed' && (
+                      <span className="block text-xs mt-0.5" style={{ color: '#D64545' }}>失敗</span>
+                    )}
+                  </div>
+                  <div style={{ width: 80 }}>
+                    {ev.status !== 'failed' && (
+                      <span
+                        className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold"
+                        style={{
+                          background: ev.winner === 'A' ? '#E8F0FB' : ev.winner === 'B' ? '#FBF0E4' : '#F0F1F3',
+                          color: ev.winner === 'A' ? '#3B7DD8' : ev.winner === 'B' ? '#E0883A' : '#9A9A9F',
+                          borderRadius: 9999,
+                        }}
+                      >
+                        {ev.winner === 'none' ? 'なし' : `${ev.winner}案`}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
                       style={{
-                        background: ev.winner === 'A' ? '#E8F0FB' : ev.winner === 'B' ? '#FBF0E4' : '#F0F1F3',
-                        color: ev.winner === 'A' ? '#3B7DD8' : ev.winner === 'B' ? '#E0883A' : '#9A9A9F',
-                        borderRadius: 9999,
+                        color: '#666666',
+                        fontFamily: 'Geist, sans-serif',
+                        fontSize: 13,
+                        lineHeight: 1.5,
+                        ...(isExpanded
+                          ? {}
+                          : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }),
                       }}
                     >
-                      {ev.winner === 'none' ? 'なし' : `${ev.winner}案`}
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13, lineHeight: 1.5 }}>
-                    {ev.reason || '—'}
-                  </p>
-                </div>
+                      {ev.reason || '—'}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center" style={{ width: 32 }}>
+                    <ChevronDown
+                      size={16}
+                      color="#9A9A9F"
+                      style={{ transition: 'transform 0.15s', transform: isExpanded ? 'rotate(180deg)' : 'none' }}
+                    />
+                  </div>
+                </button>
+                {isExpanded && (
+                  <div
+                    className="flex flex-col gap-4"
+                    style={{ padding: '4px 16px 20px 196px', background: '#FAFAFB' }}
+                  >
+                    <div className="flex flex-col gap-1.5">
+                      <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>
+                        コメント全文
+                      </span>
+                      <p style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                        {ev.reason || '—'}
+                      </p>
+                    </div>
+                    {ev.status !== 'failed' && (
+                      <div className="flex flex-col gap-2.5">
+                        <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>
+                          評価軸別スコア
+                        </span>
+                        {(Object.keys(SCORE_LABELS) as (keyof EvaluationScores)[]).map((key) => (
+                          <PersonaScoreRow
+                            key={key}
+                            label={SCORE_LABELS[key]}
+                            scoreA={ev.scoresA[key]}
+                            scoreB={ev.scoresB[key]}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

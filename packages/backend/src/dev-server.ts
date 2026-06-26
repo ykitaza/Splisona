@@ -6,7 +6,7 @@ import { join, extname } from "node:path";
 import { listPersonas, createPersona, getPersona, updatePersona, deletePersona, generateDraft, getPersonaUploadUrl } from "./persona/handler.js";
 import { interviewPersona } from "./interview/handler.js";
 import { createTest, listTests, getTest, updateTest, deleteTest, getProgress } from "./abtest/handler.js";
-import { getReport, exportReport } from "./report/handler.js";
+import { getReport, exportReport, generateReasonSummaryFields } from "./report/handler.js";
 import { getItem, putItem, deleteItem, queryByPK, abtestKey, evaluationKey } from "./shared/dynamo.js";
 import { bedrockClient, MODEL_ID } from "./shared/bedrock.js";
 import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
@@ -29,7 +29,7 @@ function getImageFormat(key: string): "png" | "jpeg" | "gif" | "webp" {
 const localEvaluateTool: any = {
   toolSpec: {
     name: "evaluate_designs",
-    description: "デザインA/Bのどちらがペルソナ視点で優れているかを評価する",
+    description: "デザインA/Bのどちらがペルソナ視点で優れているかを評価し、各案を軸ごとに採点する",
     inputSchema: {
       json: {
         type: "object",
@@ -37,18 +37,30 @@ const localEvaluateTool: any = {
           winner: { type: "string", enum: ["A", "B", "none"] },
           confidence: { type: "number", minimum: 0, maximum: 100 },
           reason: { type: "string" },
-          scores: {
+          scoresA: {
             type: "object",
+            description: "デザインA案の各軸スコア（0〜100）",
             properties: {
-              usability: { type: "number" },
-              aesthetics: { type: "number" },
-              clarity: { type: "number" },
-              engagement: { type: "number" },
+              usability: { type: "number", minimum: 0, maximum: 100 },
+              aesthetics: { type: "number", minimum: 0, maximum: 100 },
+              clarity: { type: "number", minimum: 0, maximum: 100 },
+              engagement: { type: "number", minimum: 0, maximum: 100 },
+            },
+            required: ["usability", "aesthetics", "clarity", "engagement"],
+          },
+          scoresB: {
+            type: "object",
+            description: "デザインB案の各軸スコア（0〜100）",
+            properties: {
+              usability: { type: "number", minimum: 0, maximum: 100 },
+              aesthetics: { type: "number", minimum: 0, maximum: 100 },
+              clarity: { type: "number", minimum: 0, maximum: 100 },
+              engagement: { type: "number", minimum: 0, maximum: 100 },
             },
             required: ["usability", "aesthetics", "clarity", "engagement"],
           },
         },
-        required: ["winner", "reason", "scores"],
+        required: ["winner", "reason", "scoresA", "scoresB"],
       },
     },
   },
@@ -74,7 +86,8 @@ async function evaluateLocalBedrock(
     persona?.freeText ? `詳細: ${persona.freeText}` : null,
     "",
     "最初の画像がデザインA、次の画像がデザインBです。",
-    "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。reason は必ず日本語で記述してください。",
+    "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。",
+    "scoresA と scoresB に、A案・B案それぞれの各軸スコア（0〜100）を採点してください。reason は必ず日本語で記述してください。",
   ].filter((l) => l !== null).join("\n");
 
   const command = new ConverseCommand({
@@ -108,14 +121,16 @@ async function evaluateLocalBedrock(
       winner: "A" | "B";
       confidence?: number;
       reason: string;
-      scores: { usability: number; aesthetics: number; clarity: number; engagement: number };
+      scoresA: { usability: number; aesthetics: number; clarity: number; engagement: number };
+      scoresB: { usability: number; aesthetics: number; clarity: number; engagement: number };
     };
     await putItem({
       ...evaluationKey(testId, personaId),
       winner: input.winner,
       confidence: input.confidence ?? 0,
       reason: input.reason,
-      scores: input.scores,
+      scoresA: input.scoresA,
+      scoresB: input.scoresB,
       status: "completed",
       personaDisplayName,
       evaluatedAt: new Date().toISOString(),
@@ -127,7 +142,8 @@ async function evaluateLocalBedrock(
       winner: "none",
       confidence: 0,
       reason: "",
-      scores: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
+      scoresA: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
+      scoresB: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
       status: "failed",
       personaDisplayName,
       evaluatedAt: new Date().toISOString(),
@@ -372,6 +388,10 @@ app.post("/tests/:id/execute", async (c) => {
     )
   );
 
+  // 再実行時は古い理由要約キャッシュを破棄する
+  const { reasonSummaryStatus: _s, reasonSummaryA: _a, reasonSummaryB: _b, winnersReasonSummary: _w, ...testBase } = test;
+  void _s; void _a; void _b; void _w;
+
   if (USE_LOCAL_BEDROCK) {
     if (!test.designAImageKey || !test.designBImageKey) {
       return c.json({ error: "VALIDATION_ERROR", message: "Both design images must be set" }, 400);
@@ -380,7 +400,7 @@ app.post("/tests/:id/execute", async (c) => {
       return c.json({ error: "VALIDATION_ERROR", message: "At least one persona must be selected" }, 400);
     }
     const now = new Date().toISOString();
-    await putItem({ ...test, status: "running", updatedAt: now } as unknown as Record<string, unknown>);
+    await putItem({ ...testBase, status: "running", updatedAt: now } as unknown as Record<string, unknown>);
     // 非同期で実行（レスポンスを待たずに返す）
     (async () => {
       const batches = chunkArray(test.personaIds!, 5);
@@ -391,13 +411,15 @@ app.post("/tests/:id/execute", async (c) => {
           )
         );
       }
-      await putItem({ ...test, status: "completed", updatedAt: new Date().toISOString() } as unknown as Record<string, unknown>);
+      const evals = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
+      const summaryFields = await generateReasonSummaryFields(evals.filter((e) => e.status === "completed"));
+      await putItem({ ...testBase, status: "completed", ...summaryFields, updatedAt: new Date().toISOString() } as unknown as Record<string, unknown>);
     })();
     return c.json({ started: true });
   }
 
   const now = new Date().toISOString();
-  await putItem({ ...test, status: "running", updatedAt: now } as unknown as Record<string, unknown>);
+  await putItem({ ...testBase, status: "running", updatedAt: now } as unknown as Record<string, unknown>);
 
   // 非同期で実行（レスポンスを待たずに返す）
   (async () => {
@@ -405,24 +427,28 @@ app.post("/tests/:id/execute", async (c) => {
     for (const personaId of personaIds) {
       const persona = await getItem<PersonaRecord>({ PK: `USER#${userId}`, SK: `PERSONA#${personaId}` });
       const winner = Math.random() > 0.5 ? "A" : "B";
+      // 勝者側を高め、敗者側を低めに振った 0〜100 スコアを生成
+      const scoreFor = (isWinner: boolean) => {
+        const base = isWinner ? 70 : 45;
+        const r = () => base + Math.floor(Math.random() * 25);
+        return { usability: r(), aesthetics: r(), clarity: r(), engagement: r() };
+      };
       const evalRecord: EvaluationRecord = {
         ...evaluationKey(testId, personaId),
         winner: winner as "A" | "B",
         confidence: Math.floor(Math.random() * 35) + 60,
         reason: `[ローカルスタブ] ${persona?.displayName ?? personaId}視点での評価。デザイン${winner}の方が視認性・操作性に優れていると判断しました。`,
-        scores: {
-          usability: Math.floor(Math.random() * 3) + 7,
-          aesthetics: Math.floor(Math.random() * 3) + 6,
-          clarity: Math.floor(Math.random() * 3) + 7,
-          engagement: Math.floor(Math.random() * 3) + 6,
-        },
+        scoresA: scoreFor(winner === "A"),
+        scoresB: scoreFor(winner === "B"),
         status: "completed",
         personaDisplayName: persona?.displayName ?? personaId,
         evaluatedAt: now,
       };
       await putItem(evalRecord as unknown as Record<string, unknown>);
     }
-    await putItem({ ...test, status: "completed", updatedAt: now } as unknown as Record<string, unknown>);
+    const evals = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
+    const summaryFields = await generateReasonSummaryFields(evals.filter((e) => e.status === "completed"));
+    await putItem({ ...testBase, status: "completed", ...summaryFields, updatedAt: now } as unknown as Record<string, unknown>);
   })();
 
   return c.json({ started: true });
