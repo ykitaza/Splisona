@@ -148,7 +148,7 @@ function DesignSidePanel({
             onClick={() => inputRef.current?.click()}
             className="w-full overflow-hidden rounded-md transition-colors"
             style={{
-              height: 200,
+              height: 320,
               border: `1.5px dashed ${file ? '#2E9E5B' : '#D4D4D8'}`,
               borderRadius: 6,
               background: '#F7F7F8',
@@ -248,7 +248,7 @@ function DesignSidePanel({
           <div
             className="flex items-center justify-center overflow-hidden rounded-md"
             style={{
-              height: 150,
+              height: 240,
               background: '#F7F7F8',
               border: '1px solid #E6E6E8',
               borderRadius: 6,
