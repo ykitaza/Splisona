@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { listPersonas, createPersona, getPersona, updatePersona, deletePersona } from "./persona/handler.js";
+import { listPersonas, createPersona, getPersona, updatePersona, deletePersona, generateDraft } from "./persona/handler.js";
+import { interviewPersona } from "./interview/handler.js";
+import { createTest, listTests, getTest, updateTest, getUploadUrl, getProgress } from "./abtest/handler.js";
 
 const app = new Hono();
 
@@ -50,6 +52,51 @@ app.put("/personas/:id", async (c) => {
 
 app.delete("/personas/:id", async (c) => {
   const res = await deletePersona(toEvent(c.req, { id: c.req.param("id") }));
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.post("/personas/:id/draft", async (c) => {
+  const res = await generateDraft(toEvent(c.req, { id: c.req.param("id") }));
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.post("/personas/:id/interview", async (c) => {
+  const body = await c.req.text();
+  const res = await interviewPersona({ ...toEvent(c.req, { id: c.req.param("id") }, body), body });
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+// ABTest routes
+app.post("/tests", async (c) => {
+  const body = await c.req.text();
+  const res = await createTest({ ...toEvent(c.req, {}, body), body });
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.get("/tests", async (c) => {
+  const res = await listTests(toEvent(c.req));
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.get("/tests/:id", async (c) => {
+  const res = await getTest(toEvent(c.req, { id: c.req.param("id") }));
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.put("/tests/:id", async (c) => {
+  const body = await c.req.text();
+  const res = await updateTest({ ...toEvent(c.req, { id: c.req.param("id") }, body), body });
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.post("/tests/:id/upload-url", async (c) => {
+  const body = await c.req.text();
+  const res = await getUploadUrl({ ...toEvent(c.req, { id: c.req.param("id") }, body), body });
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.get("/tests/:id/progress", async (c) => {
+  const res = await getProgress(toEvent(c.req, { id: c.req.param("id") }));
   return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
 });
 

@@ -2,6 +2,8 @@ import { getUserId, type ApiGatewayEvent } from "../shared/auth.js";
 import { queryByPK, putItem, getItem, deleteItem, personaKey } from "../shared/dynamo.js";
 import { badRequest, errorResponse } from "../shared/errors.js";
 import { type PersonaRecord } from "../shared/types.js";
+import { bedrockClient, MODEL_ID } from "../shared/bedrock.js";
+import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import crypto from "node:crypto";
 
 type LambdaResponse = { statusCode: number; headers: Record<string, string>; body: string };
@@ -111,6 +113,57 @@ export async function deletePersona(event: ApiGatewayEvent & { pathParameters?: 
     return json(200, { deleted: true });
   } catch (e) {
     return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+  }
+}
+
+export async function generateDraft(event: ApiGatewayEvent & { pathParameters?: Record<string, string> }): Promise<LambdaResponse> {
+  try {
+    const userId = getUserId(event);
+    const personaId = event.pathParameters?.id ?? "";
+    const persona = await getItem<PersonaRecord>(personaKey(userId, personaId) as unknown as Record<string, string>);
+    if (!persona) return json(404, { error: "NOT_FOUND" });
+
+    const attrs = [
+      persona.type && `タイプ: ${persona.type}`,
+      persona.age && `年齢: ${persona.age}歳`,
+      persona.gender && `性別: ${persona.gender}`,
+      persona.occupation && `職業: ${persona.occupation}`,
+      persona.deviationScore && `偏差値: ${persona.deviationScore}`,
+      persona.annualIncome && `年収: ${persona.annualIncome}万円`,
+      persona.education && `学歴: ${persona.education}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const res = await bedrockClient.send(
+      new ConverseCommand({
+        modelId: MODEL_ID,
+        system: [{ text: "あなたはペルソナ設計の専門家です。与えられた属性から人物像の自由記述と推奨説明を日本語で生成してください。" }],
+        messages: [{ role: "user", content: [{ text: `ペルソナ名: ${persona.displayName}\n${attrs}\n\nこのペルソナの自由記述と推奨説明を generate_draft ツールで返してください。` }] }],
+        toolConfig: {
+          tools: [
+            {
+              toolSpec: {
+                name: "generate_draft",
+                description: "ペルソナの自由記述と推奨説明を生成する",
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                inputSchema: { json: { type: "object", properties: { freeText: { type: "string" }, suggestedDescription: { type: "string" } }, required: ["freeText", "suggestedDescription"] } as any },
+              },
+            },
+          ],
+          toolChoice: { tool: { name: "generate_draft" } },
+        },
+      })
+    );
+
+    const toolUse = (res as { output: { message: { content: { toolUse?: { input: { freeText: string; suggestedDescription: string } } }[] } } }).output.message.content.find(
+      (c) => (c as { toolUse?: unknown }).toolUse
+    ) as { toolUse: { input: { freeText: string; suggestedDescription: string } } } | undefined;
+
+    if (!toolUse) return errorResponse(503, "AI_UNAVAILABLE", "No draft generated") as LambdaResponse;
+    return json(200, toolUse.toolUse.input);
+  } catch {
+    return errorResponse(503, "AI_UNAVAILABLE", "Bedrock call failed") as LambdaResponse;
   }
 }
 

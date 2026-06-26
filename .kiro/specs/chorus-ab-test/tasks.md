@@ -81,7 +81,7 @@
 
 ## Task 2: バックエンド — ペルソナ・インタビュー・A/B テストサービス
 
-- [ ] 2. バックエンド: ドメインサービスを実装する
+- [x] 2. バックエンド: ドメインサービスを実装する
 
 - [x] 2.1 ペルソナ CRUD サービスを実装する
   - `GET /personas`、`POST /personas`、`GET /personas/{id}`、`PUT /personas/{id}`、`DELETE /personas/{id}` を実装する
@@ -91,7 +91,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.6_
   - _Boundary: Persona Service Lambda_
 
-- [ ] 2.2 ペルソナ AI アシスト下書き生成を実装する
+- [x] 2.2 ペルソナ AI アシスト下書き生成を実装する
   - `POST /personas/{id}/draft` エンドポイントを実装する
   - ペルソナ属性を `BEDROCK_MODEL_ID` のモデルに Bedrock Converse で送信し、自由記述の下書きを生成する
   - Bedrock 呼び出し失敗時は 503 を返し、ペルソナ CRUD をブロックしない
@@ -99,7 +99,7 @@
   - _Requirements: 2.5_
   - _Boundary: Persona Service Lambda_
 
-- [ ] 2.3 (P) ペルソナインタビューサービスを実装する
+- [x] 2.3 (P) ペルソナインタビューサービスを実装する
   - `POST /personas/{id}/interview` エンドポイントを実装する
   - リクエストの `messages` 配列をペルソナ設定のシステムプロンプトと組み合わせて Bedrock へ送信する（ステートレス）
   - Bedrock ConverseStream でストリーミングレスポンスを返す
@@ -108,7 +108,7 @@
   - _Requirements: 3.1, 3.2, 3.3_
   - _Boundary: Interview Service Lambda_
 
-- [ ] 2.4 (P) A/B テスト管理サービスを実装する
+- [x] 2.4 (P) A/B テスト管理サービスを実装する
   - `POST /tests`、`GET /tests`、`GET /tests/{id}`、`PUT /tests/{id}` を実装する
   - `POST /tests/{id}/upload-url` で S3 Presigned PUT URL（有効期限 15 分）を生成して返す
   - `GET /tests/{id}/progress` で ABTest の `status`・完了数・失敗数を返す
