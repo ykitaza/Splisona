@@ -135,6 +135,8 @@ export function ABTestTable({
 }: Props) {
   const navigate = useNavigate();
   const isDashboard = mode === 'dashboard';
+  // 選択モード時のみテスト名列を右にインデントしてチェックボックス分の余白を確保
+  const selecting = !isDashboard && selectionMode;
 
   // column config per mode
   const personaW  = isDashboard ? 90  : 80;
@@ -183,20 +185,16 @@ export function ABTestTable({
 
       {/* Table Header */}
       <div
-        className="flex items-center"
-        style={{ background: '#F7F7F8', padding: hPad, gap: 16 }}
+        className="flex items-center justify-between"
+        style={{ background: '#F7F7F8', padding: hPad, position: 'relative' }}
       >
-        {!isDashboard && (
-          <div style={{ width: 16, flexShrink: 0 }}>
-            {selectionMode && (
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={(e) => onToggleAll?.(e.target.checked)}
-                style={{ width: 13, height: 13, cursor: 'pointer', accentColor: '#1A1A1A' }}
-              />
-            )}
-          </div>
+        {!isDashboard && selectionMode && (
+          <input
+            type="checkbox"
+            checked={allSelected}
+            onChange={(e) => onToggleAll?.(e.target.checked)}
+            style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, cursor: 'pointer', accentColor: '#1A1A1A', zIndex: 1 }}
+          />
         )}
 
         {onSort ? (
@@ -204,13 +202,13 @@ export function ABTestTable({
             type="button"
             className="flex items-center gap-1"
             onClick={() => onSort('title')}
-            style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            style={{ width: 210, flexShrink: 0, paddingLeft: selecting ? 24 : 0, background: 'none', border: 'none', cursor: 'pointer' }}
           >
             <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>テスト名</span>
             <SortIcon col="title" sortKey={sortKey} sortDir={sortDir} />
           </button>
         ) : (
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ width: 210, flexShrink: 0, paddingLeft: selecting ? 24 : 0 }}>
             <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>テスト名</span>
           </div>
         )}
@@ -235,10 +233,10 @@ export function ABTestTable({
         return (
           <div
             key={test.testId}
-            className="flex items-center group"
+            className="flex items-center justify-between group"
             style={{
               padding: rPad,
-              gap: 16,
+              position: 'relative',
               borderTop: i > 0 ? '1px solid #E6E6E8' : 'none',
               background: isChecked ? '#EEF2FF' : '#FFFFFF',
               cursor: 'pointer',
@@ -248,20 +246,17 @@ export function ABTestTable({
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && handleRowClick(test)}
           >
-            {!isDashboard && (
-              <div style={{ width: 16, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-                {selectionMode && (
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => onToggleOne?.(test.testId)}
-                    style={{ width: 13, height: 13, cursor: 'pointer', accentColor: '#1A1A1A' }}
-                  />
-                )}
-              </div>
+            {selecting && (
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={() => onToggleOne?.(test.testId)}
+                onClick={(e) => e.stopPropagation()}
+                style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, cursor: 'pointer', accentColor: '#1A1A1A', zIndex: 1 }}
+              />
             )}
 
-            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+            <div style={{ width: 210, flexShrink: 0, overflow: 'hidden', paddingLeft: selecting ? 24 : 0 }}>
               <span
                 className="block truncate"
                 style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500 }}
