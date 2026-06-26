@@ -35,16 +35,16 @@
 
 ## Task 1: Foundation — CDK インフラ・共有ユーティリティ
 
-- [ ] 1. Foundation: CDK インフラと共有ユーティリティを構築する
+- [x] 1. Foundation: CDK インフラと共有ユーティリティを構築する
 
-- [ ] 1.1 モノレポ構造と開発環境を初期化する
+- [x] 1.1 モノレポ構造と開発環境を初期化する
   - `packages/frontend`、`packages/backend`、`packages/infra` の 3 パッケージ構造を pnpm ワークスペースで初期化
   - 各パッケージの TypeScript 設定（tsconfig.json）とパッケージ定義（package.json）を整える
   - esbuild による Lambda バンドル設定を infra パッケージに追加する
   - `pnpm install` でワークスペース全体の依存が解決でき、`pnpm build` が成功する
   - _Requirements: 9.1_
 
-- [ ] 1.2 DynamoDB 単一テーブルと S3 バケットを CDK で定義する
+- [x] 1.2 DynamoDB 単一テーブルと S3 バケットを CDK で定義する
   - `chorus-main` テーブルを PAY_PER_REQUEST・PK+SK 複合キーでStorage Construct に定義する
   - デザイン画像保管用 S3 バケットを CloudFront OAC 付きで定義する
   - 本番 SPA 配信用 S3 バケット＋CloudFront ディストリビューションを定義する
@@ -52,7 +52,7 @@
   - _Requirements: 8.1, 8.4_
   - _Boundary: Storage Construct_
 
-- [ ] 1.3 Cognito User Pool を CDK で定義する
+- [x] 1.3 Cognito User Pool を CDK で定義する
   - User Pool と App Client（PKCE フロー設定）を Auth Construct に定義する
   - Identity Provider フェデレーション設定のプレースホルダを用意して SSO 追加に備える
   - CDK Output に User Pool ID と Client ID を出力し、フロントエンド設定から参照できるようにする
@@ -60,7 +60,7 @@
   - _Requirements: 1.1, 1.3, 1.4_
   - _Boundary: Auth Construct_
 
-- [ ] 1.4 API Gateway HTTP API と Lambda 共通設定を CDK で定義する
+- [x] 1.4 API Gateway HTTP API と Lambda 共通設定を CDK で定義する
   - HTTP API v2 を Cognito JWT Authorizer 付きで API Construct に定義する
   - 各 Lambda の共通環境変数（`TABLE_NAME`, `IMAGE_BUCKET`, `BEDROCK_MODEL_ID`）を CDK で注入する
   - `BEDROCK_MODEL_ID` のデフォルト値を `amazon.nova-lite-v1:0` に設定する
