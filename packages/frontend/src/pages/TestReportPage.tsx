@@ -45,31 +45,6 @@ function DonutChart({ rateA, rateB, rateNone }: { rateA: number; rateB: number; 
   );
 }
 
-function ScoreBar({ label, scoreA, scoreB }: { label: string; scoreA: number; scoreB: number }) {
-  const total = scoreA + scoreB;
-  const aRatio = total > 0 ? (scoreA / total) * 100 : 50;
-  const bRatio = total > 0 ? (scoreB / total) * 100 : 50;
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>{label}</span>
-        <div className="flex items-center gap-3">
-          <span style={{ color: '#3B7DD8', fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
-            A {scoreA.toFixed(1)}
-          </span>
-          <span style={{ color: '#E0883A', fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
-            B {scoreB.toFixed(1)}
-          </span>
-        </div>
-      </div>
-      <div className="flex overflow-hidden rounded-full" style={{ height: 6, background: '#F0F1F3' }}>
-        <div style={{ width: `${aRatio}%`, height: '100%', background: '#3B7DD8' }} />
-        <div style={{ width: `${bRatio}%`, height: '100%', background: '#E0883A' }} />
-      </div>
-    </div>
-  );
-}
-
 function ReasonGroup({ caption, color, reasons }: { caption: string; color: string; reasons: string[] }) {
   if (reasons.length === 0) return null;
   return (
@@ -89,17 +64,38 @@ function ReasonGroup({ caption, color, reasons }: { caption: string; color: stri
   );
 }
 
-function PersonaScoreRow({ label, scoreA, scoreB }: { label: string; scoreA: number; scoreB: number }) {
+function ScoreBars({
+  label,
+  scoreA,
+  scoreB,
+  colorA,
+  colorB,
+}: {
+  label: string;
+  scoreA: number;
+  scoreB: number;
+  colorA: string;
+  colorB: string;
+}) {
+  const total = scoreA + scoreB;
+  const aRatio = total > 0 ? (scoreA / total) * 100 : 50;
+  const bRatio = total > 0 ? (scoreB / total) * 100 : 50;
   return (
-    <div className="flex items-center justify-between">
-      <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>{label}</span>
-      <div className="flex items-center gap-3">
-        <span style={{ color: '#3B7DD8', fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
-          A {scoreA.toFixed(1)}
-        </span>
-        <span style={{ color: '#E0883A', fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
-          B {scoreB.toFixed(1)}
-        </span>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>{label}</span>
+        <div className="flex items-center gap-3">
+          <span style={{ color: colorA, fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
+            A {scoreA.toFixed(1)}
+          </span>
+          <span style={{ color: colorB, fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
+            B {scoreB.toFixed(1)}
+          </span>
+        </div>
+      </div>
+      <div className="flex overflow-hidden rounded-full" style={{ height: 6, background: '#F0F1F3' }}>
+        <div style={{ width: `${aRatio}%`, height: '100%', background: colorA }} />
+        <div style={{ width: `${bRatio}%`, height: '100%', background: colorB }} />
       </div>
     </div>
   );
@@ -429,11 +425,13 @@ export function TestReportPage() {
             評価軸別の比較
           </span>
           {(Object.keys(SCORE_LABELS) as (keyof EvaluationScores)[]).map((key) => (
-            <ScoreBar
+            <ScoreBars
               key={key}
               label={SCORE_LABELS[key]}
               scoreA={summary.avgScores.A[key]}
               scoreB={summary.avgScores.B[key]}
+              colorA="#3B7DD8"
+              colorB="#E0883A"
             />
           ))}
         </div>
@@ -536,17 +534,19 @@ export function TestReportPage() {
                         {ev.reason || '—'}
                       </p>
                     </div>
-                    {ev.status !== 'failed' && (
-                      <div className="flex flex-col gap-2.5">
+                    {ev.status !== 'failed' && ev.scoresA && ev.scoresB && (
+                      <div className="flex flex-col gap-3.5">
                         <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>
                           評価軸別スコア
                         </span>
                         {(Object.keys(SCORE_LABELS) as (keyof EvaluationScores)[]).map((key) => (
-                          <PersonaScoreRow
+                          <ScoreBars
                             key={key}
                             label={SCORE_LABELS[key]}
                             scoreA={ev.scoresA[key]}
                             scoreB={ev.scoresB[key]}
+                            colorA="#4F9D69"
+                            colorB="#4F9D69"
                           />
                         ))}
                       </div>
