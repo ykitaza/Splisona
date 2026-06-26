@@ -156,13 +156,15 @@ app.post("/tests/:id/capture", async (c) => {
   if (inputType === "figma_url" && figmaToken) {
     try {
       const match = url.match(/figma\.com\/(?:design|file)\/([^/?]+)/) ;
-      const nodeId = new URL(url).searchParams.get("node-id") ?? "";
+      const nodeIdRaw = new URL(url).searchParams.get("node-id") ?? "";
+      // URL は "123-456" 形式だが Figma API レスポンスのキーは "123:456" 形式
+      const nodeIdCanonical = nodeIdRaw.replace(/-/g, ":");
       const fileKey = match?.[1];
       if (fileKey) {
-        const apiUrl = `https://api.figma.com/v1/images/${fileKey}?ids=${encodeURIComponent(nodeId)}&format=png`;
+        const apiUrl = `https://api.figma.com/v1/images/${fileKey}?ids=${encodeURIComponent(nodeIdRaw)}&format=png`;
         const apiRes = await fetch(apiUrl, { headers: { "X-Figma-Token": figmaToken } });
         const data = await apiRes.json() as { images?: Record<string, string> };
-        const imgUrl = data.images?.[nodeId];
+        const imgUrl = data.images?.[nodeIdCanonical] ?? data.images?.[nodeIdRaw];
         if (imgUrl) {
           const imgRes = await fetch(imgUrl);
           const buf = Buffer.from(await imgRes.arrayBuffer());
@@ -175,8 +177,9 @@ app.post("/tests/:id/capture", async (c) => {
     }
   }
 
+  // 1x1 グレー (#CCCCCC) のスタブ PNG
   const stubPng = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==",
     "base64"
   );
   writeFileSync(filePath, stubPng);
