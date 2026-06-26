@@ -330,7 +330,7 @@ export function PersonaUnifiedPage() {
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploadingAvatar}
                         className="absolute bottom-0 right-0 flex items-center justify-center rounded-full bg-accent disabled:opacity-50"
-                        style={{ width: 20, height: 20, border: '2px solid var(--color-bg-surface)' }}
+                        style={{ width: 20, height: 20, border: '2px solid var(--color-surface)' }}
                       >
                         <Camera size={10} color="#FFFFFF" />
                       </button>

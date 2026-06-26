@@ -6,9 +6,9 @@ const css = readFileSync(resolve(__dirname, 'index.css'), 'utf-8');
 
 describe('index.css @theme tokens', () => {
   const requiredColorTokens = [
-    '--color-bg-base',
-    '--color-bg-surface',
-    '--color-bg-raised',
+    '--color-base',
+    '--color-surface',
+    '--color-raised',
     '--color-hairline',
     '--color-text-hi',
     '--color-text-mid',

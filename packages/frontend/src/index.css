@@ -16,9 +16,9 @@ html, body, #root {
 }
 
 @theme {
-  --color-bg-base: #0A0B0D;
-  --color-bg-surface: #131517;
-  --color-bg-raised: #1C1F23;
+  --color-base: #0A0B0D;
+  --color-surface: #131517;
+  --color-raised: #1C1F23;
   --color-hairline: #FFFFFF14;
   --color-text-hi: #F2F4F7;
   --color-text-mid: #9BA1AC;

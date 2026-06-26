@@ -12,7 +12,7 @@ type SortDir = 'asc' | 'desc';
 const STATUS_ORDER = { draft: 0, running: 1, completed: 2, failed: 3 };
 
 const STATUS_COLORS: Record<ABTestStatus, { bg: string; text: string }> = {
-  draft: { bg: 'var(--color-bg-raised)', text: 'var(--color-text-lo)' },
+  draft: { bg: 'var(--color-raised)', text: 'var(--color-text-lo)' },
   running: { bg: 'var(--color-accent-dim)', text: 'var(--color-accent)' },
   completed: { bg: 'var(--color-win-b-dim, rgba(201,151,79,0.15))', text: 'var(--color-win-b)' },
   failed: { bg: 'var(--color-danger-dim, rgba(214,69,69,0.15))', text: 'var(--color-danger)' },
@@ -32,7 +32,7 @@ function WinnerThumb({ test }: { test: ABTest }) {
   const input = winner === 'B' ? test.designBInput : test.designAInput;
   const src = input?.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
   return (
-    <div className="overflow-hidden rounded flex-shrink-0" style={{ width: 48, height: 32, background: 'var(--color-bg-raised)' }}>
+    <div className="overflow-hidden rounded flex-shrink-0" style={{ width: 48, height: 32, background: 'var(--color-raised)' }}>
       {src ? (
         <img src={src} alt="サムネイル" className="w-full h-full object-cover" />
       ) : (

@@ -137,7 +137,7 @@ function DesignSidePanel({
               style={{
                 height: 320,
                 border: `1.5px dashed ${file ? 'var(--color-accent)' : 'var(--color-hairline)'}`,
-                background: 'var(--color-bg-raised)',
+                background: 'var(--color-raised)',
                 cursor: 'pointer',
               }}
             >
@@ -207,7 +207,7 @@ function DesignSidePanel({
               className="flex items-center justify-center overflow-hidden rounded-md"
               style={{
                 height: 320,
-                background: 'var(--color-bg-raised)',
+                background: 'var(--color-raised)',
                 cursor: capturedPreviewUrl ? 'zoom-in' : 'default',
               }}
               onClick={() => { if (capturedPreviewUrl) setLightboxSrc(capturedPreviewUrl); }}

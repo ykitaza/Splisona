@@ -78,7 +78,7 @@ export function TestPersonaSelectPage() {
       <div className="flex items-center justify-between">
         <div
           className="flex items-center gap-2"
-          style={{ width: 280, borderRadius: 10, background: 'var(--color-bg-surface)', border: '1px solid var(--color-hairline)', padding: '8px 12px' }}
+          style={{ width: 280, borderRadius: 10, background: 'var(--color-surface)', border: '1px solid var(--color-hairline)', padding: '8px 12px' }}
         >
           <Search size={15} className="text-text-lo flex-shrink-0" />
           <input

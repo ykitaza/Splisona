@@ -58,7 +58,7 @@ export function PersonaListPage() {
             <h1 className="text-text-hi font-sans text-xl font-semibold" style={{ fontSize: 24 }}>ペルソナ管理</h1>
             <span
               className="text-text-mid font-mono text-xs"
-              style={{ background: 'var(--color-bg-raised)', borderRadius: 6, padding: '4px 8px' }}
+              style={{ background: 'var(--color-raised)', borderRadius: 6, padding: '4px 8px' }}
             >
               {filtered.length}
             </span>
@@ -67,7 +67,7 @@ export function PersonaListPage() {
         <div className="flex items-center gap-3">
           <div
             className="flex items-center gap-2"
-            style={{ width: 220, borderRadius: 10, background: 'var(--color-bg-surface)', border: '1px solid var(--color-hairline)', padding: '8px 12px' }}
+            style={{ width: 220, borderRadius: 10, background: 'var(--color-surface)', border: '1px solid var(--color-hairline)', padding: '8px 12px' }}
           >
             <Search size={15} className="text-text-lo flex-shrink-0" />
             <input
@@ -102,7 +102,7 @@ export function PersonaListPage() {
               style={{
                 borderRadius: 999,
                 padding: '8px 16px',
-                background: active ? 'var(--color-bg-raised)' : 'transparent',
+                background: active ? 'var(--color-raised)' : 'transparent',
                 border: active ? '1px solid var(--color-hairline)' : '1px solid transparent',
                 color: active ? 'var(--color-text-hi)' : 'var(--color-text-lo)',
                 letterSpacing: 0.5,

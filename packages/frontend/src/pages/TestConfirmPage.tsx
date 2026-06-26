@@ -178,7 +178,7 @@ export function TestConfirmPage() {
               <span
                 key={p.personaId}
                 className="text-text-hi font-sans text-sm"
-                style={{ borderRadius: 999, background: 'var(--color-bg-raised)', padding: '6px 14px' }}
+                style={{ borderRadius: 999, background: 'var(--color-raised)', padding: '6px 14px' }}
               >
                 {p.displayName}
               </span>

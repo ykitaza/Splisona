@@ -21,21 +21,40 @@ interface PersonaNodeProps {
 }
 
 export function PersonaNode({ seed, size = 44 }: PersonaNodeProps) {
-  const h = hashSeed(seed);
-  const color = PALETTE[h % PALETTE.length];
+  const color = PALETTE[hashSeed(seed) % PALETTE.length];
 
   const grid = 5;
   const dot = 0.78;
-  const step = 100 / grid;
-  const r = (step * dot) / 2;
+  const pad = 2;
+  const cellSize = (100 - pad * 2) / grid;
+  const dotSize = cellSize * dot;
+  const offset = (cellSize - dotSize) / 2;
+  const rx = dotSize * 0.2;
 
-  const cells: boolean[][] = [];
-  for (let row = 0; row < grid; row++) {
-    const rowCells: boolean[] = [];
-    for (let col = 0; col < 3; col++) {
-      rowCells.push((hashSeed(seed + row + col) >>> 0) % 2 === 1);
+  const h1 = hashSeed(seed);
+  const h2 = hashSeed(seed + '\x01');
+
+  const filled: boolean[] = [];
+  for (let i = 0; i < 15; i++) {
+    const hash = i < 16 ? h1 : h2;
+    filled.push(((hash >>> i) & 1) === 1);
+  }
+  const count = filled.filter(Boolean).length;
+  if (count < 5) {
+    for (let i = 0; i < 15 && filled.filter(Boolean).length < 7; i++) {
+      if (!filled[i]) filled[i] = true;
     }
-    cells.push(rowCells);
+  }
+
+  const rects: { x: number; y: number }[] = [];
+  for (let row = 0; row < grid; row++) {
+    for (let col = 0; col < 3; col++) {
+      if (!filled[row * 3 + col]) continue;
+      rects.push({ x: pad + col * cellSize + offset, y: pad + row * cellSize + offset });
+      if (col < 2) {
+        rects.push({ x: pad + (4 - col) * cellSize + offset, y: pad + row * cellSize + offset });
+      }
+    }
   }
 
   return (
@@ -46,21 +65,9 @@ export function PersonaNode({ seed, size = 44 }: PersonaNodeProps) {
       role="img"
       aria-label={`${seed} のアイコン`}
     >
-      {cells.map((row, ri) =>
-        row.map((fill, ci) => {
-          if (!fill) return null;
-          const cols = ci === 2 ? [ci] : [ci, 4 - ci];
-          return cols.map((col) => (
-            <circle
-              key={`${col}-${ri}`}
-              cx={step / 2 + col * step}
-              cy={step / 2 + ri * step}
-              r={r}
-              fill={color}
-            />
-          ));
-        })
-      )}
+      {rects.map((d, i) => (
+        <rect key={i} x={d.x} y={d.y} width={dotSize} height={dotSize} rx={rx} fill={color} />
+      ))}
     </svg>
   );
 }

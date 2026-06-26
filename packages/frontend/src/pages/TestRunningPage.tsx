@@ -21,10 +21,10 @@ function sunflowerOffset(k: number): { dx: number; dy: number } {
 const VERDICT_CHIP: Record<'A' | 'B' | 'none', { label: string; color: string; bg: string }> = {
   A: { label: 'A案', color: 'var(--color-win-a)', bg: 'var(--color-accent-dim)' },
   B: { label: 'B案', color: 'var(--color-win-b)', bg: 'var(--color-win-b-dim, rgba(201,151,79,0.15))' },
-  none: { label: '互角', color: 'var(--color-text-lo)', bg: 'var(--color-bg-raised)' },
+  none: { label: '互角', color: 'var(--color-text-lo)', bg: 'var(--color-raised)' },
 };
 const FAILED_CHIP = { label: '失敗', color: 'var(--color-danger)', bg: 'var(--color-danger-dim, rgba(214,69,69,0.15))' };
-const THINKING_CHIP = { label: '検討中', color: 'var(--color-text-lo)', bg: 'var(--color-bg-raised)' };
+const THINKING_CHIP = { label: '検討中', color: 'var(--color-text-lo)', bg: 'var(--color-raised)' };
 
 function DesignThumb({ label, imageKey, accentColor, scanning }: { label: string; imageKey?: string; accentColor: string; scanning?: boolean }) {
   const [lightbox, setLightbox] = useState(false);
@@ -40,7 +40,7 @@ function DesignThumb({ label, imageKey, accentColor, scanning }: { label: string
         </div>
         <div
           className="relative mx-3 mb-3 overflow-hidden rounded flex items-center justify-center"
-          style={{ height: 120, background: 'var(--color-bg-raised)', cursor: src ? 'zoom-in' : 'default' }}
+          style={{ height: 120, background: 'var(--color-raised)', cursor: src ? 'zoom-in' : 'default' }}
           onClick={() => { if (src) setLightbox(true); }}
         >
           {src ? (
@@ -164,7 +164,7 @@ export function TestRunningPage() {
       <div
         className="relative overflow-hidden flex-1 rounded-md"
         style={{
-          background: 'linear-gradient(90deg, var(--color-accent-dim) 0%, var(--color-bg-base) 50%, var(--color-win-b-dim, rgba(201,151,79,0.15)) 100%)',
+          background: 'linear-gradient(90deg, var(--color-accent-dim) 0%, var(--color-base) 50%, var(--color-win-b-dim, rgba(201,151,79,0.15)) 100%)',
           border: '1px solid var(--color-hairline)',
           minHeight: 240,
         }}
@@ -223,7 +223,7 @@ export function TestRunningPage() {
           aria-valuemin={0}
           aria-valuemax={100}
           className="overflow-hidden rounded-full"
-          style={{ height: 6, background: 'var(--color-bg-raised)' }}
+          style={{ height: 6, background: 'var(--color-raised)' }}
         >
           <div
             className="h-full rounded-full transition-all duration-500"

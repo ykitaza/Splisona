@@ -166,7 +166,7 @@ export function PersonaEditPage() {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingAvatar}
                   className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full transition-opacity disabled:opacity-50 bg-accent"
-                  style={{ width: 22, height: 22, border: '2px solid var(--color-bg-base)' }}
+                  style={{ width: 22, height: 22, border: '2px solid var(--color-base)' }}
                 >
                   <Camera size={10} color="#FFFFFF" />
                 </button>

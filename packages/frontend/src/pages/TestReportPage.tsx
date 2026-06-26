@@ -83,7 +83,7 @@ function ScoreBars({ label, scoreA, scoreB }: { label: string; scoreA: number; s
           </span>
         </div>
       </div>
-      <div className="flex overflow-hidden rounded-full" style={{ height: 6, background: 'var(--color-bg-raised, #1C1F23)' }}>
+      <div className="flex overflow-hidden rounded-full" style={{ height: 6, background: 'var(--color-raised, #1C1F23)' }}>
         <div style={{ width: `${aRatio}%`, height: '100%', background: 'var(--color-win-a, #6E78D9)' }} />
         <div style={{ width: `${bRatio}%`, height: '100%', background: 'var(--color-win-b, #C9974F)' }} />
       </div>
@@ -133,7 +133,7 @@ function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
       <div className="flex flex-col overflow-hidden flex-1" style={{ borderLeft: isWinner ? `2px solid ${accentColor}` : 'none' }}>
         <div
           className="flex items-center justify-center overflow-hidden flex-shrink-0 rounded-md"
-          style={{ height: 200, background: 'var(--color-bg-raised, #1C1F23)', cursor: imageUrl ? 'zoom-in' : 'default' }}
+          style={{ height: 200, background: 'var(--color-raised, #1C1F23)', cursor: imageUrl ? 'zoom-in' : 'default' }}
           onClick={() => { if (imageUrl) setLightbox(true); }}
         >
           {imageUrl ? (
@@ -355,7 +355,7 @@ export function TestReportPage() {
                       <span
                         className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold"
                         style={{
-                          background: ev.winner === 'A' ? 'var(--color-accent-dim)' : ev.winner === 'B' ? 'var(--color-win-b-dim)' : 'var(--color-bg-raised)',
+                          background: ev.winner === 'A' ? 'var(--color-accent-dim)' : ev.winner === 'B' ? 'var(--color-win-b-dim)' : 'var(--color-raised)',
                           color: ev.winner === 'A' ? 'var(--color-win-a)' : ev.winner === 'B' ? 'var(--color-win-b)' : 'var(--color-text-lo)',
                         }}
                       >
