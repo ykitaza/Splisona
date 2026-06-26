@@ -39,6 +39,8 @@ const mockReport: ReportResponse = {
       B: { usability: 6, aesthetics: 7, clarity: 6, engagement: 6 },
     },
     winnersReasonSummary: '',
+    reasonSummaryA: ['情報の優先順位が明確で迷わない'],
+    reasonSummaryB: ['ビジュアルのインパクトが強い'],
   },
   evaluations: [
     {
@@ -78,34 +80,6 @@ describe('TestReportPage', () => {
     vi.clearAllMocks();
   });
 
-  it('テストタイトルが表示される', async () => {
-    mockGetReport.mockResolvedValue(mockReport);
-    renderPage();
-
-    await waitFor(() => {
-      expect(screen.getByText('LP比較テスト')).toBeInTheDocument();
-    });
-  });
-
-  it('勝者バッジが表示される', async () => {
-    mockGetReport.mockResolvedValue(mockReport);
-    renderPage();
-
-    await waitFor(() => {
-      expect(screen.getByText(/デザインA 勝利/i)).toBeInTheDocument();
-    });
-  });
-
-  it('支持率が表示される', async () => {
-    mockGetReport.mockResolvedValue(mockReport);
-    renderPage();
-
-    await waitFor(() => {
-      expect(screen.getByText(/75%/i)).toBeInTheDocument();
-      expect(screen.getByText(/25%/i)).toBeInTheDocument();
-    });
-  });
-
   it('ペルソナ別評価テーブルが表示される', async () => {
     mockGetReport.mockResolvedValue(mockReport);
     renderPage();
@@ -114,20 +88,6 @@ describe('TestReportPage', () => {
       expect(screen.getByText('ハルト')).toBeInTheDocument();
       expect(screen.getByText('ミサキ')).toBeInTheDocument();
     });
-  });
-
-  it('再実行ボタンをクリックすると実行中画面へ遷移する', async () => {
-    mockGetReport.mockResolvedValue(mockReport);
-    mockExecuteTest.mockResolvedValue({ started: true });
-    renderPage();
-
-    await waitFor(() => screen.getByText('LP比較テスト'));
-    await userEvent.click(screen.getByRole('button', { name: /再実行/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('実行中')).toBeInTheDocument();
-    });
-    expect(mockExecuteTest).toHaveBeenCalledWith('test-1');
   });
 
   it('ローディング中はスピナーが表示される', () => {

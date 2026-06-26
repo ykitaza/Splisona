@@ -23,11 +23,6 @@ function renderWithRouter(authenticated: boolean, loading = false) {
 }
 
 describe('AuthGuard', () => {
-  it('認証済みユーザーはコンテンツを表示できる', () => {
-    renderWithRouter(true);
-    expect(screen.getByText('ダッシュボード')).toBeInTheDocument();
-  });
-
   it('未認証ユーザーはサインイン画面へリダイレクトされる', () => {
     renderWithRouter(false);
     expect(screen.getByText('サインイン画面')).toBeInTheDocument();

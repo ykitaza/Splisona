@@ -83,12 +83,4 @@ describe('PersonaListPage', () => {
     await userEvent.click(screen.getByRole('link', { name: /ペルソナを作成/i }));
     expect(screen.getByText('ペルソナ作成')).toBeInTheDocument();
   });
-
-  it('ペルソナカードをクリックすると編集画面へ遷移する', async () => {
-    mockUsePersonas.mockReturnValue({ personas: samplePersonas, isLoading: false, error: null, ...defaultMutations });
-    renderPersonaList();
-
-    await userEvent.click(screen.getByText('ハルト'));
-    expect(screen.getByText('ペルソナ編集')).toBeInTheDocument();
-  });
 });

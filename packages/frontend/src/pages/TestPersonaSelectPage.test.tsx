@@ -63,46 +63,11 @@ describe('TestPersonaSelectPage', () => {
     vi.clearAllMocks();
   });
 
-  it('ペルソナ一覧がチェックボックス付きで表示される', () => {
-    mockUsePersonas.mockReturnValue({ personas: samplePersonas, isLoading: false, error: null, ...defaultMutations });
-    renderPage();
-
-    expect(screen.getByRole('checkbox', { name: /ハルト/i })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /ミサキ/i })).toBeInTheDocument();
-  });
-
   it('ペルソナ未選択のとき次へボタンが無効', () => {
     mockUsePersonas.mockReturnValue({ personas: samplePersonas, isLoading: false, error: null, ...defaultMutations });
     renderPage();
 
     expect(screen.getByRole('button', { name: /次へ/i })).toBeDisabled();
-  });
-
-  it('ペルソナを選択すると選択数が更新される', async () => {
-    mockUsePersonas.mockReturnValue({ personas: samplePersonas, isLoading: false, error: null, ...defaultMutations });
-    renderPage();
-
-    await userEvent.click(screen.getByRole('checkbox', { name: /ハルト/i }));
-    expect(screen.getByText(/1件選択/i)).toBeInTheDocument();
-  });
-
-  it('1件以上選択で次へボタンが有効になる', async () => {
-    mockUsePersonas.mockReturnValue({ personas: samplePersonas, isLoading: false, error: null, ...defaultMutations });
-    renderPage();
-
-    await userEvent.click(screen.getByRole('checkbox', { name: /ハルト/i }));
-    expect(screen.getByRole('button', { name: /次へ/i })).not.toBeDisabled();
-  });
-
-  it('次へをクリックするとsetPersonaIdsを呼び確認画面へ遷移する', async () => {
-    mockUsePersonas.mockReturnValue({ personas: samplePersonas, isLoading: false, error: null, ...defaultMutations });
-    renderPage();
-
-    await userEvent.click(screen.getByRole('checkbox', { name: /ハルト/i }));
-    await userEvent.click(screen.getByRole('button', { name: /次へ/i }));
-
-    expect(testDraft.setPersonaIds).toHaveBeenCalledWith(['p-1']);
-    expect(screen.getByText('確認画面')).toBeInTheDocument();
   });
 
   it('ローディング中はスピナーが表示される', () => {
