@@ -1,8 +1,21 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
 import { usePersonas } from '../hooks/usePersonas';
-import { ABTEST_STATUS_LABELS, type ABTestStatus } from '../types';
+import { ABTEST_STATUS_LABELS, type ABTestStatus, type DesignInput } from '../types';
 import { FlaskConical, Users, CalendarCheck, ArrowRight, Plus } from 'lucide-react';
+import { API_BASE } from '../api/client';
+
+function DesignThumb({ input, label }: { input: DesignInput; label: string }) {
+  const src = input.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
+  return (
+    <div
+      className="overflow-hidden flex-shrink-0"
+      style={{ width: 68, height: 40, borderRadius: 5, background: '#F0F1F3', border: '1px solid #E6E6E8' }}
+    >
+      {src && <img src={src} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+    </div>
+  );
+}
 
 const STATUS_COLORS: Record<ABTestStatus, { bg: string; text: string }> = {
   draft: { bg: '#F0F1F3', text: '#666666' },
@@ -143,22 +156,22 @@ export function DashboardPage() {
           >
             {/* Table Header */}
             <div
-              className="flex items-center"
+              className="flex items-center justify-between"
               style={{ background: '#F0F1F3', padding: '12px 20px' }}
             >
-              <div className="flex-1">
+              <div style={{ width: 210, flexShrink: 0 }}>
                 <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>テスト名</span>
               </div>
-              <div style={{ width: 200 }}>
-                <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>タイプ</span>
+              <div style={{ width: 170, flexShrink: 0 }}>
+                <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>プレビュー</span>
               </div>
-              <div style={{ width: 90 }}>
+              <div style={{ width: 90, flexShrink: 0 }}>
                 <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>ペルソナ</span>
               </div>
-              <div style={{ width: 140 }}>
+              <div style={{ width: 140, flexShrink: 0 }}>
                 <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>結果</span>
               </div>
-              <div style={{ width: 96 }}>
+              <div style={{ width: 120, flexShrink: 0 }}>
                 <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>日付</span>
               </div>
             </div>
@@ -170,7 +183,7 @@ export function DashboardPage() {
               return (
                 <div
                   key={test.testId}
-                  className="flex items-center"
+                  className="flex items-center justify-between"
                   style={{
                     padding: '15px 20px',
                     borderTop: i > 0 ? '1px solid #E6E6E8' : 'none',
@@ -181,22 +194,22 @@ export function DashboardPage() {
                   tabIndex={isClickable ? 0 : undefined}
                   onKeyDown={(e) => e.key === 'Enter' && isClickable && handleTestClick(test.testId, test.status)}
                 >
-                  <div className="flex-1">
-                    <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500 }}>
+                  <div style={{ width: 210, flexShrink: 0, overflow: 'hidden' }}>
+                    <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {test.title}
                     </span>
                   </div>
-                  <div style={{ width: 200 }}>
-                    <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-                      画像アップロード
-                    </span>
+                  <div className="flex items-center flex-shrink-0" style={{ width: 170, gap: 8 }}>
+                    <DesignThumb input={test.designAInput} label="A" />
+                    <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>vs</span>
+                    <DesignThumb input={test.designBInput} label="B" />
                   </div>
-                  <div style={{ width: 90 }}>
+                  <div style={{ width: 90, flexShrink: 0 }}>
                     <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
                       {test.personaIds.length}人
                     </span>
                   </div>
-                  <div style={{ width: 140 }}>
+                  <div style={{ width: 140, flexShrink: 0 }}>
                     <span
                       className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium"
                       style={{ background: colors.bg, color: colors.text, borderRadius: 9999 }}
@@ -204,9 +217,9 @@ export function DashboardPage() {
                       {ABTEST_STATUS_LABELS[test.status]}
                     </span>
                   </div>
-                  <div style={{ width: 96 }}>
+                  <div style={{ width: 120, flexShrink: 0 }}>
                     <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 12 }}>
-                      {new Date(test.createdAt).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' }).replace('/', '/')}
+                      {new Date(test.createdAt).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                 </div>

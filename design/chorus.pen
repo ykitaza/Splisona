@@ -399,10 +399,10 @@
               "type": "frame",
               "id": "URz8G",
               "name": "Card Avatar",
-              "width": 44,
-              "height": 44,
+              "width": 56,
+              "height": 56,
               "fill": "$variant-a-soft",
-              "cornerRadius": "$radius-full",
+              "cornerRadius": 9999,
               "justifyContent": "center",
               "alignItems": "center",
               "children": [
@@ -954,49 +954,15 @@
                       "width": "fill_container",
                       "descendants": {
                         "URz8G": {
-                          "fill": "$variant-a-soft"
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1609766456218-2210559f8554?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODMzMDl8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          }
                         },
                         "xyqo6": {
-                          "content": "ハ",
-                          "fill": "$accent"
-                        },
-                        "PzSvH": {
-                          "content": "ハルト"
-                        },
-                        "FWFjD": {
-                          "content": "せっかちなビジネスマン"
-                        },
-                        "W4StBg": {
-                          "fill": "$accent-soft"
-                        },
-                        "Z67UEC": {
-                          "icon": "sparkles",
-                          "fill": "$accent"
-                        },
-                        "oGirf": {
-                          "content": "AI生成",
-                          "fill": "$accent"
-                        },
-                        "QbdfY": {
-                          "content": "32歳"
-                        },
-                        "AobMh": {
-                          "content": "男性"
-                        },
-                        "qdWdd": {
-                          "content": "58"
-                        },
-                        "r7MrR": {
-                          "content": "800万円"
-                        },
-                        "Y3sLoj": {
-                          "content": "大卒"
-                        },
-                        "w1JZa": {
-                          "content": "営業職"
-                        },
-                        "prVBG": {
-                          "content": "常に時間に追われており、3秒で要点が伝わらないUIは離脱する。最短手数でゴールに到達したい。"
+                          "opacity": 0
                         }
                       }
                     },
@@ -1008,49 +974,15 @@
                       "width": "fill_container",
                       "descendants": {
                         "URz8G": {
-                          "fill": "$variant-b-soft"
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODMzMTB8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          }
                         },
                         "xyqo6": {
-                          "content": "ミ",
-                          "fill": "$variant-b"
-                        },
-                        "PzSvH": {
-                          "content": "ミサキ"
-                        },
-                        "FWFjD": {
-                          "content": "慎重派の主婦"
-                        },
-                        "W4StBg": {
-                          "fill": "$surface-subtle"
-                        },
-                        "Z67UEC": {
-                          "icon": "pencil-line",
-                          "fill": "$ink-secondary"
-                        },
-                        "oGirf": {
-                          "content": "手動作成",
-                          "fill": "$ink-secondary"
-                        },
-                        "QbdfY": {
-                          "content": "41歳"
-                        },
-                        "AobMh": {
-                          "content": "女性"
-                        },
-                        "qdWdd": {
-                          "content": "55"
-                        },
-                        "r7MrR": {
-                          "content": "世帯600万"
-                        },
-                        "Y3sLoj": {
-                          "content": "短大卒"
-                        },
-                        "w1JZa": {
-                          "content": "専業主婦"
-                        },
-                        "prVBG": {
-                          "content": "価格と安全性を重視。レビューや口コミを細かく確認してから判断する慎重なタイプ。"
+                          "opacity": 0
                         }
                       }
                     },
@@ -1062,50 +994,15 @@
                       "width": "fill_container",
                       "descendants": {
                         "URz8G": {
-                          "fill": "$variant-a-soft"
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1625619538545-311218cfaf59?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODMzMTB8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          }
                         },
                         "xyqo6": {
-                          "content": "ソ",
-                          "fill": "$accent"
-                        },
-                        "PzSvH": {
-                          "content": "ソウタ"
-                        },
-                        "FWFjD": {
-                          "content": "デジタルネイティブ学生"
-                        },
-                        "W4StBg": {
-                          "fill": "$accent-soft"
-                        },
-                        "Z67UEC": {
-                          "icon": "sparkles",
-                          "fill": "$accent"
-                        },
-                        "oGirf": {
-                          "content": "AI生成",
-                          "fill": "$accent"
-                        },
-                        "QbdfY": {
-                          "content": "20歳"
-                        },
-                        "AobMh": {
-                          "content": "男性"
-                        },
-                        "qdWdd": {
-                          "content": "62"
-                        },
-                        "r7MrR": {
-                          "content": "指定なし",
-                          "fill": "$ink-muted"
-                        },
-                        "Y3sLoj": {
-                          "content": "在学中"
-                        },
-                        "w1JZa": {
-                          "content": "大学生"
-                        },
-                        "prVBG": {
-                          "content": "スマホ前提。直感的でテンポの良い操作を好み、長い説明文はほぼ読まない。"
+                          "opacity": 0
                         }
                       }
                     }
@@ -1126,50 +1023,15 @@
                       "width": "fill_container",
                       "descendants": {
                         "URz8G": {
-                          "fill": "$variant-b-soft"
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1761140836528-50330b5a811b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODMzMTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          }
                         },
                         "xyqo6": {
-                          "content": "ヨ",
-                          "fill": "$variant-b"
-                        },
-                        "PzSvH": {
-                          "content": "ヨシコ"
-                        },
-                        "FWFjD": {
-                          "content": "ITに不慣れなシニア"
-                        },
-                        "W4StBg": {
-                          "fill": "$surface-subtle"
-                        },
-                        "Z67UEC": {
-                          "icon": "pencil-line",
-                          "fill": "$ink-secondary"
-                        },
-                        "oGirf": {
-                          "content": "手動作成",
-                          "fill": "$ink-secondary"
-                        },
-                        "QbdfY": {
-                          "content": "68歳"
-                        },
-                        "AobMh": {
-                          "content": "女性"
-                        },
-                        "qdWdd": {
-                          "content": "指定なし",
-                          "fill": "$ink-muted"
-                        },
-                        "r7MrR": {
-                          "content": "年金"
-                        },
-                        "Y3sLoj": {
-                          "content": "高卒"
-                        },
-                        "w1JZa": {
-                          "content": "無職"
-                        },
-                        "prVBG": {
-                          "content": "文字は大きく、専門用語は苦手。一画面に情報が多すぎると混乱してしまう。"
+                          "opacity": 0
                         }
                       }
                     },
@@ -1181,49 +1043,15 @@
                       "width": "fill_container",
                       "descendants": {
                         "URz8G": {
-                          "fill": "$variant-a-soft"
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1781106301056-e4907952bd2f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODMzMTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          }
                         },
                         "xyqo6": {
-                          "content": "ユ",
-                          "fill": "$accent"
-                        },
-                        "PzSvH": {
-                          "content": "ユウト"
-                        },
-                        "FWFjD": {
-                          "content": "コスパ重視の若手社会人"
-                        },
-                        "W4StBg": {
-                          "fill": "$accent-soft"
-                        },
-                        "Z67UEC": {
-                          "icon": "sparkles",
-                          "fill": "$accent"
-                        },
-                        "oGirf": {
-                          "content": "AI生成",
-                          "fill": "$accent"
-                        },
-                        "QbdfY": {
-                          "content": "26歳"
-                        },
-                        "AobMh": {
-                          "content": "男性"
-                        },
-                        "qdWdd": {
-                          "content": "56"
-                        },
-                        "r7MrR": {
-                          "content": "400万円"
-                        },
-                        "Y3sLoj": {
-                          "content": "専門卒"
-                        },
-                        "w1JZa": {
-                          "content": "会社員"
-                        },
-                        "prVBG": {
-                          "content": "機能と価格の釣り合いを常に意識。まず無料で試せるかどうかを探す。"
+                          "opacity": 0
                         }
                       }
                     },
@@ -1235,49 +1063,15 @@
                       "width": "fill_container",
                       "descendants": {
                         "URz8G": {
-                          "fill": "$variant-a-soft"
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1672676209731-354a2a305bb3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODMzMTJ8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          }
                         },
                         "xyqo6": {
-                          "content": "ア",
-                          "fill": "$accent"
-                        },
-                        "PzSvH": {
-                          "content": "アヤ"
-                        },
-                        "FWFjD": {
-                          "content": "効率重視のマネージャー"
-                        },
-                        "W4StBg": {
-                          "fill": "$accent-soft"
-                        },
-                        "Z67UEC": {
-                          "icon": "sparkles",
-                          "fill": "$accent"
-                        },
-                        "oGirf": {
-                          "content": "AI生成",
-                          "fill": "$accent"
-                        },
-                        "QbdfY": {
-                          "content": "45歳"
-                        },
-                        "AobMh": {
-                          "content": "女性"
-                        },
-                        "qdWdd": {
-                          "content": "64"
-                        },
-                        "r7MrR": {
-                          "content": "1200万円"
-                        },
-                        "Y3sLoj": {
-                          "content": "院卒"
-                        },
-                        "w1JZa": {
-                          "content": "管理職"
-                        },
-                        "prVBG": {
-                          "content": "意思決定が速い。比較情報が整理されていれば即断できると考えている。"
+                          "opacity": 0
                         }
                       }
                     }
@@ -3775,6 +3569,7 @@
                   "name": "RT Header",
                   "width": "fill_container",
                   "fill": "$surface-subtle",
+                  "gap": 24,
                   "padding": [
                     12,
                     20
@@ -3786,6 +3581,8 @@
                       "id": "E7IDmx",
                       "name": "RTH テスト名",
                       "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
@@ -3802,20 +3599,48 @@
                     },
                     {
                       "type": "frame",
-                      "id": "bOUI3",
-                      "name": "RTH タイプ",
-                      "width": 200,
+                      "id": "VpNfv",
+                      "name": "Hdr AB",
+                      "width": 142,
+                      "gap": 6,
                       "children": [
                         {
-                          "type": "text",
-                          "id": "WlPbi",
-                          "name": "RTH Text タイプ",
-                          "fill": "$ink-muted",
-                          "content": "タイプ",
-                          "fontFamily": "$font-mono",
-                          "fontSize": 11,
-                          "fontWeight": "normal",
-                          "letterSpacing": 0.5
+                          "type": "frame",
+                          "id": "H3Jtr",
+                          "name": "Hdr A",
+                          "width": 68,
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "muEc8",
+                              "name": "Hdr A Label",
+                              "fill": "$variant-a",
+                              "content": "A",
+                              "fontFamily": "$font-mono",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "xs7bD",
+                          "name": "Hdr B",
+                          "width": 68,
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mngnA",
+                              "name": "Hdr B Label",
+                              "fill": "$variant-b",
+                              "content": "B",
+                              "fontFamily": "$font-mono",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
                         }
                       ]
                     },
@@ -3861,7 +3686,7 @@
                       "type": "frame",
                       "id": "DGmnh",
                       "name": "RTH 日付",
-                      "width": 96,
+                      "width": 120,
                       "children": [
                         {
                           "type": "text",
@@ -3885,6 +3710,7 @@
                   "width": "fill_container",
                   "stroke": "$border",
                   "strokeAlignment": "inner",
+                  "gap": 24,
                   "padding": [
                     15,
                     20
@@ -3893,14 +3719,16 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "c3lDPm",
+                      "id": "cB7Qe",
                       "name": "RT C1 0",
                       "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "LZLTz",
-                          "name": "RT Name 0",
+                          "id": "Y7zVi",
+                          "name": "RT Name",
                           "fill": "$ink-primary",
                           "content": "LP改修案の比較",
                           "fontFamily": "$font-body",
@@ -3911,19 +3739,71 @@
                     },
                     {
                       "type": "frame",
-                      "id": "Cksxf",
-                      "name": "RT C2 0",
-                      "width": 200,
+                      "id": "jQEAn",
+                      "name": "Thumb Pair",
+                      "width": 142,
+                      "gap": 6,
+                      "alignItems": "center",
                       "children": [
                         {
-                          "type": "text",
-                          "id": "vhFNn",
-                          "name": "RT Type 0",
-                          "fill": "$ink-secondary",
-                          "content": "Figma 2案を比較",
-                          "fontFamily": "$font-body",
-                          "fontSize": 13,
-                          "fontWeight": "normal"
+                          "type": "frame",
+                          "id": "tdglT",
+                          "name": "Wrap A",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "dy8yH",
+                              "name": "Thumb A",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "pramodtiwari",
+                                "link": "https://unsplash.com/@pramodtiwari",
+                                "author": "Pramod Tiwari"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1672818640506-d5fb6372ed40?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODI2NTV8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "rPV4l",
+                          "name": "Wrap B",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "M2oEpm",
+                              "name": "Thumb B",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "blenderdesigner",
+                                "link": "https://unsplash.com/@blenderdesigner",
+                                "author": "Sufyan"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1651082341996-ef871fccd6b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODI2NTV8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5
+                            }
+                          ]
                         }
                       ]
                     },
@@ -3980,14 +3860,14 @@
                       "type": "frame",
                       "id": "vMbRe",
                       "name": "RT C5 0",
-                      "width": 96,
+                      "width": 120,
                       "children": [
                         {
                           "type": "text",
                           "id": "yG2aI",
                           "name": "RT Date 0",
                           "fill": "$ink-muted",
-                          "content": "06/24",
+                          "content": "06/24 14:32",
                           "fontFamily": "$font-mono",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -4006,6 +3886,7 @@
                     "top": 1
                   },
                   "strokeAlignment": "inner",
+                  "gap": 24,
                   "padding": [
                     15,
                     20
@@ -4014,14 +3895,16 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "QCqls",
+                      "id": "BDUnM",
                       "name": "RT C1 1",
                       "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "Q9h3S",
-                          "name": "RT Name 1",
+                          "id": "lTKTq",
+                          "name": "RT Name",
                           "fill": "$ink-primary",
                           "content": "商品ページ リニューアル",
                           "fontFamily": "$font-body",
@@ -4032,19 +3915,71 @@
                     },
                     {
                       "type": "frame",
-                      "id": "bb2TH",
-                      "name": "RT C2 1",
-                      "width": 200,
+                      "id": "luu0D",
+                      "name": "Thumb Pair",
+                      "width": 142,
+                      "gap": 6,
+                      "alignItems": "center",
                       "children": [
                         {
-                          "type": "text",
-                          "id": "p57hMQ",
-                          "name": "RT Type 1",
-                          "fill": "$ink-secondary",
-                          "content": "現行サイト vs Figma",
-                          "fontFamily": "$font-body",
-                          "fontSize": 13,
-                          "fontWeight": "normal"
+                          "type": "frame",
+                          "id": "N9Mzd4",
+                          "name": "Wrap A",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "TUrPi",
+                              "name": "Thumb A",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "getswello",
+                                "link": "https://unsplash.com/@getswello",
+                                "author": "Swello"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1644317167929-be46b2904f4b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODI2NTZ8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "RTHnb",
+                          "name": "Wrap B",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "ovMzj",
+                              "name": "Thumb B",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "teamnocoloco",
+                                "link": "https://unsplash.com/@teamnocoloco",
+                                "author": "Team Nocoloco"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1648134859179-ed0c98f54519?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODI2NTd8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5
+                            }
+                          ]
                         }
                       ]
                     },
@@ -4101,14 +4036,14 @@
                       "type": "frame",
                       "id": "Z2cvhY",
                       "name": "RT C5 1",
-                      "width": 96,
+                      "width": 120,
                       "children": [
                         {
                           "type": "text",
                           "id": "naQWE",
                           "name": "RT Date 1",
                           "fill": "$ink-muted",
-                          "content": "06/22",
+                          "content": "06/22 09:15",
                           "fontFamily": "$font-mono",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -4127,6 +4062,7 @@
                     "top": 1
                   },
                   "strokeAlignment": "inner",
+                  "gap": 24,
                   "padding": [
                     15,
                     20
@@ -4135,14 +4071,16 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "lWXJc",
+                      "id": "KHaD4",
                       "name": "RT C1 2",
                       "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "jAOWM",
-                          "name": "RT Name 2",
+                          "id": "Z5o9e",
+                          "name": "RT Name",
                           "fill": "$ink-primary",
                           "content": "申込フォーム 簡略化",
                           "fontFamily": "$font-body",
@@ -4153,19 +4091,71 @@
                     },
                     {
                       "type": "frame",
-                      "id": "KkPJN",
-                      "name": "RT C2 2",
-                      "width": 200,
+                      "id": "iDYM7",
+                      "name": "Thumb Pair",
+                      "width": 142,
+                      "gap": 6,
+                      "alignItems": "center",
                       "children": [
                         {
-                          "type": "text",
-                          "id": "GX8UA",
-                          "name": "RT Type 2",
-                          "fill": "$ink-secondary",
-                          "content": "Figma 2案を比較",
-                          "fontFamily": "$font-body",
-                          "fontSize": 13,
-                          "fontWeight": "normal"
+                          "type": "frame",
+                          "id": "ODcBg",
+                          "name": "Wrap A",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "KGOrt",
+                              "name": "Thumb A",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "nickkarvounis",
+                                "link": "https://unsplash.com/@nickkarvounis",
+                                "author": "Nick Karvounis"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1505685296765-3a2736de412f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODI2NTh8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "yBCoU",
+                          "name": "Wrap B",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Aobjr",
+                              "name": "Thumb B",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "markuswinkler",
+                                "link": "https://unsplash.com/@markuswinkler",
+                                "author": "Markus Winkler"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1590935216109-8d3318de2c1c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODI2NTl8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5
+                            }
+                          ]
                         }
                       ]
                     },
@@ -4222,14 +4212,14 @@
                       "type": "frame",
                       "id": "OnPe1",
                       "name": "RT C5 2",
-                      "width": 96,
+                      "width": 120,
                       "children": [
                         {
                           "type": "text",
                           "id": "j10i7",
                           "name": "RT Date 2",
                           "fill": "$ink-muted",
-                          "content": "06/20",
+                          "content": "06/20 17:48",
                           "fontFamily": "$font-mono",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -4248,6 +4238,7 @@
                     "top": 1
                   },
                   "strokeAlignment": "inner",
+                  "gap": 24,
                   "padding": [
                     15,
                     20
@@ -4256,14 +4247,16 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "q2UBdL",
+                      "id": "R0cg7W",
                       "name": "RT C1 3",
                       "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "WrDtQ",
-                          "name": "RT Name 3",
+                          "id": "WSHUT",
+                          "name": "RT Name",
                           "fill": "$ink-primary",
                           "content": "トップ ヒーロー改善",
                           "fontFamily": "$font-body",
@@ -4274,19 +4267,71 @@
                     },
                     {
                       "type": "frame",
-                      "id": "icOTY",
-                      "name": "RT C2 3",
-                      "width": 200,
+                      "id": "XgKyU",
+                      "name": "Thumb Pair",
+                      "width": 142,
+                      "gap": 6,
+                      "alignItems": "center",
                       "children": [
                         {
-                          "type": "text",
-                          "id": "z0osS3",
-                          "name": "RT Type 3",
-                          "fill": "$ink-secondary",
-                          "content": "Figma 2案を比較",
-                          "fontFamily": "$font-body",
-                          "fontSize": 13,
-                          "fontWeight": "normal"
+                          "type": "frame",
+                          "id": "z1CVqu",
+                          "name": "Wrap A",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "K54KB",
+                              "name": "Thumb A",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "kutanural",
+                                "link": "https://unsplash.com/@kutanural",
+                                "author": "Kutan Ural"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1591957971546-ac76c69146d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODI2Njd8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "BcG18",
+                          "name": "Wrap B",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Iv4az",
+                              "name": "Thumb B",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "andrewtneel",
+                                "link": "https://unsplash.com/@andrewtneel",
+                                "author": "Andrew Neel"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1679403766682-3b31efa571a8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODI2NjB8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5
+                            }
+                          ]
                         }
                       ]
                     },
@@ -4343,14 +4388,14 @@
                       "type": "frame",
                       "id": "a6zDQt",
                       "name": "RT C5 3",
-                      "width": 96,
+                      "width": 120,
                       "children": [
                         {
                           "type": "text",
                           "id": "Iutgn",
                           "name": "RT Date 3",
                           "fill": "$ink-muted",
-                          "content": "06/18",
+                          "content": "06/18 11:03",
                           "fontFamily": "$font-mono",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -4369,6 +4414,7 @@
                     "top": 1
                   },
                   "strokeAlignment": "inner",
+                  "gap": 24,
                   "padding": [
                     15,
                     20
@@ -4377,14 +4423,16 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "ysq2s",
+                      "id": "E6hE6g",
                       "name": "RT C1 4",
                       "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "llGQ8",
-                          "name": "RT Name 4",
+                          "id": "M82ae",
+                          "name": "RT Name",
                           "fill": "$ink-primary",
                           "content": "価格表レイアウト",
                           "fontFamily": "$font-body",
@@ -4395,19 +4443,71 @@
                     },
                     {
                       "type": "frame",
-                      "id": "S4gEQ5",
-                      "name": "RT C2 4",
-                      "width": 200,
+                      "id": "ZRP38",
+                      "name": "Thumb Pair",
+                      "width": 142,
+                      "gap": 6,
+                      "alignItems": "center",
                       "children": [
                         {
-                          "type": "text",
-                          "id": "S5WoqM",
-                          "name": "RT Type 4",
-                          "fill": "$ink-secondary",
-                          "content": "現行サイト vs Figma",
-                          "fontFamily": "$font-body",
-                          "fontSize": 13,
-                          "fontWeight": "normal"
+                          "type": "frame",
+                          "id": "V9zQV",
+                          "name": "Wrap A",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "BPzDg",
+                              "name": "Thumb A",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "markfarias",
+                                "link": "https://unsplash.com/@markfarias",
+                                "author": "Mark Farías"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1605239635283-751d5117f558?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODI2NjF8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FsQxj",
+                          "name": "Wrap B",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "x0r2i",
+                              "name": "Thumb B",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "klim11",
+                                "link": "https://unsplash.com/@klim11",
+                                "author": "Klim Musalimov"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1622709308333-1a2d1b2e38dd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODI2NjF8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5
+                            }
+                          ]
                         }
                       ]
                     },
@@ -4464,14 +4564,14 @@
                       "type": "frame",
                       "id": "ED8RC",
                       "name": "RT C5 4",
-                      "width": 96,
+                      "width": 120,
                       "children": [
                         {
                           "type": "text",
                           "id": "gc25P",
                           "name": "RT Date 4",
                           "fill": "$ink-muted",
-                          "content": "06/15",
+                          "content": "06/15 09:30",
                           "fontFamily": "$font-mono",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -13497,6 +13597,1428 @@
                   "fontFamily": "$font-body",
                   "fontSize": 12,
                   "fontWeight": "600"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "cBcyL",
+      "x": 3576,
+      "y": 1840,
+      "name": "S5a 結果一覧",
+      "clip": true,
+      "width": 1440,
+      "height": 1024,
+      "fill": "$surface-page",
+      "children": [
+        {
+          "id": "H9u87",
+          "type": "ref",
+          "ref": "mliWa",
+          "name": "Sidebar",
+          "height": "fill_container",
+          "descendants": {
+            "Bsvbm": {
+              "fill": "$accent-soft"
+            },
+            "k7Xyp": {
+              "fill": "$accent"
+            },
+            "XQcEf": {
+              "fill": "$accent",
+              "fontWeight": "600"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "LU1Ok",
+          "name": "Main",
+          "clip": true,
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 24,
+          "padding": [
+            32,
+            40
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "SQHBp",
+              "name": "Page Header",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "KmLBd",
+                  "name": "Title Col",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "JqmEB",
+                      "name": "Title",
+                      "fill": "$ink-primary",
+                      "content": "結果レポート",
+                      "fontFamily": "$font-heading",
+                      "fontSize": 28,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ylKaa",
+                      "name": "Subtitle",
+                      "fill": "$ink-secondary",
+                      "content": "A/B テスト一覧",
+                      "fontFamily": "$font-body",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "id": "RSlwK",
+                  "type": "ref",
+                  "ref": "OjDF3",
+                  "name": "New Test Btn",
+                  "descendants": {
+                    "pCKxb": {
+                      "content": "新しいA/Bテスト"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bybB3",
+              "name": "Toolbar",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "lpAwq",
+                  "name": "Search Bar",
+                  "width": 340,
+                  "fill": "$surface-card",
+                  "cornerRadius": "$radius-sm",
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "L0QlXk",
+                      "name": "Search Icon",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "search",
+                      "library": "lucide",
+                      "fill": "$ink-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "LR8UA",
+                      "name": "Search Placeholder",
+                      "fill": "$ink-muted",
+                      "content": "テスト名・ステータスで検索",
+                      "fontFamily": "$font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "GfTQ8",
+                  "name": "Count",
+                  "fill": "$ink-secondary",
+                  "content": "5件",
+                  "fontFamily": "$font-body",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "BIIB5",
+              "name": "Table",
+              "clip": true,
+              "width": "fill_container",
+              "fill": "$surface-card",
+              "cornerRadius": "$radius-md",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "wyCJ6",
+                  "name": "Table Header",
+                  "width": "fill_container",
+                  "fill": "$surface-subtle",
+                  "padding": [
+                    10,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "BqauI",
+                      "name": "Chk Cell",
+                      "width": 36,
+                      "height": 15,
+                      "fill": "$border",
+                      "cornerRadius": 3
+                    },
+                    {
+                      "type": "frame",
+                      "id": "LhCOR",
+                      "name": "AB+Name Col",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "WxI9n",
+                          "name": "Hdr Name",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "JeKSN",
+                              "name": "Name Lbl",
+                              "fill": "$ink-muted",
+                              "content": "テスト名",
+                              "fontFamily": "$font-mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.5
+                            },
+                            {
+                              "type": "icon",
+                              "id": "o5VutG",
+                              "name": "Sort Icon",
+                              "width": 12,
+                              "height": 12,
+                              "icon": "chevrons-up-down",
+                              "library": "lucide",
+                              "fill": "$ink-muted"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "RybLk",
+                          "name": "Hdr AB",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "BtpZG",
+                              "name": "Hdr A",
+                              "width": 68,
+                              "justifyContent": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Vk48b",
+                                  "name": "A Label",
+                                  "fill": "$variant-a",
+                                  "content": "A",
+                                  "fontFamily": "$font-mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "MGhps",
+                              "name": "Hdr B",
+                              "width": 68,
+                              "justifyContent": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ZfNLa",
+                                  "name": "B Label",
+                                  "fill": "$variant-b",
+                                  "content": "B",
+                                  "fontFamily": "$font-mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PRqW7",
+                      "name": "Hdr Persona",
+                      "width": 80,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "O0ard",
+                          "name": "Persona Lbl",
+                          "fill": "$ink-muted",
+                          "content": "ペルソナ",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal",
+                          "letterSpacing": 0.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "J1WGr",
+                      "name": "Hdr Status",
+                      "width": 110,
+                      "gap": 4,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "U495q",
+                          "name": "Status Lbl",
+                          "fill": "$ink-muted",
+                          "content": "ステータス",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal",
+                          "letterSpacing": 0.5
+                        },
+                        {
+                          "type": "icon",
+                          "id": "wdirc",
+                          "name": "Sort Icon 2",
+                          "width": 12,
+                          "height": 12,
+                          "icon": "chevrons-up-down",
+                          "library": "lucide",
+                          "fill": "$ink-muted"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "m9ftbQ",
+                      "name": "Hdr Date",
+                      "width": 120,
+                      "gap": 4,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vP6Tf",
+                          "name": "Date Lbl",
+                          "fill": "$ink-muted",
+                          "content": "日時",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal",
+                          "letterSpacing": 0.5
+                        },
+                        {
+                          "type": "icon",
+                          "id": "aM1Ww",
+                          "name": "Date Sort Icon",
+                          "width": 12,
+                          "height": 12,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "$ink-secondary"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "e8SIY",
+                      "name": "Hdr Actions",
+                      "width": 64,
+                      "height": "fit_content(0)"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pHloQ",
+                  "name": "Row 0",
+                  "width": "fill_container",
+                  "padding": [
+                    13,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "WgyLN",
+                      "name": "Chk",
+                      "width": 36,
+                      "height": 15,
+                      "fill": "$border",
+                      "cornerRadius": 3
+                    },
+                    {
+                      "type": "frame",
+                      "id": "S1chf0",
+                      "name": "AB+Name 0",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "EoEuC",
+                          "name": "Name 0",
+                          "fill": "$ink-primary",
+                          "content": "LP改修案の比較",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "X5Dgs",
+                          "name": "Thumb Pair 0",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "FwBlj",
+                              "name": "Thumb A 0",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "introspectivedsgn",
+                                "link": "https://unsplash.com/@introspectivedsgn",
+                                "author": "Erik Mclean"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1584824486509-112e4181ff6b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODUzMTR8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5,
+                              "stroke": "$border",
+                              "strokeWidth": 1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "vVrGt",
+                              "name": "Thumb B 0",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "helloimnik",
+                                "link": "https://unsplash.com/@helloimnik",
+                                "author": "Nik"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1643639779508-4c60952c058c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODUzMTV8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5,
+                              "stroke": "$border",
+                              "strokeWidth": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pzkns",
+                      "name": "Persona 0",
+                      "width": 80,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ZgZaK",
+                          "name": "Count 0",
+                          "fill": "$ink-secondary",
+                          "content": "3人",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "QsDvD",
+                      "name": "Status 0",
+                      "width": 110,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "GEqpE",
+                          "name": "Chip 0",
+                          "fill": "$variant-a-soft",
+                          "cornerRadius": "$radius-full",
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Q0IkEM",
+                              "name": "Chip Lbl 0",
+                              "fill": "$variant-a",
+                              "content": "完了",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "dJSRN",
+                      "name": "Date 0",
+                      "width": 120,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "FcJI0",
+                          "name": "Date Text 0",
+                          "fill": "$ink-muted",
+                          "content": "06/24 14:32",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vU9MH",
+                      "name": "Actions 0",
+                      "width": 64,
+                      "gap": 8,
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "MIEfp",
+                          "name": "Del 0",
+                          "width": 28,
+                          "height": 28,
+                          "cornerRadius": "$radius-sm",
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "TEpkx",
+                              "name": "Trash 0",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "trash-2",
+                              "library": "lucide",
+                              "fill": "#000000"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "icon",
+                          "id": "pqkQ8",
+                          "name": "Arrow 0",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "arrow-right",
+                          "library": "lucide",
+                          "fill": "$ink-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "GVLWo",
+                  "name": "Row 1",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    13,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "AHOqO",
+                      "name": "Chk",
+                      "width": 36,
+                      "height": 15,
+                      "fill": "$border",
+                      "cornerRadius": 3
+                    },
+                    {
+                      "type": "frame",
+                      "id": "z39iEr",
+                      "name": "AB+Name 1",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TBWvP",
+                          "name": "Name 1",
+                          "fill": "$ink-primary",
+                          "content": "商品ページ リニューアル",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "h6KgO",
+                          "name": "Thumb Pair 1",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "p8c2gL",
+                              "name": "Thumb A 1",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "wsmajd",
+                                "link": "https://unsplash.com/@wsmajd",
+                                "author": "Wahyu Suryo Majid"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1672890881478-2b2f56969aa2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODUzMTZ8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5,
+                              "stroke": "$border",
+                              "strokeWidth": 1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "VjVSf",
+                              "name": "Thumb B 1",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "ravi1512",
+                                "link": "https://unsplash.com/@ravi1512",
+                                "author": "Ravi Kiran"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1667538881328-b120759ff6b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODUzMTZ8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5,
+                              "stroke": "$border",
+                              "strokeWidth": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "CK5tL",
+                      "name": "Persona 1",
+                      "width": 80,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mScxq",
+                          "name": "Count 1",
+                          "fill": "$ink-secondary",
+                          "content": "4人",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "c7pNUS",
+                      "name": "Status 1",
+                      "width": 110,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "RSPHo",
+                          "name": "Chip 1",
+                          "fill": "$variant-b-soft",
+                          "cornerRadius": "$radius-full",
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "kfmDC",
+                              "name": "Chip Lbl 1",
+                              "fill": "$variant-b",
+                              "content": "完了",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fjLfI",
+                      "name": "Date 1",
+                      "width": 120,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "db5lM",
+                          "name": "Date Text 1",
+                          "fill": "$ink-muted",
+                          "content": "06/22 09:15",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "U7018",
+                      "name": "Actions 1",
+                      "width": 64,
+                      "gap": 8,
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "t2eSYt",
+                          "name": "Del 1",
+                          "width": 28,
+                          "height": 28,
+                          "cornerRadius": "$radius-sm",
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "DW0Te",
+                              "name": "Trash 1",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "trash-2",
+                              "library": "lucide",
+                              "fill": "#000000"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "icon",
+                          "id": "sYsY2",
+                          "name": "Arrow 1",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "arrow-right",
+                          "library": "lucide",
+                          "fill": "$ink-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "IVkeX",
+                  "name": "Row 2",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    13,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Lc22Q",
+                      "name": "Chk",
+                      "width": 36,
+                      "height": 15,
+                      "fill": "$border",
+                      "cornerRadius": 3
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FnW3j",
+                      "name": "AB+Name 2",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "F5VTW",
+                          "name": "Name 2",
+                          "fill": "$ink-primary",
+                          "content": "申込フォーム 簡略化",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "G87td",
+                          "name": "Thumb Pair 2",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "EDPph",
+                              "name": "Thumb A 2",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "silverkblack",
+                                "link": "https://unsplash.com/@silverkblack",
+                                "author": "Vitaly Gariev"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1758599668338-4c55a3bd0ce0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODUzMTd8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5,
+                              "stroke": "$border",
+                              "strokeWidth": 1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "cqW9D",
+                              "name": "Thumb B 2",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "markuswinkler",
+                                "link": "https://unsplash.com/@markuswinkler",
+                                "author": "Markus Winkler"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1586281380901-171d7fd8b6db?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODUzMTd8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5,
+                              "stroke": "$border",
+                              "strokeWidth": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qWXWb",
+                      "name": "Persona 2",
+                      "width": 80,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GpJwx",
+                          "name": "Count 2",
+                          "fill": "$ink-secondary",
+                          "content": "3人",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "h5rhQq",
+                      "name": "Status 2",
+                      "width": 110,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "s5YWP",
+                          "name": "Chip 2",
+                          "fill": "$accent-soft",
+                          "cornerRadius": "$radius-full",
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "n5sz6",
+                              "name": "Chip Lbl 2",
+                              "fill": "$accent",
+                              "content": "実行中",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Et4vR",
+                      "name": "Date 2",
+                      "width": 120,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "BEdjE",
+                          "name": "Date Text 2",
+                          "fill": "$ink-muted",
+                          "content": "06/20 17:48",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "S3XUl",
+                      "name": "Actions 2",
+                      "width": 64,
+                      "gap": 8,
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "hzklO",
+                          "name": "Del 2",
+                          "width": 28,
+                          "height": 28,
+                          "cornerRadius": "$radius-sm",
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "MeSrH",
+                              "name": "Trash 2",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "trash-2",
+                              "library": "lucide",
+                              "fill": "#000000"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "icon",
+                          "id": "qmSz4",
+                          "name": "Arrow 2",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "arrow-right",
+                          "library": "lucide",
+                          "fill": "$ink-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ltOiX",
+                  "name": "Row 3",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    13,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "woS9s",
+                      "name": "Chk",
+                      "width": 36,
+                      "height": 15,
+                      "fill": "$border",
+                      "cornerRadius": 3
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mxoua",
+                      "name": "AB+Name 3",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vYfBH",
+                          "name": "Name 3",
+                          "fill": "$ink-primary",
+                          "content": "トップ ヒーロー改善",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "tAixR",
+                          "name": "Thumb Pair 3",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "G4dydv",
+                              "name": "Thumb A 3",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "kobuagency",
+                                "link": "https://unsplash.com/@kobuagency",
+                                "author": "KOBU Agency"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1587401048173-456fe247f0ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODU2ODl8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5,
+                              "stroke": "$border",
+                              "strokeWidth": 1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "pjzay",
+                              "name": "Thumb B 3",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "gavinspavin",
+                                "link": "https://unsplash.com/@gavinspavin",
+                                "author": "Gavin Phillips"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1778010955462-5b1c52059848?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODU2OTB8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5,
+                              "stroke": "$border",
+                              "strokeWidth": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Tcsdu",
+                      "name": "Persona 3",
+                      "width": 80,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "YUHMo",
+                          "name": "Count 3",
+                          "fill": "$ink-secondary",
+                          "content": "5人",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "R4UFue",
+                      "name": "Status 3",
+                      "width": 110,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "rSv9F",
+                          "name": "Chip 3",
+                          "fill": "$surface-subtle",
+                          "cornerRadius": "$radius-full",
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "h8I5Po",
+                              "name": "Chip Lbl 3",
+                              "fill": "$ink-muted",
+                              "content": "下書き",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "dX7go",
+                      "name": "Date 3",
+                      "width": 120,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "pT9wN",
+                          "name": "Date Text 3",
+                          "fill": "$ink-muted",
+                          "content": "06/18 11:03",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "X7RAWL",
+                      "name": "Actions 3",
+                      "width": 64,
+                      "gap": 8,
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "qwmf1",
+                          "name": "Del 3",
+                          "width": 28,
+                          "height": 28,
+                          "cornerRadius": "$radius-sm",
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "QPpSH",
+                              "name": "Trash 3",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "trash-2",
+                              "library": "lucide",
+                              "fill": "#000000"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "icon",
+                          "id": "AUzqz",
+                          "name": "Arrow 3",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "arrow-right",
+                          "library": "lucide",
+                          "fill": "$ink-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "b0ps1",
+                  "name": "Row 4",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    13,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "cMvf4",
+                      "name": "Chk",
+                      "width": 36,
+                      "height": 15,
+                      "fill": "$border",
+                      "cornerRadius": 3
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lWySj",
+                      "name": "AB+Name 4",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KAdai",
+                          "name": "Name 4",
+                          "fill": "$ink-primary",
+                          "content": "価格表レイアウト",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Zn7u8",
+                          "name": "Thumb Pair 4",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "uP6Gw",
+                              "name": "Thumb A 4",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "justatony",
+                                "link": "https://unsplash.com/@justatony",
+                                "author": "Tony Litvyak"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1655813710748-138746ffca54?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODUzMTh8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5,
+                              "stroke": "$border",
+                              "strokeWidth": 1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "m5sfrT",
+                              "name": "Thumb B 4",
+                              "metadata": {
+                                "type": "unsplash",
+                                "username": "sepiatone",
+                                "link": "https://unsplash.com/@sepiatone",
+                                "author": "Bret Lama"
+                              },
+                              "width": 68,
+                              "height": 40,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1728512551511-bf4764b31159?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODIzODUzMTl8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "fill"
+                              },
+                              "cornerRadius": 5,
+                              "stroke": "$border",
+                              "strokeWidth": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AxAHE",
+                      "name": "Persona 4",
+                      "width": 80,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jlhAd",
+                          "name": "Count 4",
+                          "fill": "$ink-secondary",
+                          "content": "2人",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "yY0Zq",
+                      "name": "Status 4",
+                      "width": 110,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "BP781",
+                          "name": "Chip 4",
+                          "fill": "$variant-a-soft",
+                          "cornerRadius": "$radius-full",
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "l9LMt",
+                              "name": "Chip Lbl 4",
+                              "fill": "$variant-a",
+                              "content": "完了",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "f5Q1S",
+                      "name": "Date 4",
+                      "width": 120,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "H0rjf",
+                          "name": "Date Text 4",
+                          "fill": "$ink-muted",
+                          "content": "06/15 09:30",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MQMoO",
+                      "name": "Actions 4",
+                      "width": 64,
+                      "gap": 8,
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "AxKit",
+                          "name": "Del 4",
+                          "width": 28,
+                          "height": 28,
+                          "cornerRadius": "$radius-sm",
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "H9YZMq",
+                              "name": "Trash 4",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "trash-2",
+                              "library": "lucide",
+                              "fill": "#000000"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "icon",
+                          "id": "W3PUlT",
+                          "name": "Arrow 4",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "arrow-right",
+                          "library": "lucide",
+                          "fill": "$ink-muted"
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }

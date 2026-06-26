@@ -1,9 +1,22 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
-import { ABTEST_STATUS_LABELS, type ABTestStatus, type ABTest } from '../types';
+import { ABTEST_STATUS_LABELS, type ABTestStatus, type ABTest, type DesignInput } from '../types';
 import { Plus, ArrowRight, Search, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { testDraft, type DesignSideData } from '../lib/testDraft';
+import { API_BASE } from '../api/client';
+
+function DesignThumb({ input, label }: { input: DesignInput; label: string }) {
+  const src = input.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
+  return (
+    <div
+      className="overflow-hidden flex-shrink-0"
+      style={{ width: 68, height: 40, borderRadius: 5, background: '#F0F1F3', border: '1px solid #E6E6E8' }}
+    >
+      {src && <img src={src} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+    </div>
+  );
+}
 
 const STATUS_COLORS: Record<ABTestStatus, { bg: string; text: string }> = {
   draft: { bg: '#F0F1F3', text: '#666666' },
@@ -219,15 +232,18 @@ export function TestListPage() {
 
             <button
               type="button"
-              className="flex items-center gap-1 flex-1"
+              className="flex items-center gap-1 flex-1 min-w-0"
               onClick={() => toggleSort('title')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             >
               <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>テスト名</span>
               <SortIcon col="title" sortKey={sortKey} sortDir={sortDir} />
             </button>
+            <div style={{ width: 170, flexShrink: 0 }}>
+              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>プレビュー</span>
+            </div>
 
-            <div style={{ width: 80, flexShrink: 0 }}>
+            <div style={{ width: 90, flexShrink: 0 }}>
               <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>ペルソナ</span>
             </div>
 
@@ -235,7 +251,7 @@ export function TestListPage() {
               type="button"
               className="flex items-center gap-1"
               onClick={() => toggleSort('status')}
-              style={{ width: 110, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              style={{ width: 140, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             >
               <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>ステータス</span>
               <SortIcon col="status" sortKey={sortKey} sortDir={sortDir} />
@@ -245,9 +261,9 @@ export function TestListPage() {
               type="button"
               className="flex items-center gap-1"
               onClick={() => toggleSort('createdAt')}
-              style={{ width: 90, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              style={{ width: 120, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             >
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>日付</span>
+              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>日時</span>
               <SortIcon col="createdAt" sortKey={sortKey} sortDir={sortDir} />
             </button>
 
@@ -292,7 +308,7 @@ export function TestListPage() {
                     />
                   </div>
 
-                  <div className="flex-1 min-w-0">
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
                     <span
                       className="block truncate"
                       style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500 }}
@@ -300,14 +316,19 @@ export function TestListPage() {
                       {test.title}
                     </span>
                   </div>
+                  <div className="flex items-center flex-shrink-0" style={{ width: 170, gap: 8 }}>
+                    <DesignThumb input={test.designAInput} label="A" />
+                    <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>vs</span>
+                    <DesignThumb input={test.designBInput} label="B" />
+                  </div>
 
-                  <div style={{ width: 80, flexShrink: 0 }}>
+                  <div style={{ width: 90, flexShrink: 0 }}>
                     <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
                       {test.personaIds.length}人
                     </span>
                   </div>
 
-                  <div style={{ width: 110, flexShrink: 0 }}>
+                  <div style={{ width: 140, flexShrink: 0 }}>
                     <span
                       className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium"
                       style={{ background: colors.bg, color: colors.text, borderRadius: 9999, fontSize: 11 }}
@@ -316,9 +337,9 @@ export function TestListPage() {
                     </span>
                   </div>
 
-                  <div style={{ width: 90, flexShrink: 0 }}>
+                  <div style={{ width: 120, flexShrink: 0 }}>
                     <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 12 }}>
-                      {new Date(test.createdAt).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' })}
+                      {new Date(test.createdAt).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
 
