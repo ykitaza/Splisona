@@ -28,7 +28,7 @@ const evaluateDesignsTool: any = {
       json: {
         type: "object",
         properties: {
-          winner: { type: "string", enum: ["A", "B"] },
+          winner: { type: "string", enum: ["A", "B", "none"] },
           confidence: { type: "number", minimum: 0, maximum: 100 },
           reason: { type: "string" },
           scores: {
@@ -79,20 +79,27 @@ async function evaluateOnePersona(
 
   const personaDisplayName = persona?.displayName ?? personaId;
   const imageBucket = process.env.IMAGE_BUCKET ?? "chorus-images";
-  const prompt = `あなたは「${personaDisplayName}」というペルソナです。
-タイプ: ${persona?.type ?? "consumer"}
-${persona?.occupation ? `職業: ${persona.occupation}` : ""}
-${persona?.freeText ? `詳細: ${persona.freeText}` : ""}
-
-以下の2つのデザインを評価してください。
-デザインA: s3://${imageBucket}/${imageKeyA}
-デザインB: s3://${imageBucket}/${imageKeyB}
-
-あなたのペルソナ視点から、どちらのデザインが優れているか evaluate_designs ツールを使って評価してください。`;
+  const prompt = [
+    `あなたは「${personaDisplayName}」というペルソナです。`,
+    `タイプ: ${persona?.type ?? "consumer"}`,
+    persona?.occupation ? `職業: ${persona.occupation}` : null,
+    persona?.freeText ? `詳細: ${persona.freeText}` : null,
+    "",
+    "最初の画像がデザインA、次の画像がデザインBです。",
+    "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。reason は必ず日本語で記述してください。",
+  ].filter((l) => l !== null).join("\n");
 
   const command = new ConverseCommand({
     modelId: MODEL_ID,
-    messages: [{ role: "user", content: [{ text: prompt }] }],
+    inferenceConfig: { temperature: 0.2 },
+    messages: [{
+      role: "user",
+      content: [
+        { text: prompt },
+        { image: { format: "png", source: { s3Location: { uri: `s3://${imageBucket}/${imageKeyA}` } } } },
+        { image: { format: "png", source: { s3Location: { uri: `s3://${imageBucket}/${imageKeyB}` } } } },
+      ],
+    }],
     toolConfig: {
       tools: [evaluateDesignsTool],
       toolChoice: { tool: { name: "evaluate_designs" } },

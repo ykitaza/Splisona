@@ -4,3 +4,9 @@ dist/
 .env*.local
 *.pen
 !design/chorus.pen
+
+# macOS
+.DS_Store
+
+# Playwright MCP
+.playwright-mcp/

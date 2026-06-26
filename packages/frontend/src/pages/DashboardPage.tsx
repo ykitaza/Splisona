@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
 import { usePersonas } from '../hooks/usePersonas';
 import { ABTEST_STATUS_LABELS, type ABTestStatus } from '../types';
-import { FlaskConical, Users, Scale, CalendarCheck, ArrowRight, Plus } from 'lucide-react';
+import { FlaskConical, Users, CalendarCheck, ArrowRight, Plus } from 'lucide-react';
 
 const STATUS_COLORS: Record<ABTestStatus, { bg: string; text: string }> = {
   draft: { bg: '#F0F1F3', text: '#666666' },
@@ -31,7 +31,6 @@ export function DashboardPage() {
     const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-  const totalPersonasUsed = tests.reduce((sum, t) => sum + t.personaIds.length, 0);
 
   function handleTestClick(testId: string, status: ABTestStatus) {
     if (status === 'running') {
@@ -53,14 +52,7 @@ export function DashboardPage() {
       label: '登録ペルソナ',
       icon: Users,
       value: String(personas.length),
-      sub: `${totalPersonasUsed}件のテストで使用`,
-      subColor: '#9A9A9F',
-    },
-    {
-      label: '平均支持率の差',
-      icon: Scale,
-      value: '—',
-      sub: '評価完了後に表示',
+      sub: '',
       subColor: '#9A9A9F',
     },
     {
@@ -95,7 +87,7 @@ export function DashboardPage() {
       </div>
 
       {/* Metric Row */}
-      <div className="grid grid-cols-4 gap-5">
+      <div className="grid grid-cols-3 gap-5">
         {metrics.map(({ label, icon: Icon, value, sub, subColor }) => (
           <div
             key={label}

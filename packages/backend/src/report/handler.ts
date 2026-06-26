@@ -17,8 +17,8 @@ function toABTest(r: ABTestRecord) {
     userId,
     title: r.title,
     status: r.status,
-    designAInput: { inputType: r.designAInputType, imageKey: r.designAImageKey },
-    designBInput: { inputType: r.designBInputType, imageKey: r.designBImageKey },
+    designAInput: { inputType: r.designAInputType, imageKey: r.designAImageKey, ...(r.designAUrl ? (r.designAInputType === 'figma_url' ? { figmaUrl: r.designAUrl } : { siteUrl: r.designAUrl }) : {}) },
+    designBInput: { inputType: r.designBInputType, imageKey: r.designBImageKey, ...(r.designBUrl ? (r.designBInputType === 'figma_url' ? { figmaUrl: r.designBUrl } : { siteUrl: r.designBUrl }) : {}) },
     personaIds: r.personaIds,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
@@ -35,9 +35,11 @@ function computeSummary(evaluations: EvaluationRecord[], totalPersonas: number) 
 
   const countA = completed.filter((e) => e.winner === "A").length;
   const countB = completed.filter((e) => e.winner === "B").length;
+  const countNone = completed.filter((e) => e.winner === "none").length;
 
   const supportRateA = completedPersonas > 0 ? countA / completedPersonas : 0;
   const supportRateB = completedPersonas > 0 ? countB / completedPersonas : 0;
+  const supportRateNone = completedPersonas > 0 ? countNone / completedPersonas : 0;
 
   const winner: "A" | "B" | "tie" =
     countA > countB ? "A" : countB > countA ? "B" : "tie";
@@ -70,6 +72,7 @@ function computeSummary(evaluations: EvaluationRecord[], totalPersonas: number) 
     winner,
     supportRateA,
     supportRateB,
+    supportRateNone,
     totalPersonas,
     completedPersonas,
     avgScores: {

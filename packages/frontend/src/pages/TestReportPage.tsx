@@ -13,13 +13,15 @@ const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
   engagement: '訴求力',
 };
 
-function DonutChart({ rateA, rateB }: { rateA: number; rateB: number }) {
+function DonutChart({ rateA, rateB, rateNone }: { rateA: number; rateB: number; rateNone: number }) {
   const size = 120;
   const r = 44;
   const cx = size / 2;
   const cy = size / 2;
   const circumference = 2 * Math.PI * r;
   const dashA = circumference * rateA;
+  const dashB = circumference * rateB;
+  const dashNone = circumference * rateNone;
 
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
@@ -28,8 +30,11 @@ function DonutChart({ rateA, rateB }: { rateA: number; rateB: number }) {
         <circle cx={cx} cy={cy} r={r} fill="none" stroke="#3B7DD8" strokeWidth={16}
           strokeDasharray={`${dashA} ${circumference}`} />
         <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E0883A" strokeWidth={16}
-          strokeDasharray={`${circumference * rateB} ${circumference}`}
+          strokeDasharray={`${dashB} ${circumference}`}
           strokeDashoffset={-dashA} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#C4C4C8" strokeWidth={16}
+          strokeDasharray={`${dashNone} ${circumference}`}
+          strokeDashoffset={-(dashA + dashB)} />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700 }}>
@@ -46,10 +51,10 @@ function ScoreBar({ label, scoreA, scoreB }: { label: string; scoreA: number; sc
       <div className="flex items-center justify-between">
         <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>{label}</span>
         <div className="flex items-center gap-3">
-          <span style={{ color: '#3B7DD8', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600 }}>
+          <span style={{ color: '#3B7DD8', fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
             A {scoreA.toFixed(1)}
           </span>
-          <span style={{ color: '#E0883A', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600 }}>
+          <span style={{ color: '#E0883A', fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
             B {scoreB.toFixed(1)}
           </span>
         </div>
@@ -69,22 +74,34 @@ function ScoreBar({ label, scoreA, scoreB }: { label: string; scoreA: number; sc
 function DesignSourceInfo({ input }: { input: DesignInput }) {
   if (input.inputType === 'figma_url') {
     return (
-      <div className="flex items-center gap-1.5 min-w-0">
+      <a
+        href={input.figmaUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 min-w-0 hover:opacity-70 transition-opacity"
+        style={{ color: '#9A9A9F', textDecoration: 'none' }}
+      >
         <PenTool size={13} color="#9A9A9F" style={{ flexShrink: 0 }} />
-        <span className="truncate" style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>
+        <span className="truncate" style={{ fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>
           {input.figmaUrl ?? 'Figma URL'}
         </span>
-      </div>
+      </a>
     );
   }
   if (input.inputType === 'site_url') {
     return (
-      <div className="flex items-center gap-1.5 min-w-0">
+      <a
+        href={input.siteUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 min-w-0 hover:opacity-70 transition-opacity"
+        style={{ color: '#9A9A9F', textDecoration: 'none' }}
+      >
         <Globe size={13} color="#9A9A9F" style={{ flexShrink: 0 }} />
-        <span className="truncate" style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>
+        <span className="truncate" style={{ fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>
           {input.siteUrl ?? 'サイトURL'}
         </span>
-      </div>
+      </a>
     );
   }
   return (
@@ -215,6 +232,7 @@ export function TestReportPage() {
   const winnerLabel =
     summary.winner === 'tie' ? '引き分け' : `${summary.winner}案の勝ち`;
   const winnerColor = summary.winner === 'A' ? '#3B7DD8' : summary.winner === 'B' ? '#E0883A' : '#9A9A9F';
+  const pctNone = Math.round((summary.supportRateNone ?? 0) * 100);
 
   const supportCountA = Math.round(summary.supportRateA * summary.totalPersonas);
   const supportCountB = Math.round(summary.supportRateB * summary.totalPersonas);
@@ -262,9 +280,9 @@ export function TestReportPage() {
         </div>
       </div>
 
-      {/* Verdict Card */}
+      {/* Verdict Card（比較したデザインを統合） */}
       <div
-        className="flex flex-col gap-6 rounded-md p-7"
+        className="flex flex-col gap-6 rounded-md p-6"
         style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
       >
         <div className="flex items-start justify-between">
@@ -286,12 +304,18 @@ export function TestReportPage() {
                 <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 9999, background: '#E0883A' }} />
                 <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>B: {pctB}%</span>
               </span>
+              {pctNone > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 9999, background: '#C4C4C8' }} />
+                  <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>なし: {pctNone}%</span>
+                </span>
+              )}
               <span style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
                 {summary.completedPersonas}/{summary.totalPersonas}人が評価完了
               </span>
             </div>
           </div>
-          <DonutChart rateA={summary.supportRateA} rateB={summary.supportRateB} />
+          <DonutChart rateA={summary.supportRateA} rateB={summary.supportRateB} rateNone={summary.supportRateNone ?? 0} />
         </div>
 
         {summary.winnersReasonSummary && (
@@ -305,43 +329,36 @@ export function TestReportPage() {
             </p>
           </div>
         )}
-      </div>
 
-      {/* 比較したデザイン */}
-      <div className="flex flex-col gap-3">
-        <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 600 }}>
-          比較したデザイン
-        </span>
-        <div className="flex items-center gap-4 min-w-0">
-          <DesignCard
-            side="A"
-            input={abTest.designAInput}
-            isWinner={summary.winner === 'A'}
-            supportRate={summary.supportRateA}
-            supportCount={supportCountA}
-            totalCount={summary.totalPersonas}
-          />
-          <div
-            className="flex items-center justify-center flex-shrink-0"
-            style={{ width: 40, height: 40, borderRadius: 9999, background: '#FFFFFF', border: '1px solid #D4D4D8' }}
-          >
-            <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600 }}>
-              VS
-            </span>
+        <div style={{ borderTop: '1px solid #E6E6E8' }} />
+
+        <div className="flex flex-col gap-3">
+          <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>
+            比較したデザイン
+          </span>
+          <div className="flex items-center gap-6 min-w-0">
+            <DesignCard
+              side="A"
+              input={abTest.designAInput}
+              isWinner={summary.winner === 'A'}
+              supportRate={summary.supportRateA}
+              supportCount={supportCountA}
+              totalCount={summary.totalPersonas}
+            />
+<DesignCard
+              side="B"
+              input={abTest.designBInput}
+              isWinner={summary.winner === 'B'}
+              supportRate={summary.supportRateB}
+              supportCount={supportCountB}
+              totalCount={summary.totalPersonas}
+            />
           </div>
-          <DesignCard
-            side="B"
-            input={abTest.designBInput}
-            isWinner={summary.winner === 'B'}
-            supportRate={summary.supportRateB}
-            supportCount={supportCountB}
-            totalCount={summary.totalPersonas}
-          />
         </div>
       </div>
 
       {/* Summary Row: 評価のまとめ + 評価軸別の比較 */}
-      <div className="flex gap-5">
+      <div className="flex gap-6">
         {/* 評価のまとめ */}
         <div
           className="flex flex-col gap-4 rounded-md p-6 flex-1"
@@ -374,11 +391,11 @@ export function TestReportPage() {
                   <span
                     className="rounded-full px-2 py-0.5 text-xs font-semibold flex-shrink-0 mt-0.5"
                     style={{
-                      background: ev.winner === 'A' ? '#E8F0FB' : '#FBF0E4',
-                      color: ev.winner === 'A' ? '#3B7DD8' : '#E0883A',
+                      background: ev.winner === 'A' ? '#E8F0FB' : ev.winner === 'B' ? '#FBF0E4' : '#F0F1F3',
+                      color: ev.winner === 'A' ? '#3B7DD8' : ev.winner === 'B' ? '#E0883A' : '#9A9A9F',
                     }}
                   >
-                    {ev.winner}案
+                    {ev.winner === 'none' ? 'なし' : `${ev.winner}案`}
                   </span>
                   <p style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 12, lineHeight: 1.5 }}>
                     {ev.personaDisplayName}: {ev.reason}
@@ -419,12 +436,12 @@ export function TestReportPage() {
         >
           <div
             className="flex items-center"
-            style={{ background: '#F0F1F3', padding: '12px 20px' }}
+            style={{ background: '#F0F1F3', padding: '12px 16px' }}
           >
-            <div style={{ width: 260 }}>
+            <div style={{ width: 180 }}>
               <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>ペルソナ</span>
             </div>
-            <div style={{ width: 120 }}>
+            <div style={{ width: 80 }}>
               <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>勝者</span>
             </div>
             <div className="flex-1">
@@ -437,11 +454,11 @@ export function TestReportPage() {
                 key={ev.personaId}
                 className="flex items-start"
                 style={{
-                  padding: '16px 20px',
+                  padding: '16px 16px',
                   borderTop: i > 0 ? '1px solid #E6E6E8' : 'none',
                 }}
               >
-                <div style={{ width: 260 }}>
+                <div style={{ width: 180 }}>
                   <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500 }}>
                     {ev.personaDisplayName}
                   </span>
@@ -449,17 +466,17 @@ export function TestReportPage() {
                     <span className="block text-xs mt-0.5" style={{ color: '#D64545' }}>失敗</span>
                   )}
                 </div>
-                <div style={{ width: 120 }}>
+                <div style={{ width: 80 }}>
                   {ev.status !== 'failed' && (
                     <span
                       className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold"
                       style={{
-                        background: ev.winner === 'A' ? '#E8F0FB' : '#FBF0E4',
-                        color: ev.winner === 'A' ? '#3B7DD8' : '#E0883A',
+                        background: ev.winner === 'A' ? '#E8F0FB' : ev.winner === 'B' ? '#FBF0E4' : '#F0F1F3',
+                        color: ev.winner === 'A' ? '#3B7DD8' : ev.winner === 'B' ? '#E0883A' : '#9A9A9F',
                         borderRadius: 9999,
                       }}
                     >
-                      {ev.winner}案
+                      {ev.winner === 'none' ? 'なし' : `${ev.winner}案`}
                     </span>
                   )}
                 </div>

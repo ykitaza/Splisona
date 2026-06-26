@@ -31,6 +31,7 @@ const mockReport: ReportResponse = {
     winner: 'A',
     supportRateA: 0.75,
     supportRateB: 0.25,
+    supportRateNone: 0,
     totalPersonas: 4,
     completedPersonas: 4,
     avgScores: {
