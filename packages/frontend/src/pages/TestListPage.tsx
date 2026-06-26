@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
 import { ABTEST_STATUS_LABELS, type ABTestStatus, type ABTest, type DesignInput } from '../types';
-import { Plus, ArrowRight, Search, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Plus, ArrowRight, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { testDraft, type DesignSideData } from '../lib/testDraft';
 import { API_BASE } from '../api/client';
 
@@ -39,30 +39,20 @@ export function TestListPage() {
   const { tests, isLoading, deleteTest, deleteTests } = useABTests();
   const navigate = useNavigate();
 
-  const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const base = q
-      ? tests.filter(
-          (t) =>
-            t.title.toLowerCase().includes(q) ||
-            ABTEST_STATUS_LABELS[t.status].includes(q),
-        )
-      : tests;
-
-    return [...base].sort((a, b) => {
+    return [...tests].sort((a, b) => {
       let cmp = 0;
       if (sortKey === 'title') cmp = a.title.localeCompare(b.title, 'ja');
       else if (sortKey === 'status') cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
       else cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [tests, query, sortKey, sortDir]);
+  }, [tests, sortKey, sortDir]);
 
   function toggleSort(col: SortKey) {
     if (sortKey === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -171,21 +161,6 @@ export function TestListPage() {
 
       {/* Toolbar */}
       <div className="flex items-center gap-3">
-        <div
-          className="flex items-center gap-2 rounded-md px-3 py-2.5"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, flex: 1, maxWidth: 340 }}
-        >
-          <Search size={15} color="#9A9A9F" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="テスト名・ステータスで検索"
-            className="flex-1 bg-transparent text-sm outline-none"
-            style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13 }}
-          />
-        </div>
-
         {someSelected && (
           <button
             type="button"

@@ -31,7 +31,7 @@ const SCATTER_POSITIONS = [
   { x: 76, y: 78 },
 ];
 
-function DesignThumb({ label, imageKey, dotColor }: { label: string; imageKey?: string; dotColor: string }) {
+function DesignThumb({ label, imageKey, dotColor, scanning }: { label: string; imageKey?: string; dotColor: string; scanning?: boolean }) {
   const [lightbox, setLightbox] = useState(false);
   const src = imageKey ? `${API_BASE}/stub-upload/${imageKey}` : null;
 
@@ -49,7 +49,7 @@ function DesignThumb({ label, imageKey, dotColor }: { label: string; imageKey?: 
           </span>
         </div>
         <div
-          className="mx-3 mb-3 overflow-hidden rounded-md flex items-center justify-center"
+          className="relative mx-3 mb-3 overflow-hidden rounded-md flex items-center justify-center"
           style={{ height: 120, background: '#F7F7F8', borderRadius: 6, cursor: src ? 'zoom-in' : 'default' }}
           onClick={() => { if (src) setLightbox(true); }}
         >
@@ -61,6 +61,23 @@ function DesignThumb({ label, imageKey, dotColor }: { label: string; imageKey?: 
             />
           ) : (
             <span style={{ color: '#C4C4C8', fontFamily: 'Geist, sans-serif', fontSize: 12 }}>画像なし</span>
+          )}
+          {scanning && (
+            <div
+              className="absolute inset-0 pointer-events-none overflow-hidden"
+              style={{ borderRadius: 6 }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  height: 48,
+                  background: 'linear-gradient(to bottom, transparent, rgba(59,125,216,0.25) 50%, transparent)',
+                  animation: 'ai-scan 1.8s ease-in-out infinite',
+                }}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -149,11 +166,13 @@ export function TestRunningPage() {
           label="A案"
           imageKey={test?.designAInput?.imageKey}
           dotColor="#3B7DD8"
+          scanning={!isDone}
         />
         <DesignThumb
           label="B案"
           imageKey={test?.designBInput?.imageKey}
           dotColor="#E0883A"
+          scanning={!isDone}
         />
       </div>
 
