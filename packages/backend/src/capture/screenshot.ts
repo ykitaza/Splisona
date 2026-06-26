@@ -18,7 +18,7 @@ export async function captureWebsite(url: string): Promise<Buffer> {
     const page = await browser.newPage();
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(url, { waitUntil: "networkidle", timeout: 15_000 });
-    const buf = await page.screenshot({ type: "png", fullPage: false });
+    const buf = await page.screenshot({ type: "png", fullPage: true });
     return Buffer.from(buf);
   } catch (e) {
     throw new ScreenshotError(`サイトのスクリーンショット取得に失敗しました: ${String(e)}`);
