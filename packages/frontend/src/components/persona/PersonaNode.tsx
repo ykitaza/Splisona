@@ -24,53 +24,43 @@ export function PersonaNode({ seed, size = 44 }: PersonaNodeProps) {
   const h = hashSeed(seed);
   const color = PALETTE[h % PALETTE.length];
 
-  const cells: { x: number; y: number; fill: boolean }[] = [];
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 3; col++) {
-      const bit = (hashSeed(seed + row + col) >>> 0) % 2 === 1;
-      cells.push({ x: col, y: row, fill: bit });
-    }
-  }
+  const grid = 5;
+  const dot = 0.78;
+  const step = 100 / grid;
+  const r = (step * dot) / 2;
 
-  const cellSize = 16;
-  const gap = 2;
-  const padding = 6;
+  const cells: boolean[][] = [];
+  for (let row = 0; row < grid; row++) {
+    const rowCells: boolean[] = [];
+    for (let col = 0; col < 3; col++) {
+      rowCells.push((hashSeed(seed + row + col) >>> 0) % 2 === 1);
+    }
+    cells.push(rowCells);
+  }
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox={`0 0 ${padding * 2 + 5 * (cellSize + gap) - gap} ${padding * 2 + 5 * (cellSize + gap) - gap}`}
+      viewBox="0 0 100 100"
       role="img"
       aria-label={`${seed} のアイコン`}
     >
-      <rect width="100%" height="100%" rx="8" fill={color} fillOpacity={0.15} />
-      {cells.map(({ x, y, fill }) => {
-        if (!fill) return null;
-        const mirrorX = 4 - x;
-        return (
-          <g key={`${x}-${y}`}>
-            <rect
-              x={padding + x * (cellSize + gap)}
-              y={padding + y * (cellSize + gap)}
-              width={cellSize}
-              height={cellSize}
-              rx={3}
+      {cells.map((row, ri) =>
+        row.map((fill, ci) => {
+          if (!fill) return null;
+          const cols = ci === 2 ? [ci] : [ci, 4 - ci];
+          return cols.map((col) => (
+            <circle
+              key={`${col}-${ri}`}
+              cx={step / 2 + col * step}
+              cy={step / 2 + ri * step}
+              r={r}
               fill={color}
             />
-            {x !== 2 && (
-              <rect
-                x={padding + mirrorX * (cellSize + gap)}
-                y={padding + y * (cellSize + gap)}
-                width={cellSize}
-                height={cellSize}
-                rx={3}
-                fill={color}
-              />
-            )}
-          </g>
-        );
-      })}
+          ));
+        })
+      )}
     </svg>
   );
 }
