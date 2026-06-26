@@ -81,6 +81,8 @@ function DesignSidePanel({
       onSideChange({ inputType, url: urlInput.trim(), imageKey });
     } catch {
       setCaptureError('スクリーンショットの取得に失敗しました。URLを確認してください。');
+      // URL は残しつつ imageKey なし = 未完了状態
+      onSideChange({ inputType, url: urlInput.trim(), imageKey: '' });
     } finally {
       setIsCapturing(false);
     }
