@@ -1,41 +1,161 @@
-import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+
+const MIN_SCALE = 1;
+const MAX_SCALE = 8;
+const ZOOM_STEP = 0.3;
 
 export function ImageLightbox({ src, alt, onClose }: { src: string; alt?: string; onClose: () => void }) {
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const offsetAtDragStart = useRef({ x: 0, y: 0 });
+
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
+      if (e.key === '+' || e.key === '=') zoomBy(ZOOM_STEP);
+      if (e.key === '-') zoomBy(-ZOOM_STEP);
+      if (e.key === '0') reset();
     }
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
+  function zoomBy(delta: number) {
+    setScale((s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, s + delta)));
+  }
+
+  function reset() {
+    setScale(1);
+    setOffset({ x: 0, y: 0 });
+  }
+
+  function handleWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+    setScale((s) => {
+      const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, s + delta));
+      if (next === MIN_SCALE) setOffset({ x: 0, y: 0 });
+      return next;
+    });
+  }
+
+  function handleMouseDown(e: React.MouseEvent) {
+    if (scale <= 1) return;
+    e.preventDefault();
+    dragging.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    offsetAtDragStart.current = offset;
+  }
+
+  function handleMouseMove(e: React.MouseEvent) {
+    if (!dragging.current) return;
+    setOffset({
+      x: offsetAtDragStart.current.x + (e.clientX - dragStart.current.x),
+      y: offsetAtDragStart.current.y + (e.clientY - dragStart.current.y),
+    });
+  }
+
+  function handleMouseUp() {
+    dragging.current = false;
+  }
+
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: 'rgba(0,0,0,0.80)' }}
+      style={{ background: 'rgba(0,0,0,0.85)' }}
       onClick={onClose}
+      onWheel={handleWheel}
     >
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute top-4 right-4 flex items-center justify-center rounded-full transition-colors hover:bg-white/20"
-        style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer' }}
-      >
-        <X size={18} color="#FFFFFF" />
-      </button>
-      <img
-        src={src}
-        alt={alt ?? ''}
+      {/* Controls */}
+      <div
+        className="absolute top-4 right-4 flex items-center gap-1 z-10"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          maxWidth: 'min(90vw, 1200px)',
-          maxHeight: '85vh',
-          objectFit: 'contain',
-          borderRadius: 8,
-          boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
-        }}
-      />
+      >
+        <button
+          type="button"
+          onClick={() => zoomBy(-ZOOM_STEP)}
+          disabled={scale <= MIN_SCALE}
+          className="flex items-center justify-center rounded-md transition-colors hover:bg-white/20 disabled:opacity-30"
+          style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer' }}
+        >
+          <ZoomOut size={15} color="#FFFFFF" />
+        </button>
+        <span
+          className="text-center"
+          style={{ color: '#FFFFFF', fontFamily: 'Geist Mono, monospace', fontSize: 11, minWidth: 40 }}
+        >
+          {Math.round(scale * 100)}%
+        </span>
+        <button
+          type="button"
+          onClick={() => zoomBy(ZOOM_STEP)}
+          disabled={scale >= MAX_SCALE}
+          className="flex items-center justify-center rounded-md transition-colors hover:bg-white/20 disabled:opacity-30"
+          style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer' }}
+        >
+          <ZoomIn size={15} color="#FFFFFF" />
+        </button>
+        {scale > 1 && (
+          <button
+            type="button"
+            onClick={reset}
+            className="flex items-center justify-center rounded-md transition-colors hover:bg-white/20"
+            style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer' }}
+          >
+            <RotateCcw size={15} color="#FFFFFF" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex items-center justify-center rounded-md transition-colors hover:bg-white/20 ml-1"
+          style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer' }}
+        >
+          <X size={15} color="#FFFFFF" />
+        </button>
+      </div>
+
+      {/* Image */}
+      <div
+        style={{ overflow: 'hidden', maxWidth: '90vw', maxHeight: '85vh', cursor: scale > 1 ? 'grab' : 'default' }}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        <img
+          src={src}
+          alt={alt ?? ''}
+          onDoubleClick={scale > 1 ? reset : () => zoomBy(ZOOM_STEP * 3)}
+          style={{
+            maxWidth: '90vw',
+            maxHeight: '85vh',
+            objectFit: 'contain',
+            borderRadius: 8,
+            boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+            transform: `scale(${scale}) translate(${offset.x / scale}px, ${offset.y / scale}px)`,
+            transformOrigin: 'center',
+            transition: dragging.current ? 'none' : 'transform 0.15s ease',
+            userSelect: 'none',
+            display: 'block',
+          }}
+          draggable={false}
+        />
+      </div>
+
+      {/* Hint */}
+      {scale === 1 && (
+        <p
+          className="absolute bottom-4"
+          style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'Geist, sans-serif', fontSize: 11 }}
+        >
+          スクロールでズーム・ダブルクリックで拡大
+        </p>
+      )}
     </div>
   );
 }
