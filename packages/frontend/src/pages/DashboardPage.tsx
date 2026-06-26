@@ -1,34 +1,20 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
 import { usePersonas } from '../hooks/usePersonas';
-import { ABTEST_STATUS_LABELS, type ABTestStatus, type DesignInput } from '../types';
+import { useReportSummaries } from '../hooks/useReportSummaries';
 import { FlaskConical, Users, CalendarCheck, ArrowRight, Plus } from 'lucide-react';
-import { API_BASE } from '../api/client';
-
-function DesignThumb({ input, label }: { input: DesignInput; label: string }) {
-  const src = input.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
-  return (
-    <div
-      className="overflow-hidden flex-shrink-0"
-      style={{ width: 68, height: 40, borderRadius: 5, background: '#F0F1F3', border: '1px solid #E6E6E8' }}
-    >
-      {src && <img src={src} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-    </div>
-  );
-}
-
-const STATUS_COLORS: Record<ABTestStatus, { bg: string; text: string }> = {
-  draft: { bg: '#F0F1F3', text: '#666666' },
-  running: { bg: '#E8F0FB', text: '#3B7DD8' },
-  completed: { bg: '#E8F0FB', text: '#3B7DD8' },
-  failed: { bg: '#FDEAEA', text: '#D64545' },
-};
-
+import { ABTestTable } from '../components/ABTestTable';
 
 export function DashboardPage() {
   const { tests, isLoading: testsLoading } = useABTests();
   const { personas } = usePersonas();
-  const navigate = useNavigate();
+  const recentTests = useMemo(() => tests.slice(0, 10), [tests]);
+  const completedIds = useMemo(
+    () => recentTests.filter((t) => t.status === 'completed').map((t) => t.testId),
+    [recentTests]
+  );
+  const summaries = useReportSummaries(completedIds);
 
   if (testsLoading) {
     return (
@@ -44,14 +30,6 @@ export function DashboardPage() {
     const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-
-  function handleTestClick(testId: string, status: ABTestStatus) {
-    if (status === 'running') {
-      navigate(`/tests/${testId}/running`);
-    } else if (status === 'completed' || status === 'failed') {
-      navigate(`/tests/${testId}/report`);
-    }
-  }
 
   const metrics = [
     {
@@ -150,82 +128,11 @@ export function DashboardPage() {
             </Link>
           </div>
         ) : (
-          <div
-            className="overflow-hidden"
-            style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
-          >
-            {/* Table Header */}
-            <div
-              className="flex items-center justify-between"
-              style={{ background: '#F0F1F3', padding: '12px 20px' }}
-            >
-              <div style={{ width: 210, flexShrink: 0 }}>
-                <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>テスト名</span>
-              </div>
-              <div style={{ width: 170, flexShrink: 0 }}>
-                <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>プレビュー</span>
-              </div>
-              <div style={{ width: 90, flexShrink: 0 }}>
-                <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>ペルソナ</span>
-              </div>
-              <div style={{ width: 140, flexShrink: 0 }}>
-                <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>結果</span>
-              </div>
-              <div style={{ width: 120, flexShrink: 0 }}>
-                <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>日付</span>
-              </div>
-            </div>
-
-            {/* Table Rows */}
-            {tests.slice(0, 10).map((test, i) => {
-              const colors = STATUS_COLORS[test.status];
-              const isClickable = test.status === 'running' || test.status === 'completed' || test.status === 'failed';
-              return (
-                <div
-                  key={test.testId}
-                  className="flex items-center justify-between"
-                  style={{
-                    padding: '15px 20px',
-                    borderTop: i > 0 ? '1px solid #E6E6E8' : 'none',
-                    cursor: isClickable ? 'pointer' : 'default',
-                  }}
-                  onClick={() => isClickable && handleTestClick(test.testId, test.status)}
-                  role={isClickable ? 'button' : undefined}
-                  tabIndex={isClickable ? 0 : undefined}
-                  onKeyDown={(e) => e.key === 'Enter' && isClickable && handleTestClick(test.testId, test.status)}
-                >
-                  <div style={{ width: 210, flexShrink: 0, overflow: 'hidden' }}>
-                    <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {test.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center flex-shrink-0" style={{ width: 170, gap: 8 }}>
-                    <DesignThumb input={test.designAInput} label="A" />
-                    <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>vs</span>
-                    <DesignThumb input={test.designBInput} label="B" />
-                  </div>
-                  <div style={{ width: 90, flexShrink: 0 }}>
-                    <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-                      {test.personaIds.length}人
-                    </span>
-                  </div>
-                  <div style={{ width: 140, flexShrink: 0 }}>
-                    <span
-                      className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium"
-                      style={{ background: colors.bg, color: colors.text, borderRadius: 9999 }}
-                    >
-                      {ABTEST_STATUS_LABELS[test.status]}
-                    </span>
-                  </div>
-                  <div style={{ width: 120, flexShrink: 0 }}>
-                    <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 12 }}>
-                      {new Date(test.createdAt).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <ABTestTable
+            tests={recentTests}
+            mode="dashboard"
+            summaries={summaries}
+          />
         )}
       </div>
     </div>

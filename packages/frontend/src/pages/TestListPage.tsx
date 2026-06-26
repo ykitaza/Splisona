@@ -1,50 +1,20 @@
 import { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
-import { ABTEST_STATUS_LABELS, type ABTestStatus, type ABTest, type DesignInput } from '../types';
-import { Plus, ArrowRight, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
-import { testDraft, type DesignSideData } from '../lib/testDraft';
-import { API_BASE } from '../api/client';
+import { Plus, Trash2 } from 'lucide-react';
+import { ABTestTable, type SortKey, type SortDir } from '../components/ABTestTable';
 
-function DesignThumb({ input, label }: { input: DesignInput; label: string }) {
-  const src = input.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
-  return (
-    <div
-      className="overflow-hidden flex-shrink-0"
-      style={{ width: 68, height: 40, borderRadius: 5, background: '#F0F1F3', border: '1px solid #E6E6E8' }}
-    >
-      {src && <img src={src} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-    </div>
-  );
-}
-
-const STATUS_COLORS: Record<ABTestStatus, { bg: string; text: string }> = {
-  draft: { bg: '#F0F1F3', text: '#666666' },
-  running: { bg: '#E8F0FB', text: '#3B7DD8' },
-  completed: { bg: '#E6F4EC', text: '#2E9E5B' },
-  failed: { bg: '#FDEAEA', text: '#D64545' },
-};
-
-type SortKey = 'title' | 'status' | 'createdAt';
-type SortDir = 'asc' | 'desc';
-
-function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
-  if (col !== sortKey) return <ChevronsUpDown size={12} color="#C4C4C8" />;
-  return sortDir === 'asc' ? <ChevronUp size={12} color="#666666" /> : <ChevronDown size={12} color="#666666" />;
-}
-
-const STATUS_ORDER: Record<ABTestStatus, number> = { draft: 0, running: 1, completed: 2, failed: 3 };
+const STATUS_ORDER = { draft: 0, running: 1, completed: 2, failed: 3 };
 
 export function TestListPage() {
   const { tests, isLoading, deleteTest, deleteTests } = useABTests();
-  const navigate = useNavigate();
 
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const filtered = useMemo(() => {
+  const sorted = useMemo(() => {
     return [...tests].sort((a, b) => {
       let cmp = 0;
       if (sortKey === 'title') cmp = a.title.localeCompare(b.title, 'ja');
@@ -60,7 +30,7 @@ export function TestListPage() {
   }
 
   function toggleAll(checked: boolean) {
-    setSelected(checked ? new Set(filtered.map((t) => t.testId)) : new Set());
+    setSelected(checked ? new Set(sorted.map((t) => t.testId)) : new Set());
   }
 
   function toggleOne(id: string) {
@@ -70,38 +40,6 @@ export function TestListPage() {
       else next.add(id);
       return next;
     });
-  }
-
-  function restoreSide(input: ABTest['designAInput']): DesignSideData | null {
-    if (!input) return null;
-    const { inputType, imageKey } = input;
-    if (inputType === 'image_upload') {
-      if (!imageKey) return null;
-      return { inputType: 'image_upload', file: new File([], 'uploaded'), imageKey };
-    }
-    if (inputType === 'figma_url') return { inputType: 'figma_url', url: '', imageKey: imageKey ?? '' };
-    if (inputType === 'site_url') return { inputType: 'site_url', url: '', imageKey: imageKey ?? '' };
-    return null;
-  }
-
-  function handleClick(testId: string, status: ABTestStatus, test?: ABTest) {
-    if (status === 'running') navigate(`/tests/${testId}/running`);
-    else if (status === 'completed' || status === 'failed') navigate(`/tests/${testId}/report`);
-    else if (status === 'draft' && test) {
-      const sideA = restoreSide(test.designAInput);
-      const sideB = restoreSide(test.designBInput);
-      const bothReady = !!sideA?.imageKey && !!sideB?.imageKey;
-      testDraft.resume({
-        title: test.title,
-        sideA,
-        sideB,
-        personaIds: test.personaIds,
-        resumeId: test.testId,
-      });
-      if (bothReady && test.personaIds.length > 0) navigate('/tests/new/confirm');
-      else if (bothReady) navigate('/tests/new/personas');
-      else navigate('/tests/new');
-    }
   }
 
   async function handleBulkDelete() {
@@ -134,7 +72,6 @@ export function TestListPage() {
     );
   }
 
-  const allSelected = filtered.length > 0 && filtered.every((t) => selected.has(t.testId));
   const someSelected = selected.size > 0;
 
   return (
@@ -143,7 +80,7 @@ export function TestListPage() {
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <h1 style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 28, fontWeight: 600 }}>
-            結果レポート
+            テスト一覧
           </h1>
           <p style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 14 }}>
             A/B テスト一覧
@@ -173,9 +110,8 @@ export function TestListPage() {
             {selected.size}件を削除
           </button>
         )}
-
         <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13, marginLeft: 'auto' }}>
-          {filtered.length}件
+          {sorted.length}件
         </span>
       </div>
 
@@ -190,156 +126,17 @@ export function TestListPage() {
           </Link>
         </div>
       ) : (
-        <div
-          className="overflow-hidden"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
-        >
-          {/* Table header */}
-          <div className="flex items-center" style={{ background: '#F0F1F3', padding: '10px 16px' }}>
-            <div style={{ width: 36, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={(e) => toggleAll(e.target.checked)}
-                style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#1A1A1A' }}
-              />
-            </div>
-
-            <button
-              type="button"
-              className="flex items-center gap-1 flex-1 min-w-0"
-              onClick={() => toggleSort('title')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>テスト名</span>
-              <SortIcon col="title" sortKey={sortKey} sortDir={sortDir} />
-            </button>
-            <div style={{ width: 170, flexShrink: 0 }}>
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>プレビュー</span>
-            </div>
-
-            <div style={{ width: 90, flexShrink: 0 }}>
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>ペルソナ</span>
-            </div>
-
-            <button
-              type="button"
-              className="flex items-center gap-1"
-              onClick={() => toggleSort('status')}
-              style={{ width: 140, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>ステータス</span>
-              <SortIcon col="status" sortKey={sortKey} sortDir={sortDir} />
-            </button>
-
-            <button
-              type="button"
-              className="flex items-center gap-1"
-              onClick={() => toggleSort('createdAt')}
-              style={{ width: 120, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>日時</span>
-              <SortIcon col="createdAt" sortKey={sortKey} sortDir={sortDir} />
-            </button>
-
-            <div style={{ width: 64, flexShrink: 0 }} />
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="flex items-center justify-center py-12">
-              <p style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-                該当するテストがありません
-              </p>
-            </div>
-          ) : (
-            filtered.map((test, i) => {
-              const colors = STATUS_COLORS[test.status];
-              const isClickable = true;
-              const isChecked = selected.has(test.testId);
-              return (
-                <div
-                  key={test.testId}
-                  className="flex items-center group"
-                  style={{
-                    padding: '13px 16px',
-                    borderTop: i > 0 ? '1px solid #E6E6E8' : 'none',
-                    background: isChecked ? '#F7F8FF' : '#FFFFFF',
-                    cursor: isClickable ? 'pointer' : 'default',
-                  }}
-                  onClick={() => isClickable && handleClick(test.testId, test.status, test)}
-                  role={isClickable ? 'button' : undefined}
-                  tabIndex={isClickable ? 0 : undefined}
-                  onKeyDown={(e) => e.key === 'Enter' && isClickable && handleClick(test.testId, test.status, test)}
-                >
-                  <div
-                    style={{ width: 36, flexShrink: 0, display: 'flex', alignItems: 'center' }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleOne(test.testId)}
-                      style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#1A1A1A' }}
-                    />
-                  </div>
-
-                  <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <span
-                      className="block truncate"
-                      style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500 }}
-                    >
-                      {test.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center flex-shrink-0" style={{ width: 170, gap: 8 }}>
-                    <DesignThumb input={test.designAInput} label="A" />
-                    <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>vs</span>
-                    <DesignThumb input={test.designBInput} label="B" />
-                  </div>
-
-                  <div style={{ width: 90, flexShrink: 0 }}>
-                    <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-                      {test.personaIds.length}人
-                    </span>
-                  </div>
-
-                  <div style={{ width: 140, flexShrink: 0 }}>
-                    <span
-                      className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium"
-                      style={{ background: colors.bg, color: colors.text, borderRadius: 9999, fontSize: 11 }}
-                    >
-                      {ABTEST_STATUS_LABELS[test.status]}
-                    </span>
-                  </div>
-
-                  <div style={{ width: 120, flexShrink: 0 }}>
-                    <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 12 }}>
-                      {new Date(test.createdAt).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-
-                  <div
-                    style={{ width: 64, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      type="button"
-                      disabled={isDeleting}
-                      onClick={(e) => handleSingleDelete(e, test.testId)}
-                      className="flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30"
-                      style={{ width: 28, height: 28, background: 'none', border: '1px solid #E6E6E8', borderRadius: 6, cursor: 'pointer' }}
-                      title="削除"
-                    >
-                      <Trash2 size={13} color="#D64545" />
-                    </button>
-                    {isClickable && <ArrowRight size={16} color="#9A9A9F" />}
-                    {!isClickable && <div style={{ width: 16 }} />}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <ABTestTable
+          tests={sorted}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={toggleSort}
+          selected={selected}
+          onToggleAll={toggleAll}
+          onToggleOne={toggleOne}
+          onDelete={handleSingleDelete}
+          isDeleting={isDeleting}
+        />
       )}
     </div>
   );
