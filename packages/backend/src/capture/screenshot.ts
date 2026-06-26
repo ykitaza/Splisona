@@ -16,9 +16,10 @@ export async function captureWebsite(url: string): Promise<Buffer> {
   const browser = await chromium.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"] });
   try {
     const page = await browser.newPage();
-    await page.setViewportSize({ width: 1280, height: 800 });
+    // Bedrock の画像サイズ上限 (8000px) を超えないよう高さを制限
+    await page.setViewportSize({ width: 1280, height: 4000 });
     await page.goto(url, { waitUntil: "networkidle", timeout: 15_000 });
-    const buf = await page.screenshot({ type: "png", fullPage: true });
+    const buf = await page.screenshot({ type: "png", fullPage: false });
     return Buffer.from(buf);
   } catch (e) {
     throw new ScreenshotError(`サイトのスクリーンショット取得に失敗しました: ${String(e)}`);

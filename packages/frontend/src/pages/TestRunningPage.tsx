@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { getProgress, getTest, getReport } from '../api/tests';
 import { ArrowRight } from 'lucide-react';
 import { usePersonas } from '../hooks/usePersonas';
@@ -17,15 +17,16 @@ const AVATAR_COLORS = [
 ];
 
 // スタンス軸: 左=A案支持 / 中央=迷い・中立 / 右=B案支持
-const ZONE_X = { A: 22, B: 78, none: 50 } as const;
+type Zone = 'A' | 'B' | 'center';
+const ZONE_X: Record<Zone, number> = { A: 22, center: 50, B: 78 };
 
-// インデックスから決定的に縦レーンと横ジッターを算出（重なり回避＋ランダム感）
-function laneTop(i: number, n: number): number {
-  if (n <= 1) return 50;
-  return 20 + (60 * i) / (n - 1);
-}
-function jitterX(i: number): number {
-  return ((i * 53) % 17) - 8; // -8..8
+// ひまわりの種の配置（黄金角フィロタキシス）: クラスター中心からのpxオフセット
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5)); // ≈137.5°
+const SEED_SPACING = 64; // 種の間隔(px)。アバター48px+吹き出しの重なりを抑える距離
+function sunflowerOffset(k: number): { dx: number; dy: number } {
+  const r = SEED_SPACING * Math.sqrt(k); // k=0 は中心
+  const theta = k * GOLDEN_ANGLE;
+  return { dx: r * Math.cos(theta), dy: r * Math.sin(theta) };
 }
 
 const VERDICT_CHIP: Record<'A' | 'B' | 'none', { label: string; bg: string; text: string }> = {
@@ -33,6 +34,8 @@ const VERDICT_CHIP: Record<'A' | 'B' | 'none', { label: string; bg: string; text
   B: { label: '👍 B案', bg: '#FBF0E4', text: '#E0883A' },
   none: { label: '🤝 互角', bg: '#F0F1F3', text: '#666666' },
 };
+
+const FAILED_CHIP = { label: '⚠️ 失敗', bg: '#FBEAEA', text: '#D64545' };
 
 function DesignThumb({ label, imageKey, dotColor, scanning }: { label: string; imageKey?: string; dotColor: string; scanning?: boolean }) {
   const [lightbox, setLightbox] = useState(false);
@@ -90,7 +93,6 @@ function DesignThumb({ label, imageKey, dotColor, scanning }: { label: string; i
 
 export function TestRunningPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [progress, setProgress] = useState<ProgressResponse | null>(null);
   const [test, setTest] = useState<ABTest | null>(null);
   const { personas } = usePersonas();
@@ -101,8 +103,7 @@ export function TestRunningPage() {
   }, [id]);
 
   const [isDone, setIsDone] = useState(false);
-  const [verdicts, setVerdicts] = useState<Record<string, EvaluationResult['winner']>>({});
-  const [settled, setSettled] = useState(false);
+  const [results, setResults] = useState<Record<string, EvaluationResult>>({});
 
   useEffect(() => {
     if (!id) return;
@@ -113,25 +114,28 @@ export function TestRunningPage() {
         const data = await getProgress(id!);
         if (!active) return;
         setProgress(data);
+
+        // 実行中でも、確定済みの評価だけを逐次取り込み、確定した子から片側へ移動させる
+        try {
+          const report = await getReport(id!);
+          if (!active) return;
+          const map: Record<string, EvaluationResult> = {};
+          for (const ev of report.evaluations) {
+            if (ev.status === 'completed' || ev.status === 'failed') map[ev.personaId] = ev;
+          }
+          setResults(map);
+        } catch {
+          // レポート取得失敗は無視して継続
+        }
+
         if (data.status === 'completed' || data.status === 'failed') {
           setIsDone(true);
-          // 完了したら各ペルソナの勝者を取得し、ひと呼吸おいてゆっくり整列させる
-          try {
-            const report = await getReport(id!);
-            if (!active) return;
-            const map: Record<string, EvaluationResult['winner']> = {};
-            for (const ev of report.evaluations) map[ev.personaId] = ev.winner;
-            setVerdicts(map);
-          } catch {
-            // レポート取得失敗時は中央のまま
-          }
-          setTimeout(() => active && setSettled(true), 600);
           return;
         }
       } catch {
         // ポーリング失敗は無視して継続
       }
-      if (active) setTimeout(poll, 3000);
+      if (active) setTimeout(poll, 2000);
     }
 
     poll();
@@ -149,6 +153,20 @@ export function TestRunningPage() {
     .filter(Boolean) as typeof personas;
 
   const displayCount = personaIds.length || 6;
+
+  // 各ペルソナのゾーン（A/中央/B）を決め、ゾーンごとにひまわり配置のインデックスを割り当てる。
+  // 結果が来た子からゾーンが確定し、未確定の子は中央クラスターに残る。
+  const zoneSeen: Record<Zone, number> = { A: 0, center: 0, B: 0 };
+  const stageItems = Array.from({ length: displayCount }).map((_, i) => {
+    const persona = relevantPersonas[i];
+    const result = persona ? results[persona.personaId] : undefined;
+    const winner = result?.status === 'completed' ? result.winner : undefined;
+    const isFailed = result?.status === 'failed';
+    // 失敗・互角は中央のまま（A/Bに寄せない）
+    const zone: Zone = winner === 'A' ? 'A' : winner === 'B' ? 'B' : 'center';
+    const seedIndex = zoneSeen[zone]++;
+    return { i, persona, result, winner, isFailed, zone, seedIndex };
+  });
 
   return (
     <div className="flex flex-col gap-5 p-8 pb-10" style={{ height: '100%' }}>
@@ -216,30 +234,27 @@ export function TestRunningPage() {
           B案 支持
         </span>
 
-        {Array.from({ length: displayCount }).map((_, i) => {
-          const persona = relevantPersonas[i];
+        {stageItems.map(({ i, persona, result, winner, isFailed, zone, seedIndex }) => {
           const name = persona?.displayName ?? `P${i + 1}`;
           const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
 
-          const winner = persona ? verdicts[persona.personaId] : undefined;
-          const targetX = settled && winner ? ZONE_X[winner] : 50;
-          const left = targetX + jitterX(i);
-          const top = laneTop(i, displayCount);
-          const chip = settled && winner ? VERDICT_CHIP[winner] : null;
-
-          // 推論中（未確定）は揺れ、確定したら揺れを止めてゆっくり整列
-          const wavering = !settled || !winner;
+          // ゾーン中心(左/中央/右)からのひまわり配置オフセット(px)
+          const { dx, dy } = sunflowerOffset(seedIndex);
+          // 結果が来た子は確定（揺れ停止）、まだの子は中央で揺れ続ける
+          const wavering = !result;
+          const chip = result
+            ? (winner ? VERDICT_CHIP[winner] : isFailed ? FAILED_CHIP : VERDICT_CHIP.none)
+            : null;
 
           return (
             <div
               key={i}
               className="absolute flex flex-col items-center gap-1.5"
               style={{
-                left: `${left}%`,
-                top: `${top}%`,
-                transform: 'translate(-50%, -50%)',
-                transition: 'left 1.6s cubic-bezier(0.22, 1, 0.36, 1), top 1.6s cubic-bezier(0.22, 1, 0.36, 1)',
-                transitionDelay: `${i * 0.12}s`,
+                left: `${ZONE_X[zone]}%`,
+                top: '50%',
+                transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`,
+                transition: 'left 1.6s cubic-bezier(0.22, 1, 0.36, 1), transform 1.6s cubic-bezier(0.22, 1, 0.36, 1)',
               }}
             >
               <div
@@ -288,9 +303,6 @@ export function TestRunningPage() {
                     {name.charAt(0)}
                   </span>
                 </div>
-                <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 11, whiteSpace: 'nowrap' }}>
-                  {name}
-                </span>
               </div>
             </div>
           );

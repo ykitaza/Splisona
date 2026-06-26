@@ -30,6 +30,7 @@ export interface Persona {
   annualIncome?: number;
   education?: string;
   freeText?: string;
+  avatarImageKey?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,6 +46,7 @@ export type CreatePersonaInput = {
   annualIncome?: number;
   education?: string;
   freeText?: string;
+  avatarImageKey?: string;
 };
 
 export type UpdatePersonaInput = Partial<CreatePersonaInput>;
@@ -142,6 +144,8 @@ export interface ReportSummary {
     B: EvaluationScores;
   };
   winnersReasonSummary: string;
+  reasonSummaryA: string[];
+  reasonSummaryB: string[];
 }
 
 export interface ReportResponse {

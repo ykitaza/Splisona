@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Trophy } from 'lucide-react';
+import { ChevronLeft, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Trophy, Check } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { getReport, executeTest, exportTest } from '../api/tests';
 import { API_BASE } from '../api/client';
@@ -67,6 +67,25 @@ function ScoreBar({ label, scoreA, scoreB }: { label: string; scoreA: number; sc
           <div style={{ width: `${(scoreB / 10) * 100}%`, height: '100%', background: '#E0883A', borderRadius: 9999 }} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function ReasonGroup({ caption, color, reasons }: { caption: string; color: string; reasons: string[] }) {
+  if (reasons.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2.5">
+      <span style={{ color, fontFamily: 'Geist Mono, monospace', fontSize: 11, fontWeight: 600, letterSpacing: '0.5px' }}>
+        {caption}
+      </span>
+      {reasons.map((reason, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <Check size={15} color={color} style={{ flexShrink: 0, marginTop: 2 }} />
+          <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13, lineHeight: 1.5 }}>
+            {reason}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -367,43 +386,22 @@ export function TestReportPage() {
           <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 600 }}>
             評価のまとめ
           </span>
-          {summary.winner !== 'tie' && (
-            <div className="flex flex-col gap-1.5">
-              <span
-                style={{
-                  color: summary.winner === 'A' ? '#3B7DD8' : '#E0883A',
-                  fontFamily: 'Geist, sans-serif',
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-              >
-                {summary.winner}案が支持された理由
-              </span>
-              <p style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13, lineHeight: 1.6 }}>
-                {summary.winnersReasonSummary || '—'}
-              </p>
-            </div>
+          {summary.reasonSummaryA.length === 0 && summary.reasonSummaryB.length === 0 ? (
+            <p style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>—</p>
+          ) : (
+            <>
+              <ReasonGroup
+                caption="A案が支持された理由"
+                color="#3B7DD8"
+                reasons={summary.reasonSummaryA}
+              />
+              <ReasonGroup
+                caption="B案が評価された点"
+                color="#E0883A"
+                reasons={summary.reasonSummaryB}
+              />
+            </>
           )}
-          <div className="flex flex-col gap-2 mt-1">
-            {evaluations.slice(0, 3).map((ev) => (
-              ev.status !== 'failed' && (
-                <div key={ev.personaId} className="flex items-start gap-2">
-                  <span
-                    className="rounded-full px-2 py-0.5 text-xs font-semibold flex-shrink-0 mt-0.5"
-                    style={{
-                      background: ev.winner === 'A' ? '#E8F0FB' : ev.winner === 'B' ? '#FBF0E4' : '#F0F1F3',
-                      color: ev.winner === 'A' ? '#3B7DD8' : ev.winner === 'B' ? '#E0883A' : '#9A9A9F',
-                    }}
-                  >
-                    {ev.winner === 'none' ? 'なし' : `${ev.winner}案`}
-                  </span>
-                  <p style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 12, lineHeight: 1.5 }}>
-                    {ev.personaDisplayName}: {ev.reason}
-                  </p>
-                </div>
-              )
-            ))}
-          </div>
         </div>
 
         {/* 評価軸別の比較 */}

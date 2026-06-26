@@ -144,7 +144,7 @@ async function evaluateOnePersona(
   } catch {
     const failRecord: EvaluationRecord = {
       ...evaluationKey(testId, personaId),
-      winner: "A",
+      winner: "none",
       confidence: 0,
       reason: "",
       scores: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },

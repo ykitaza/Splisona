@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join, extname } from "node:path";
-import { listPersonas, createPersona, getPersona, updatePersona, deletePersona, generateDraft } from "./persona/handler.js";
+import { listPersonas, createPersona, getPersona, updatePersona, deletePersona, generateDraft, getPersonaUploadUrl } from "./persona/handler.js";
 import { interviewPersona } from "./interview/handler.js";
 import { createTest, listTests, getTest, updateTest, deleteTest, getProgress } from "./abtest/handler.js";
 import { getReport, exportReport } from "./report/handler.js";
@@ -120,10 +120,11 @@ async function evaluateLocalBedrock(
       personaDisplayName,
       evaluatedAt: new Date().toISOString(),
     } as unknown as Record<string, unknown>);
-  } catch {
+  } catch (err) {
+    console.error(`[evaluate] ${personaId} failed:`, err);
     await putItem({
       ...evaluationKey(testId, personaId),
-      winner: "A",
+      winner: "none",
       confidence: 0,
       reason: "",
       scores: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
@@ -215,6 +216,18 @@ app.post("/personas/:id/draft", async (c) => {
   return c.json({
     freeText: `[ローカルスタブ] ${name}は${persona?.occupation ?? "職業不明"}の${persona?.age ?? "年齢不明"}歳。日常的にデジタルサービスを利用しており、使いやすさと視覚的な明確さを重視する傾向があります。`,
     suggestedDescription: `[ローカルスタブ] ${name}の行動特性と価値観に関する説明文がここに生成されます。`,
+  });
+});
+
+// ペルソナアバター画像アップロードURL（ローカルはスタブ）
+app.post("/personas/:id/upload-url", async (c) => {
+  const personaId = c.req.param("id");
+  const { contentType = "image/png" } = await c.req.json<{ contentType?: string }>();
+  const ext = contentType === "image/jpeg" ? "jpg" : contentType === "image/webp" ? "webp" : "png";
+  const imageKey = `local/personas/${personaId}-${Date.now()}.${ext}`;
+  return c.json({
+    uploadUrl: `http://localhost:${port}/stub-upload/${imageKey}`,
+    imageKey,
   });
 });
 

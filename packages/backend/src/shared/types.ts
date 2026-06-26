@@ -18,6 +18,7 @@ export interface PersonaRecord {
   annualIncome?: number;
   education?: string;
   freeText?: string;
+  avatarImageKey?: string;
   createdAt: string;
   updatedAt: string;
 }

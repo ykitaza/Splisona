@@ -4,6 +4,9 @@ import { badRequest, errorResponse } from "../shared/errors.js";
 import { type PersonaRecord } from "../shared/types.js";
 import { bedrockClient, MODEL_ID } from "../shared/bedrock.js";
 import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { s3Client, IMAGE_BUCKET } from "../shared/s3.js";
 import crypto from "node:crypto";
 
 type LambdaResponse = { statusCode: number; headers: Record<string, string>; body: string };
@@ -93,6 +96,7 @@ export async function updatePersona(event: ApiGatewayEvent & { pathParameters?: 
           education: input.education,
           freeText: input.freeText,
           source: input.source,
+          avatarImageKey: input.avatarImageKey,
         }).filter(([, v]) => v !== undefined)
       ),
       updatedAt: now,
@@ -169,8 +173,34 @@ export async function generateDraft(event: ApiGatewayEvent & { pathParameters?: 
   }
 }
 
+export async function getPersonaUploadUrl(
+  event: ApiGatewayEvent & { pathParameters?: Record<string, string>; body?: string }
+): Promise<LambdaResponse> {
+  try {
+    const userId = getUserId(event);
+    const personaId = event.pathParameters?.id ?? "";
+    const { contentType = "image/png" } = JSON.parse(event.body ?? "{}");
+
+    const existing = await getItem<PersonaRecord>(personaKey(userId, personaId) as unknown as Record<string, string>);
+    if (!existing) return json(404, { error: "NOT_FOUND" });
+
+    const ext = contentType === "image/jpeg" ? "jpg" : contentType === "image/webp" ? "webp" : "png";
+    const imageKey = `${userId}/personas/${personaId}.${ext}`;
+
+    const uploadUrl = await getSignedUrl(
+      s3Client,
+      new PutObjectCommand({ Bucket: IMAGE_BUCKET, Key: imageKey, ContentType: contentType }),
+      { expiresIn: 900 }
+    );
+
+    return json(200, { uploadUrl, imageKey });
+  } catch (e) {
+    return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+  }
+}
+
 function toPersona(r: PersonaRecord) {
   const personaId = r.SK.replace("PERSONA#", "");
   const userId = r.PK.replace("USER#", "");
-  return { personaId, userId, displayName: r.displayName, type: r.type, source: r.source, age: r.age, gender: r.gender, occupation: r.occupation, deviationScore: r.deviationScore, annualIncome: r.annualIncome, education: r.education, freeText: r.freeText, createdAt: r.createdAt, updatedAt: r.updatedAt };
+  return { personaId, userId, displayName: r.displayName, type: r.type, source: r.source, age: r.age, gender: r.gender, occupation: r.occupation, deviationScore: r.deviationScore, annualIncome: r.annualIncome, education: r.education, freeText: r.freeText, avatarImageKey: r.avatarImageKey, createdAt: r.createdAt, updatedAt: r.updatedAt };
 }

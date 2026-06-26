@@ -1,5 +1,5 @@
-import { apiRequest } from './client';
-import type { Persona, CreatePersonaInput, UpdatePersonaInput, PersonaDraft, ConversationMessage } from '../types';
+import { apiRequest, API_BASE } from './client';
+import type { Persona, CreatePersonaInput, UpdatePersonaInput, PersonaDraft, ConversationMessage, UploadUrlResponse } from '../types';
 
 export function listPersonas(): Promise<Persona[]> {
   return apiRequest('/personas');
@@ -23,6 +23,20 @@ export function deletePersona(id: string): Promise<{ deleted: true }> {
 
 export function generateDraft(id: string): Promise<PersonaDraft> {
   return apiRequest(`/personas/${id}/draft`, { method: 'POST' });
+}
+
+export function getPersonaUploadUrl(id: string, contentType: string): Promise<UploadUrlResponse> {
+  return apiRequest(`/personas/${id}/upload-url`, { method: 'POST', body: JSON.stringify({ contentType }) });
+}
+
+export async function uploadPersonaAvatar(id: string, file: File): Promise<string> {
+  const { uploadUrl, imageKey } = await getPersonaUploadUrl(id, file.type);
+  await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+  return imageKey;
+}
+
+export function getAvatarUrl(avatarImageKey: string): string {
+  return `${API_BASE}/stub-upload/${avatarImageKey}`;
 }
 
 export function sendInterviewMessage(

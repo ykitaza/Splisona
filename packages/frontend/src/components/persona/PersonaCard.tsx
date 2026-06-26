@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, PencilLine, MoreHorizontal, Layers2 } from 'lucide-react';
 import { PERSONA_TYPE_LABELS } from '../../types';
 import type { Persona } from '../../types';
+import { getAvatarUrl } from '../../api/personas';
 
 const AVATAR_COLORS: { bg: string; text: string }[] = [
   { bg: '#E8F0FB', text: '#3B7DD8' },
@@ -68,12 +69,20 @@ export function PersonaCard({ persona, onDelete }: Props) {
       {/* Header */}
       <div className="flex items-center gap-3">
         <div
-          className="flex items-center justify-center rounded-full flex-shrink-0"
+          className="flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden"
           style={{ width: 44, height: 44, background: color.bg, borderRadius: 9999 }}
         >
-          <span style={{ color: color.text, fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>
-            {initials(persona.displayName)}
-          </span>
+          {persona.avatarImageKey ? (
+            <img
+              src={getAvatarUrl(persona.avatarImageKey)}
+              alt={persona.displayName}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <span style={{ color: color.text, fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>
+              {initials(persona.displayName)}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col flex-1" style={{ gap: 5 }}>
