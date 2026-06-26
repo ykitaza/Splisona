@@ -3,6 +3,8 @@ import { serve } from "@hono/node-server";
 import { listPersonas, createPersona, getPersona, updatePersona, deletePersona, generateDraft } from "./persona/handler.js";
 import { interviewPersona } from "./interview/handler.js";
 import { createTest, listTests, getTest, updateTest, getUploadUrl, getProgress } from "./abtest/handler.js";
+import { executeTest } from "./evaluation/orchestrator.js";
+import { getReport, exportReport, listTestsForReport } from "./report/handler.js";
 
 const app = new Hono();
 
@@ -99,6 +101,25 @@ app.get("/tests/:id/progress", async (c) => {
   const res = await getProgress(toEvent(c.req, { id: c.req.param("id") }));
   return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
 });
+
+app.post("/tests/:id/execute", async (c) => {
+  const res = await executeTest(toEvent(c.req, { id: c.req.param("id") }));
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.get("/tests/:id/report", async (c) => {
+  const res = await getReport(toEvent(c.req, { id: c.req.param("id") }));
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.get("/tests/:id/export", async (c) => {
+  const res = await exportReport(toEvent(c.req, { id: c.req.param("id") }));
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+// listTestsForReport は /tests GET と重複しないよう別パスを使わない
+// （listTests と同じ GET /tests をカバーする形で dev-server では既存ルートを使用）
+void listTestsForReport;
 
 const port = Number(process.env.PORT ?? 3001);
 console.log(`Chorus local dev server running on http://localhost:${port}`);
