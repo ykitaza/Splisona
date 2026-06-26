@@ -21,12 +21,17 @@ export function Modal({ open, onClose, children }: ModalProps) {
   return (
     <div
       data-testid="modal-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={onClose}
     >
       <div
-        className="bg-surface rounded-lg"
-        style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}
+        className="bg-surface"
+        style={{
+          borderRadius: 14,
+          border: '1px solid var(--color-hairline)',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

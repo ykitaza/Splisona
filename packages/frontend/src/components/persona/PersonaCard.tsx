@@ -146,7 +146,7 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
       </div>
 
       {/* Personality */}
-      <p className="text-text-mid font-sans text-base flex-1" style={{ lineHeight: 1.5 }}>
+      <p className="text-text-mid font-sans text-base" style={{ lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
         {persona.freeText || ' '}
       </p>
 

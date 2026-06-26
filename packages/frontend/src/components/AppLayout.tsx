@@ -17,13 +17,14 @@ const COLLAPSE_BREAKPOINT = 1024;
 function AboutModal({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50 bg-black/50"
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={onClose}
     >
       <div
         data-testid="about-modal-content"
-        className="flex flex-col items-center relative bg-surface rounded-lg px-8 py-10"
-        style={{ width: 320, boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}
+        className="flex flex-col items-center relative bg-surface px-8 py-10"
+        style={{ width: 320, borderRadius: 14, border: '1px solid var(--color-hairline)', boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
