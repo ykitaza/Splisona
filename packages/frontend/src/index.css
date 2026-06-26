@@ -4,3 +4,9 @@
   0%   { transform: translateY(-100%); }
   100% { transform: translateY(200%); }
 }
+
+/* 推論中のペルソナが「迷い」を表す左右の揺れ */
+@keyframes persona-waver {
+  0%, 100% { transform: translateX(-11px) rotate(-2.5deg); }
+  50%      { transform: translateX(11px) rotate(2.5deg); }
+}

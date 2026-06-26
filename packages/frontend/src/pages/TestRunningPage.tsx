@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getProgress, getTest } from '../api/tests';
+import { getProgress, getTest, getReport } from '../api/tests';
 import { ArrowRight } from 'lucide-react';
 import { usePersonas } from '../hooks/usePersonas';
 import { API_BASE } from '../api/client';
 import { ImageLightbox } from '../components/ImageLightbox';
-import type { ProgressResponse, ABTest } from '../types';
+import type { ProgressResponse, ABTest, EvaluationResult } from '../types';
 
 const AVATAR_COLORS = [
   { bg: '#E8F0FB', text: '#3B7DD8' },
@@ -16,20 +16,23 @@ const AVATAR_COLORS = [
   { bg: '#E6F4F4', text: '#2E9E9E' },
 ];
 
-const SCATTER_POSITIONS = [
-  { x: 12, y: 22 },
-  { x: 32, y: 55 },
-  { x: 52, y: 18 },
-  { x: 70, y: 50 },
-  { x: 22, y: 72 },
-  { x: 55, y: 68 },
-  { x: 82, y: 22 },
-  { x: 84, y: 62 },
-  { x: 42, y: 40 },
-  { x: 65, y: 32 },
-  { x: 18, y: 44 },
-  { x: 76, y: 78 },
-];
+// スタンス軸: 左=A案支持 / 中央=迷い・中立 / 右=B案支持
+const ZONE_X = { A: 22, B: 78, none: 50 } as const;
+
+// インデックスから決定的に縦レーンと横ジッターを算出（重なり回避＋ランダム感）
+function laneTop(i: number, n: number): number {
+  if (n <= 1) return 50;
+  return 20 + (60 * i) / (n - 1);
+}
+function jitterX(i: number): number {
+  return ((i * 53) % 17) - 8; // -8..8
+}
+
+const VERDICT_CHIP: Record<'A' | 'B' | 'none', { label: string; bg: string; text: string }> = {
+  A: { label: '👍 A案', bg: '#E8F0FB', text: '#3B7DD8' },
+  B: { label: '👍 B案', bg: '#FBF0E4', text: '#E0883A' },
+  none: { label: '🤝 互角', bg: '#F0F1F3', text: '#666666' },
+};
 
 function DesignThumb({ label, imageKey, dotColor, scanning }: { label: string; imageKey?: string; dotColor: string; scanning?: boolean }) {
   const [lightbox, setLightbox] = useState(false);
@@ -98,6 +101,8 @@ export function TestRunningPage() {
   }, [id]);
 
   const [isDone, setIsDone] = useState(false);
+  const [verdicts, setVerdicts] = useState<Record<string, EvaluationResult['winner']>>({});
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -110,6 +115,17 @@ export function TestRunningPage() {
         setProgress(data);
         if (data.status === 'completed' || data.status === 'failed') {
           setIsDone(true);
+          // 完了したら各ペルソナの勝者を取得し、ひと呼吸おいてゆっくり整列させる
+          try {
+            const report = await getReport(id!);
+            if (!active) return;
+            const map: Record<string, EvaluationResult['winner']> = {};
+            for (const ev of report.evaluations) map[ev.personaId] = ev.winner;
+            setVerdicts(map);
+          } catch {
+            // レポート取得失敗時は中央のまま
+          }
+          setTimeout(() => active && setSettled(true), 600);
           return;
         }
       } catch {
@@ -176,49 +192,106 @@ export function TestRunningPage() {
         />
       </div>
 
-      {/* Persona stage */}
+      {/* Persona stage: 左=A案 / 中央=迷い / 右=B案 のスタンス軸 */}
       <div
         className="relative overflow-hidden flex-1 rounded-md"
-        style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10, minHeight: 240 }}
+        style={{
+          background: 'linear-gradient(90deg, #E8F0FB 0%, #FFFFFF 50%, #FBF0E4 100%)',
+          border: '1px solid #E6E6E8',
+          borderRadius: 10,
+          minHeight: 240,
+        }}
       >
+        {/* 軸ラベル */}
+        <span
+          className="absolute"
+          style={{ left: 16, top: 12, color: '#3B7DD8', fontFamily: 'Geist, sans-serif', fontSize: 11, fontWeight: 600, letterSpacing: 0.5 }}
+        >
+          A案 支持
+        </span>
+        <span
+          className="absolute"
+          style={{ right: 16, top: 12, color: '#E0883A', fontFamily: 'Geist, sans-serif', fontSize: 11, fontWeight: 600, letterSpacing: 0.5 }}
+        >
+          B案 支持
+        </span>
+
         {Array.from({ length: displayCount }).map((_, i) => {
           const persona = relevantPersonas[i];
           const name = persona?.displayName ?? `P${i + 1}`;
           const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
-          const pos = SCATTER_POSITIONS[i % SCATTER_POSITIONS.length];
-          const done = i < completed;
+
+          const winner = persona ? verdicts[persona.personaId] : undefined;
+          const targetX = settled && winner ? ZONE_X[winner] : 50;
+          const left = targetX + jitterX(i);
+          const top = laneTop(i, displayCount);
+          const chip = settled && winner ? VERDICT_CHIP[winner] : null;
+
+          // 推論中（未確定）は揺れ、確定したら揺れを止めてゆっくり整列
+          const wavering = !settled || !winner;
 
           return (
             <div
               key={i}
               className="absolute flex flex-col items-center gap-1.5"
               style={{
-                left: `${pos.x}%`,
-                top: `${pos.y}%`,
+                left: `${left}%`,
+                top: `${top}%`,
                 transform: 'translate(-50%, -50%)',
-                transition: 'opacity 0.5s',
-                opacity: done ? 1 : 0.35,
+                transition: 'left 1.6s cubic-bezier(0.22, 1, 0.36, 1), top 1.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                transitionDelay: `${i * 0.12}s`,
               }}
             >
               <div
-                className="flex items-center justify-center rounded-full"
-                style={{ width: 48, height: 48, background: color.bg, borderRadius: 9999 }}
+                style={{
+                  animation: wavering ? `persona-waver ${2 + (i % 3) * 0.4}s ease-in-out ${i * 0.18}s infinite` : 'none',
+                }}
+                className="flex flex-col items-center gap-1.5"
               >
-                <span style={{ color: color.text, fontFamily: 'Geist, sans-serif', fontSize: 17, fontWeight: 600 }}>
-                  {name.charAt(0)}
+                {/* 吹き出しステータス（アイコンの上） */}
+                {(() => {
+                  const b = chip ?? { label: '🤔 検討中', bg: '#F0F1F3', text: '#9A9A9F' };
+                  return (
+                    <div
+                      className="relative px-2.5 py-1"
+                      style={{
+                        background: b.bg,
+                        borderRadius: 12,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                        marginBottom: 2,
+                      }}
+                    >
+                      <span style={{ color: b.text, fontFamily: 'Geist, sans-serif', fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {b.label}
+                      </span>
+                      {/* 尻尾 */}
+                      <div
+                        className="absolute"
+                        style={{
+                          left: '50%',
+                          bottom: -3,
+                          width: 8,
+                          height: 8,
+                          background: b.bg,
+                          transform: 'translateX(-50%) rotate(45deg)',
+                          borderRadius: 1,
+                        }}
+                      />
+                    </div>
+                  );
+                })()}
+                <div
+                  className="flex items-center justify-center rounded-full"
+                  style={{ width: 48, height: 48, background: color.bg, borderRadius: 9999 }}
+                >
+                  <span style={{ color: color.text, fontFamily: 'Geist, sans-serif', fontSize: 17, fontWeight: 600 }}>
+                    {name.charAt(0)}
+                  </span>
+                </div>
+                <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 11, whiteSpace: 'nowrap' }}>
+                  {name}
                 </span>
               </div>
-              <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 11, whiteSpace: 'nowrap' }}>
-                {name}
-              </span>
-              {done && (
-                <span
-                  className="rounded-full px-2 py-0.5"
-                  style={{ background: '#E6F4EC', color: '#2E9E5B', fontFamily: 'Geist, sans-serif', fontSize: 10, fontWeight: 600 }}
-                >
-                  完了
-                </span>
-              )}
             </div>
           );
         })}
