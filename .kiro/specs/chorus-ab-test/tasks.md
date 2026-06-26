@@ -155,10 +155,10 @@
 
 ## Task 5: フロントエンド — プロジェクト基盤・認証 (P)
 
-- [ ] 5. (P) フロントエンド: 基盤と認証を構築する
+- [x] 5. (P) フロントエンド: 基盤と認証を構築する
   - _Depends: 1.3, 1.4_
 
-- [ ] 5.1 フロントエンドプロジェクトと Cloudflare Pages 設定を構築する
+- [x] 5.1 フロントエンドプロジェクトと Cloudflare Pages 設定を構築する
   - Vite + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui を `packages/frontend` に初期化する
   - React Router v6 でルート定義（S0〜S6 の全画面パスを仮ページで登録する）
   - `@aws-amplify/auth` v6 を設定して CDK Output の Cognito User Pool ID・Client ID と接続する
@@ -167,7 +167,7 @@
   - _Requirements: 9.1_
   - _Boundary: Frontend_
 
-- [ ] 5.2 サインイン画面と AuthGuard を実装する
+- [x] 5.2 サインイン画面と AuthGuard を実装する
   - サインイン画面（S0）を shadcn/ui でカスタム実装する（メール・パスワード入力、エラー表示）
   - Amplify `signIn` でサインインし、成功時にダッシュボードへ遷移する
   - 未認証ユーザーを保護ルートからサインイン画面へリダイレクトする AuthGuard を React Router で実装する
