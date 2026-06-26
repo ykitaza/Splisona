@@ -213,64 +213,117 @@ export function PersonaEditPage() {
             </div>
 
             {/* Attrs Card */}
-            <div className="flex flex-col gap-4 rounded-md p-5" style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}>
+            <div className="flex flex-col gap-5 rounded-md p-5" style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}>
               <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>属性（任意）</span>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
+              {/* 年齢 スライダー */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
                   <FieldLabel>年齢</FieldLabel>
-                  <TextInput
-                    id="age"
-                    type="number"
-                    min="1"
-                    max="120"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    placeholder="32"
-                  />
+                  {age && (
+                    <span style={{ color: '#3B7DD8', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600 }}>
+                      {age}歳
+                    </span>
+                  )}
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <FieldLabel>性別</FieldLabel>
-                  <TextInput
-                    id="gender"
-                    type="text"
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                    placeholder="男性"
-                  />
+                <input
+                  id="age"
+                  type="range"
+                  min="18"
+                  max="80"
+                  step="1"
+                  value={age || 30}
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full"
+                  style={{ accentColor: '#3B7DD8', cursor: 'pointer' }}
+                />
+              </div>
+
+              {/* 性別 セグメント */}
+              <div className="flex flex-col gap-2">
+                <FieldLabel>性別</FieldLabel>
+                <div className="flex gap-1.5">
+                  {['男性', '女性', 'その他', '指定なし'].map((g) => {
+                    const val = g === '指定なし' ? '' : g;
+                    const selected = gender === val;
+                    return (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setGender(val)}
+                        className="flex-1 rounded-md py-2 text-sm transition-colors"
+                        style={{
+                          border: `1px solid ${selected ? '#3B7DD8' : '#E6E6E8'}`,
+                          background: selected ? '#E8F0FB' : '#FFFFFF',
+                          color: selected ? '#3B7DD8' : '#666666',
+                          fontFamily: 'Geist, sans-serif',
+                          fontSize: 13,
+                          fontWeight: selected ? 600 : 400,
+                          cursor: 'pointer',
+                          borderRadius: 6,
+                        }}
+                      >
+                        {g}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="flex flex-col gap-1.5">
+              </div>
+
+              {/* 偏差値 スライダー */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
                   <FieldLabel>偏差値</FieldLabel>
-                  <TextInput
-                    id="deviationScore"
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={deviationScore}
-                    onChange={(e) => setDeviationScore(e.target.value)}
-                    placeholder="58"
-                  />
+                  {deviationScore && (
+                    <span style={{ color: '#3B7DD8', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600 }}>
+                      {deviationScore}
+                    </span>
+                  )}
                 </div>
+                <input
+                  id="deviationScore"
+                  type="range"
+                  min="30"
+                  max="80"
+                  step="1"
+                  value={deviationScore || 50}
+                  onChange={(e) => setDeviationScore(e.target.value)}
+                  className="w-full"
+                  style={{ accentColor: '#3B7DD8', cursor: 'pointer' }}
+                />
+              </div>
+
+              {/* 年収 / 学歴 / 職業 */}
+              <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <FieldLabel>年収（万円）</FieldLabel>
-                  <TextInput
+                  <FieldLabel>年収</FieldLabel>
+                  <select
                     id="annualIncome"
-                    type="number"
-                    min="0"
                     value={annualIncome}
                     onChange={(e) => setAnnualIncome(e.target.value)}
-                    placeholder="800"
-                  />
+                    className="block w-full rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#3B7DD8]"
+                    style={{ border: '1px solid #E6E6E8', borderRadius: 6, fontFamily: 'Geist, sans-serif', fontSize: 13, color: annualIncome ? '#1A1A1A' : '#9A9A9F' }}
+                  >
+                    <option value="">選択</option>
+                    {[200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500, 2000].map((v) => (
+                      <option key={v} value={v}>{v}万円</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <FieldLabel>学歴</FieldLabel>
-                  <TextInput
+                  <select
                     id="education"
-                    type="text"
                     value={education}
                     onChange={(e) => setEducation(e.target.value)}
-                    placeholder="大卒"
-                  />
+                    className="block w-full rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#3B7DD8]"
+                    style={{ border: '1px solid #E6E6E8', borderRadius: 6, fontFamily: 'Geist, sans-serif', fontSize: 13, color: education ? '#1A1A1A' : '#9A9A9F' }}
+                  >
+                    <option value="">選択</option>
+                    {['中卒', '高卒', '専門卒', '短大卒', '大卒', '院卒'].map((v) => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <FieldLabel>職業</FieldLabel>

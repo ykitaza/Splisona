@@ -4,7 +4,8 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm --filter backend test",
-    "dev:backend": "pnpm --filter backend dev",
+    "dev:backend": "DYNAMODB_ENDPOINT=http://localhost:8000 TABLE_NAME=chorus-main IMAGE_BUCKET=local-stub pnpm --filter backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
     "db:init": "npx tsx scripts/init-local-db.ts"
   },
   "devDependencies": {

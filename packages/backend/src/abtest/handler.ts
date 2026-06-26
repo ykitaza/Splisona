@@ -1,5 +1,5 @@
 import { getUserId, type ApiGatewayEvent } from "../shared/auth.js";
-import { queryByPK, putItem, getItem, abtestKey, evaluationKey } from "../shared/dynamo.js";
+import { queryByPK, putItem, getItem, deleteItem, abtestKey, evaluationKey } from "../shared/dynamo.js";
 import { badRequest, errorResponse } from "../shared/errors.js";
 import { type ABTestRecord, type EvaluationRecord } from "../shared/types.js";
 import { s3Client, IMAGE_BUCKET } from "../shared/s3.js";
@@ -99,6 +99,19 @@ export async function updateTest(
 
     await putItem(updated as unknown as Record<string, unknown>);
     return json(200, toABTest(updated));
+  } catch (e) {
+    return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+  }
+}
+
+export async function deleteTest(
+  event: ApiGatewayEvent & { pathParameters?: Record<string, string> }
+): Promise<LambdaResponse> {
+  try {
+    const userId = getUserId(event);
+    const testId = event.pathParameters?.id ?? "";
+    await deleteItem(abtestKey(userId, testId) as unknown as Record<string, string>);
+    return json(200, { deleted: true });
   } catch (e) {
     return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
   }

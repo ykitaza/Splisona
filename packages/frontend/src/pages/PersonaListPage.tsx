@@ -5,7 +5,7 @@ import { PersonaCard } from '../components/persona/PersonaCard';
 import { useState } from 'react';
 
 export function PersonaListPage() {
-  const { personas, isLoading } = usePersonas();
+  const { personas, isLoading, deletePersona } = usePersonas();
   const [query, setQuery] = useState('');
 
   if (isLoading) {
@@ -116,7 +116,7 @@ export function PersonaListPage() {
             <div key={ri} className="flex gap-5">
               {row.map((persona) => (
                 <div key={persona.personaId} style={{ flex: '1 1 0', minWidth: 0 }}>
-                  <PersonaCard persona={persona} isAiGenerated={!!persona.freeText} />
+                  <PersonaCard persona={persona} isAiGenerated={!!persona.freeText} onDelete={deletePersona} />
                 </div>
               ))}
               {/* fill empty slots */}

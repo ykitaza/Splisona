@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { PersonaEditPage } from './PersonaEditPage';
+import { ApiError } from '../api/client';
 
 vi.mock('../api/personas', () => ({
   getPersona: vi.fn(),
@@ -57,6 +58,20 @@ function renderEditPage() {
 describe('PersonaEditPage - 新規作成', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('保存失敗時にAPIエラーメッセージがアラートとして表示される', async () => {
+    mockCreatePersona.mockRejectedValue(new ApiError(503, 'Service Unavailable'));
+    renderNewPage();
+
+    await userEvent.type(screen.getByLabelText(/表示名/i), 'ハルト');
+    await userEvent.click(screen.getByRole('button', { name: /保存/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'AIサービスが一時的に利用できません。しばらく後でお試しください'
+      );
+    });
   });
 
   it('displayName未入力時にバリデーションエラーが表示される', async () => {

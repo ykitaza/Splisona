@@ -1,9 +1,17 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signIn } from 'aws-amplify/auth';
 
 export function SignInPage() {
   const navigate = useNavigate();
+  const localUserId = import.meta.env?.VITE_LOCAL_USER_ID as string | undefined;
+
+  useEffect(() => {
+    if (localUserId) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [localUserId, navigate]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
