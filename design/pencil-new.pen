@@ -1461,397 +1461,6 @@
     },
     {
       "type": "frame",
-      "id": "FuSRh",
-      "x": 5256,
-      "y": -1200,
-      "name": "PromptEditor",
-      "reusable": true,
-      "width": 640,
-      "height": 620,
-      "fill": "#00000099",
-      "justifyContent": "center",
-      "alignItems": "center",
-      "children": [
-        {
-          "type": "frame",
-          "id": "gCMeu",
-          "name": "Panel",
-          "width": 560,
-          "fill": "$bg-surface",
-          "cornerRadius": "$r-lg",
-          "stroke": "$hairline",
-          "strokeWidth": 1,
-          "effect": {
-            "type": "shadow",
-            "shadowType": "outer",
-            "color": "#00000080",
-            "offset": {
-              "x": 0,
-              "y": 12
-            },
-            "blur": 40
-          },
-          "layout": "vertical",
-          "gap": "$space-4",
-          "padding": "$space-5",
-          "children": [
-            {
-              "type": "frame",
-              "id": "ak1e3",
-              "name": "Head",
-              "width": "fill_container",
-              "justifyContent": "space_between",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "BtNNZ",
-                  "name": "HL",
-                  "layout": "vertical",
-                  "gap": 2,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "UWHzd",
-                      "name": "Title",
-                      "fill": "$text-hi",
-                      "content": "ペルソナ評価",
-                      "fontFamily": "$font-sans",
-                      "fontSize": "$text-lg",
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "text",
-                      "id": "w6UJi",
-                      "name": "Type",
-                      "fill": "$text-lo",
-                      "content": "evaluation",
-                      "fontFamily": "$font-mono",
-                      "fontSize": "$text-xs",
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "MOFl6",
-                  "name": "Close",
-                  "width": 24,
-                  "height": 24,
-                  "cornerRadius": "$r-sm",
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "UgYGp",
-                      "name": "Icon",
-                      "width": 16,
-                      "height": 16,
-                      "icon": "x",
-                      "library": "lucide",
-                      "fill": "$text-mid"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "rectangle",
-              "id": "kJmNW",
-              "name": "Div1",
-              "fill": "$hairline",
-              "width": "fill_container",
-              "height": 1
-            },
-            {
-              "type": "frame",
-              "id": "uDS2y",
-              "name": "FixedSection",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": "$space-2",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "Q0flG",
-                  "name": "FixedHead",
-                  "gap": "$space-2",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "V3RgS7",
-                      "name": "Lock",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "lock",
-                      "library": "lucide",
-                      "fill": "$text-lo"
-                    },
-                    {
-                      "type": "text",
-                      "id": "hjkYB",
-                      "name": "L",
-                      "fill": "$text-lo",
-                      "content": "ペルソナコンテキスト（固定）",
-                      "fontFamily": "$font-mono",
-                      "fontSize": "$text-xs",
-                      "fontWeight": "normal",
-                      "letterSpacing": 0.5
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "DZ6At",
-                  "name": "FixedBox",
-                  "width": "fill_container",
-                  "fill": "$bg-raised",
-                  "cornerRadius": "$r-sm",
-                  "layout": "vertical",
-                  "padding": "$space-3",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "I86BHf",
-                      "name": "T",
-                      "fill": "$text-mid",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "あなたは「{表示名}」というペルソナです。\n属性: {年齢}歳・{性別}・{職業}（{タイプ}）\n偏差値 {偏差値}・年収 {年収}・{学歴}\n\n人物像:\n{自由記述}",
-                      "lineHeight": 1.7,
-                      "fontFamily": "$font-mono",
-                      "fontSize": "$text-xs",
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "ZYU7c",
-              "name": "InstructionSection",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": "$space-2",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "b7yL6",
-                  "name": "InstructionHead",
-                  "gap": "$space-2",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "EsXU0",
-                      "name": "Pen",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "lock",
-                      "library": "lucide",
-                      "fill": "#5B616B"
-                    },
-                    {
-                      "type": "text",
-                      "id": "F5Hwi",
-                      "name": "L",
-                      "fill": "#5B616B",
-                      "content": "評価指示（固定）",
-                      "fontFamily": "$font-mono",
-                      "fontSize": "$text-xs",
-                      "fontWeight": "normal",
-                      "letterSpacing": 0.5
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "oC1Fy",
-                  "name": "EditBox",
-                  "width": "fill_container",
-                  "height": 120,
-                  "fill": "#1C1F23",
-                  "cornerRadius": "$r-sm",
-                  "stroke": "$hairline",
-                  "strokeWidth": 1,
-                  "layout": "vertical",
-                  "padding": "$space-3",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "rkG8w",
-                      "name": "T",
-                      "fill": "#9BA1AC",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "あなたのペルソナ視点から、提示された2つのデザインを以下の5観点で 1〜5 の整数で採点し、どちらが優れているか理由とともに回答してください。\n\n1. 使いやすさ  2. 魅力  3. 分かりやすさ\n4. 行動喚起  5. 信頼感",
-                      "lineHeight": 1.7,
-                      "fontFamily": "$font-mono",
-                      "fontSize": "$text-xs",
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "rectangle",
-              "id": "S7MyY",
-              "name": "Div2",
-              "fill": "$hairline",
-              "width": "fill_container",
-              "height": 1
-            },
-            {
-              "type": "frame",
-              "id": "F8LpI",
-              "name": "AddSection",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 8,
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "EKJ9x",
-                  "name": "AddHead",
-                  "gap": 8,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "j5FXTk",
-                      "name": "Plus",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "plus",
-                      "library": "lucide",
-                      "fill": "#6E78D9"
-                    },
-                    {
-                      "type": "text",
-                      "id": "YxYyv",
-                      "name": "L",
-                      "fill": "#6E78D9",
-                      "content": "追加指示（任意）",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 11,
-                      "fontWeight": "normal",
-                      "letterSpacing": 0.5
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "reJRv",
-                  "name": "AddBox",
-                  "width": "fill_container",
-                  "height": 80,
-                  "fill": "#0A0B0D",
-                  "cornerRadius": 6,
-                  "stroke": "#FFFFFF14",
-                  "strokeWidth": 1,
-                  "layout": "vertical",
-                  "padding": 12,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "o0CfKV",
-                      "name": "Placeholder",
-                      "fill": "#5B616B",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "追加の評価基準や指示があればここに入力…",
-                      "lineHeight": 1.7,
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 11,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "XoOdp",
-              "name": "Footer",
-              "width": "fill_container",
-              "justifyContent": "space_between",
-              "alignItems": "center",
-              "children": [
-                {
-                  "id": "j9NraM",
-                  "type": "ref",
-                  "ref": "vGIoC",
-                  "name": "リセット",
-                  "fill": "#00000000",
-                  "stroke": "$hairline",
-                  "strokeWidth": 1,
-                  "descendants": {
-                    "t9ysYm": {
-                      "icon": "rotate-ccw",
-                      "fill": "$text-lo",
-                      "width": 14,
-                      "height": 14
-                    },
-                    "sIO2d": {
-                      "content": "デフォルトに戻す",
-                      "fill": "$text-lo",
-                      "fontWeight": "normal"
-                    }
-                  }
-                },
-                {
-                  "type": "frame",
-                  "id": "tkhrP",
-                  "name": "Right",
-                  "gap": "$space-3",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "id": "QepDi",
-                      "type": "ref",
-                      "ref": "vGIoC",
-                      "name": "キャンセル",
-                      "fill": "#00000000",
-                      "stroke": "$hairline",
-                      "strokeWidth": 1,
-                      "descendants": {
-                        "t9ysYm": {
-                          "enabled": false
-                        },
-                        "sIO2d": {
-                          "content": "キャンセル",
-                          "fill": "$text-mid",
-                          "fontWeight": "normal"
-                        }
-                      }
-                    },
-                    {
-                      "id": "q8lae",
-                      "type": "ref",
-                      "ref": "vGIoC",
-                      "name": "保存",
-                      "descendants": {
-                        "t9ysYm": {
-                          "enabled": false
-                        },
-                        "sIO2d": {
-                          "content": "保存する"
-                        }
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "frame",
       "id": "xU1jg",
       "x": 5976,
       "y": -1200,
@@ -10894,6 +10503,16 @@
                                       "type": "ref",
                                       "ref": "aGpDL",
                                       "name": "Help"
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "kskTI",
+                                      "name": "Toggle",
+                                      "width": 14,
+                                      "height": 14,
+                                      "icon": "chevron-down",
+                                      "library": "lucide",
+                                      "fill": "$text-lo"
                                     }
                                   ]
                                 },
@@ -10931,9 +10550,12 @@
                             {
                               "type": "frame",
                               "id": "mXpvf",
+                              "x": 0,
+                              "y": 27,
                               "name": "Box",
-                              "width": "fill_container",
-                              "fill": "$bg-base",
+                              "enabled": false,
+                              "width": "fill_container(772)",
+                              "fill": "$bg-raised",
                               "cornerRadius": "$r-sm",
                               "stroke": "$hairline",
                               "strokeWidth": 1,
@@ -10947,8 +10569,8 @@
                                   "fill": "$text-mid",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "あなたは{表示名}、{年齢}歳・{性別}・{職業}の{タイプ}です。{自由記述}。この人物として、提示されたデザインを評価してください。",
-                                  "lineHeight": 1.6,
+                                  "content": "あなたは「田中 太郎」というペルソナです。\n属性: 34歳・男性・営業職（消費者）\n偏差値 55・年収 480万・大卒\n\n人物像:\n新しいツールには慎重で、まず無料枠で試す。レビューを重視し、コスパに敏感。最短で成果が出る導線を好む。",
+                                  "lineHeight": 1.7,
                                   "fontFamily": "$font-mono",
                                   "fontSize": "$text-xs",
                                   "fontWeight": "normal"
@@ -10964,12 +10586,13 @@
                       "id": "E16JeP",
                       "name": "Footer",
                       "width": "fill_container",
+                      "fill": "$bg-base",
                       "stroke": "$hairline",
                       "strokeWidth": {
                         "top": 1
                       },
                       "padding": [
-                        "$space-4",
+                        16,
                         0,
                         0,
                         0
@@ -12823,19 +12446,20 @@
                       "type": "ref",
                       "ref": "vGIoC",
                       "name": "3件を削除",
-                      "fill": "$danger",
+                      "fill": "#00000000",
                       "stroke": "$danger",
-                      "strokeWidth": 0,
+                      "strokeWidth": 1,
                       "descendants": {
                         "t9ysYm": {
                           "icon": "trash-2",
-                          "fill": "$bg-base",
+                          "fill": "$danger",
                           "width": 14,
                           "height": 14
                         },
                         "sIO2d": {
                           "content": "3件を削除",
-                          "fill": "$bg-base"
+                          "fill": "$danger",
+                          "fontWeight": "normal"
                         }
                       }
                     }
@@ -15496,6 +15120,86 @@
           ]
         }
       ]
+    },
+    {
+      "type": "note",
+      "id": "zUaFM",
+      "x": 3120,
+      "y": 744,
+      "name": "Note: S3",
+      "width": 400,
+      "height": 40,
+      "content": "ステータスはポーリング（5s間隔）で更新。完了時にS2結果レポートへ自動遷移"
+    },
+    {
+      "type": "note",
+      "id": "d0DZR",
+      "x": 6240,
+      "y": 1057,
+      "name": "Note: S5",
+      "width": 440,
+      "height": 40,
+      "content": "S4の上にオーバーレイ表示。ESCまたは外側クリックで閉じる。選択後S4のペルソナ欄に反映"
+    },
+    {
+      "type": "note",
+      "id": "QO3AP",
+      "x": 7800,
+      "y": 1200,
+      "name": "Note: S6 編集",
+      "width": 500,
+      "height": 48,
+      "content": "sticky footer: フッターは画面下部に固定。プロンプトプレビューはクリックで展開しフォーム値をリアルタイム反映。右カラム（プレビュー）も連動更新"
+    },
+    {
+      "type": "note",
+      "id": "jqeFH",
+      "x": 9360,
+      "y": 1200,
+      "name": "Note: S6 インタビュー",
+      "width": 460,
+      "height": 48,
+      "content": "チャットはストリーミング表示（タイピングアニメーション）。送信中はインプット無効化。履歴はセッション単位で保持"
+    },
+    {
+      "type": "note",
+      "id": "lb1rl",
+      "x": 12480,
+      "y": 840,
+      "name": "Note: S8 一括削除",
+      "width": 460,
+      "height": 40,
+      "content": "S8と同一ルート・同一コンポーネント。ヘッダーの「選択」ボタンでモード切替（状態管理のみ、ルート遷移なし）"
+    },
+    {
+      "type": "note",
+      "id": "oEpGz",
+      "x": 14040,
+      "y": 720,
+      "name": "Note: S9",
+      "width": 480,
+      "height": 40,
+      "content": "グローバルモーダル: どの画面からも起動可。サイドバーの歯車アイコンがトリガー。左ナビでセクション切替（ルート変更なし）"
+    },
+    {
+      "type": "note",
+      "id": "PwCzJ",
+      "x": 15600,
+      "y": 720,
+      "name": "Note: S9 詳細",
+      "width": 460,
+      "height": 40,
+      "content": "S9内の状態遷移（ルート変更なし）。← クリックで一覧に戻る。追加指示のみ編集可、固定セクションは読み取り専用"
+    },
+    {
+      "type": "note",
+      "id": "MF5cs",
+      "x": 17160,
+      "y": 780,
+      "name": "Note: S10",
+      "width": 400,
+      "height": 40,
+      "content": "S9設定モーダル内またはサイドバーから開くモーダル。バージョン情報・ライセンス表示用"
     }
   ],
   "variables": {
