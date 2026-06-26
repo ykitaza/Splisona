@@ -25,6 +25,7 @@ export function TestPersonaSelectPage() {
     new Set(testDraft.get().personaIds),
   );
   const [query, setQuery] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   if (isLoading) {
     return (
@@ -54,8 +55,6 @@ export function TestPersonaSelectPage() {
   function selectAll() {
     setSelectedIds(new Set(filtered.map((p) => p.personaId)));
   }
-
-  const [isSaving, setIsSaving] = useState(false);
 
   async function handleNext() {
     const ids = Array.from(selectedIds);
