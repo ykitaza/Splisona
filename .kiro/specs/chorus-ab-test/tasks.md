@@ -69,7 +69,7 @@
   - _Requirements: 1.3, 8.3, 9.1_
   - _Boundary: API Construct_
 
-- [ ] 1.5 バックエンド共有ユーティリティを実装する
+- [x] 1.5 バックエンド共有ユーティリティを実装する
   - DynamoDB DocumentClient ラッパー（`PK=TYPE#id` 補完ヘルパー含む）を `shared/dynamo.ts` に実装する
   - API Gateway JWT claims から `userId`（sub）を取得するユーティリティを `shared/auth.ts` に実装する
   - `AppError` 型と HTTP エラーレスポンス生成関数を `shared/errors.ts` に定義する
