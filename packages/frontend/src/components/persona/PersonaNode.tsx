@@ -1,4 +1,4 @@
-function hashSeed(seed: string): number {
+export function hashSeed(seed: string): number {
   let h = 0;
   for (let i = 0; i < seed.length; i++) {
     h = (h * 31 + seed.charCodeAt(i)) >>> 0;
@@ -6,10 +6,14 @@ function hashSeed(seed: string): number {
   return h;
 }
 
-const PALETTE = [
+export const PALETTE = [
   '#6E78D9', '#C9974F', '#54B587', '#E06A6A',
   '#8B7EC8', '#5BA3D9', '#D97B6E', '#7EC8A4',
 ];
+
+export function getNodeColor(seed: string): string {
+  return PALETTE[hashSeed(seed) % PALETTE.length];
+}
 
 interface PersonaNodeProps {
   seed: string;

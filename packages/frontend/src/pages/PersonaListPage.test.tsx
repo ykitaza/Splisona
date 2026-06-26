@@ -21,7 +21,7 @@ const samplePersonas: Persona[] = [
     personaId: 'p-1',
     userId: 'u-1',
     displayName: 'ハルト',
-    type: 'business',
+    type: 'action_oriented',
     occupation: '営業職',
     age: 32,
     gender: '男性',
@@ -32,7 +32,7 @@ const samplePersonas: Persona[] = [
     personaId: 'p-2',
     userId: 'u-1',
     displayName: 'ミサキ',
-    type: 'consumer',
+    type: 'cautious',
     occupation: '専業主婦',
     age: 41,
     gender: '女性',
@@ -64,8 +64,6 @@ describe('PersonaListPage', () => {
 
     expect(screen.getByText('ハルト')).toBeInTheDocument();
     expect(screen.getByText('ミサキ')).toBeInTheDocument();
-    expect(screen.getByText('営業職')).toBeInTheDocument();
-    expect(screen.getByText('専業主婦')).toBeInTheDocument();
   });
 
   it('ペルソナがない場合にEmptyStateが表示される', () => {
@@ -76,11 +74,10 @@ describe('PersonaListPage', () => {
   });
 
   it('新規作成ボタンをクリックするとペルソナ作成画面へ遷移する', async () => {
-    // ペルソナあり状態にするとヘッダーボタンのみが "ペルソナを作成" に一致する
     mockUsePersonas.mockReturnValue({ personas: samplePersonas, isLoading: false, error: null, ...defaultMutations });
     renderPersonaList();
 
-    await userEvent.click(screen.getByRole('link', { name: /ペルソナを作成/i }));
+    await userEvent.click(screen.getByRole('link', { name: /新規ペルソナ/i }));
     expect(screen.getByText('ペルソナ作成')).toBeInTheDocument();
   });
 });

@@ -59,7 +59,7 @@ describe('PersonaUnifiedPage', () => {
       expect(screen.getAllByText('ハルト').length).toBeGreaterThanOrEqual(1);
     });
 
-    expect(screen.getByLabelText(/ペルソナ名/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/表示名/)).toBeInTheDocument();
   });
 
   it('インタビュータブに切替できる', async () => {
@@ -101,7 +101,7 @@ describe('PersonaUnifiedPage', () => {
 
     expect(screen.getByText('削除')).toBeInTheDocument();
     expect(screen.getByText('キャンセル')).toBeInTheDocument();
-    expect(screen.getByText('保存')).toBeInTheDocument();
+    expect(screen.getByText('保存する')).toBeInTheDocument();
   });
 
   it('合成プロンプトプレビューの折りたたみが存在する', async () => {

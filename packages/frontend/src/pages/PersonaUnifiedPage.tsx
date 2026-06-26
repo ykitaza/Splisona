@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type FormEvent, type KeyboardEvent } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Check, Sparkles, Camera, Send, RotateCcw, Trash2, ChevronDown } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Check, Sparkles, Camera, Send, RotateCcw, Trash2, ChevronDown, Copy } from 'lucide-react';
 import { getPersona, updatePersona, deletePersona, generateDraft, sendInterviewMessage, uploadPersonaAvatar, getAvatarUrl } from '../api/personas';
 import { getApiErrorMessage } from '../api/client';
 import { PERSONA_TYPE_LABELS, type PersonaType, type Persona, type ConversationMessage } from '../types';
@@ -37,17 +37,31 @@ function PromptPreview({ fields }: { fields: { displayName: string; type: string
   const [open, setOpen] = useState(false);
   const preview = buildPromptPreview(fields);
   return (
-    <div className="flex flex-col">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 text-text-lo font-sans text-xs font-medium"
-      >
-        <ChevronDown size={14} className={`transition-transform ${open ? '' : '-rotate-90'}`} />
-        合成プロンプト
-      </button>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex items-center gap-2 text-text-lo font-mono text-xs"
+          style={{ letterSpacing: '0.5px' }}
+        >
+          <ChevronDown size={14} className={`transition-transform ${open ? '' : '-rotate-90'}`} />
+          合成プロンプト
+        </button>
+        {open && (
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(preview)}
+            className="flex items-center gap-1 text-text-lo font-sans text-xs hover:text-text-mid transition-colors"
+            data-testid="copy-prompt"
+          >
+            <Copy size={12} />
+            コピー
+          </button>
+        )}
+      </div>
       {open && (
-        <pre className="mt-2 rounded-md bg-raised border border-hairline px-4 py-3 text-text-mid font-mono text-xs whitespace-pre-wrap leading-relaxed overflow-x-auto">
+        <pre className="rounded-sm bg-raised border border-hairline p-3 text-text-mid font-mono text-xs whitespace-pre-wrap overflow-x-auto" style={{ lineHeight: 1.7 }}>
           {preview}
         </pre>
       )}
@@ -199,7 +213,7 @@ export function PersonaUnifiedPage() {
     }
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage(inputText);
@@ -229,13 +243,12 @@ export function PersonaUnifiedPage() {
       {/* Main area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header + tabs */}
-        <div className="flex flex-col px-8 pt-6 pb-0 flex-shrink-0 border-b border-hairline">
-          <Link to="/personas" className="flex items-center gap-1 text-text-lo font-sans text-xs mb-2">
-            <ChevronLeft size={14} className="text-text-lo" />
-            ペルソナ一覧
-          </Link>
-          <h1 className="text-text-hi font-sans text-xl font-semibold mb-4">{displayName || persona.displayName}</h1>
-          <div className="flex gap-0">
+        <div className="flex flex-col px-6 pt-6 pb-0 flex-shrink-0 border-b border-hairline">
+          <div className="flex flex-col gap-1 mb-6">
+            <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '0.3px' }}>ペルソナ</span>
+            <h1 className="text-text-hi font-sans text-xl font-semibold">{displayName || persona.displayName}</h1>
+          </div>
+          <div className="flex gap-6">
             {(['edit', 'interview'] as const).map((t) => (
               <button
                 key={t}
@@ -258,16 +271,48 @@ export function PersonaUnifiedPage() {
         {/* Tab content */}
         {tab === 'edit' ? (
           <form onSubmit={handleSave} noValidate className="flex flex-col flex-1 overflow-y-auto">
-            <div className="flex flex-col gap-5 p-8 pb-24">
+            <div className="flex flex-col gap-6 p-6 pb-24">
               {error && (
                 <div role="alert" className="rounded-md bg-danger/10 text-danger px-4 py-3 font-sans text-sm">
                   {error}
                 </div>
               )}
 
-              {/* Basic info */}
-              <div className="flex flex-col gap-4">
-                <span className="text-text-hi font-sans text-base font-semibold">基本情報</span>
+              {/* 基本情報 */}
+              <div className="flex flex-col gap-6">
+                <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '0.5px' }}>基本情報</span>
+
+                <div className="flex flex-col gap-1 pb-2 border-b border-hairline">
+                  <label htmlFor="displayName" className="text-text-mid font-sans text-sm">表示名</label>
+                  <input
+                    id="displayName"
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    disabled={isDefault}
+                    placeholder="例: せっかちなビジネスマン"
+                    className="bg-transparent text-text-hi font-sans text-base outline-none disabled:opacity-50"
+                  />
+                  {validationError && <p className="text-danger font-sans text-xs">{validationError}</p>}
+                </div>
+
+                <div className="flex flex-col gap-1 pb-2 border-b border-hairline">
+                  <label htmlFor="type" className="text-text-mid font-sans text-sm">タイプ</label>
+                  <div className="relative">
+                    <select
+                      id="type"
+                      value={type}
+                      onChange={(e) => setType(e.target.value as PersonaType)}
+                      disabled={isDefault}
+                      className="w-full bg-transparent text-text-hi font-sans text-base outline-none appearance-none disabled:opacity-50 pr-6"
+                    >
+                      {PERSONA_TYPES.map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={15} className="absolute right-0 top-1/2 -translate-y-1/2 text-text-lo pointer-events-none" />
+                  </div>
+                </div>
 
                 {/* Avatar */}
                 {!isDefault && (
@@ -293,42 +338,13 @@ export function PersonaUnifiedPage() {
                     <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleAvatarChange} />
                   </div>
                 )}
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="displayName" className="text-text-lo font-sans text-xs">ペルソナ名 <span className="text-danger">*</span></label>
-                  <input
-                    id="displayName"
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    disabled={isDefault}
-                    placeholder="例: せっかちなビジネスマン"
-                    className="rounded-md bg-raised border border-hairline px-3 py-2 text-text-hi font-sans text-sm outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
-                  />
-                  {validationError && <p className="text-danger font-sans text-xs">{validationError}</p>}
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="type" className="text-text-lo font-sans text-xs">タイプ</label>
-                  <select
-                    id="type"
-                    value={type}
-                    onChange={(e) => setType(e.target.value as PersonaType)}
-                    disabled={isDefault}
-                    className="rounded-md bg-raised border border-hairline px-3 py-2 text-text-hi font-sans text-sm outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
-                  >
-                    {PERSONA_TYPES.map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
               <div className="h-px bg-hairline" />
 
-              {/* Attributes */}
-              <div className="flex flex-col gap-4">
-                <span className="text-text-hi font-sans text-base font-semibold">属性</span>
+              {/* 属性 */}
+              <div className="flex flex-col gap-6">
+                <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '0.5px' }}>属性</span>
 
                 <FieldSlider
                   label="年齢"
@@ -356,79 +372,85 @@ export function PersonaUnifiedPage() {
                   onChange={(v) => setDeviationScore(String(v))}
                 />
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-text-lo font-sans text-xs">年収</span>
+                <div className="flex flex-col gap-1 pb-2 border-b border-hairline">
+                  <span className="text-text-mid font-sans text-sm">年収</span>
+                  <div className="relative">
                     <select
                       value={annualIncome}
                       onChange={(e) => setAnnualIncome(e.target.value)}
                       disabled={isDefault}
-                      className="rounded-md bg-raised border border-hairline px-3 py-2 text-text-hi font-sans text-xs outline-none disabled:opacity-50"
+                      className="w-full bg-transparent text-text-hi font-sans text-base outline-none appearance-none disabled:opacity-50 pr-6"
                     >
                       <option value="">選択</option>
                       {[200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1500, 2000].map((v) => (
                         <option key={v} value={v}>{v}万円</option>
                       ))}
                     </select>
+                    <ChevronDown size={15} className="absolute right-0 top-1/2 -translate-y-1/2 text-text-lo pointer-events-none" />
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-text-lo font-sans text-xs">学歴</span>
+                </div>
+
+                <div className="flex flex-col gap-1 pb-2 border-b border-hairline">
+                  <span className="text-text-mid font-sans text-sm">学歴</span>
+                  <div className="relative">
                     <select
                       value={education}
                       onChange={(e) => setEducation(e.target.value)}
                       disabled={isDefault}
-                      className="rounded-md bg-raised border border-hairline px-3 py-2 text-text-hi font-sans text-xs outline-none disabled:opacity-50"
+                      className="w-full bg-transparent text-text-hi font-sans text-base outline-none appearance-none disabled:opacity-50 pr-6"
                     >
                       <option value="">選択</option>
                       {['中卒', '高卒', '専門卒', '短大卒', '大卒', '院卒'].map((v) => (
                         <option key={v} value={v}>{v}</option>
                       ))}
                     </select>
+                    <ChevronDown size={15} className="absolute right-0 top-1/2 -translate-y-1/2 text-text-lo pointer-events-none" />
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-text-lo font-sans text-xs">職業</span>
-                    <input
-                      type="text"
-                      value={occupation}
-                      onChange={(e) => setOccupation(e.target.value)}
-                      disabled={isDefault}
-                      placeholder="営業職"
-                      className="rounded-md bg-raised border border-hairline px-3 py-2 text-text-hi font-sans text-xs outline-none disabled:opacity-50"
-                    />
-                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 pb-2 border-b border-hairline">
+                  <span className="text-text-mid font-sans text-sm">職業</span>
+                  <input
+                    type="text"
+                    value={occupation}
+                    onChange={(e) => setOccupation(e.target.value)}
+                    disabled={isDefault}
+                    placeholder="営業職"
+                    className="bg-transparent text-text-hi font-sans text-base outline-none disabled:opacity-50"
+                  />
                 </div>
               </div>
 
               <div className="h-px bg-hairline" />
 
-              {/* Free text */}
+              {/* 自由記述 */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-text-hi font-sans text-base font-semibold">人物像・行動特性</span>
+                  <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '0.5px' }}>自由記述</span>
                   {!isDefault && (
                     <button
                       type="button"
                       onClick={handleGenerateDraft}
                       disabled={isGenerating}
-                      className="flex items-center gap-1.5 text-accent font-sans text-xs font-medium disabled:opacity-50"
+                      className="flex items-center gap-1 text-accent font-sans text-sm font-medium disabled:opacity-50"
                     >
-                      <Sparkles size={13} />
-                      {isGenerating ? '生成中...' : 'AIで下書き'}
+                      <Sparkles size={14} />
+                      {isGenerating ? '生成中...' : 'AIで生成'}
                     </button>
                   )}
                 </div>
-                <textarea
-                  value={freeText}
-                  onChange={(e) => setFreeText(e.target.value)}
-                  disabled={isDefault}
-                  rows={4}
-                  placeholder="このペルソナの性格や行動特性を記述してください"
-                  className="rounded-md bg-raised border border-hairline px-3 py-2.5 text-text-hi font-sans text-sm outline-none resize-none focus:ring-1 focus:ring-accent disabled:opacity-50"
-                  style={{ lineHeight: 1.6 }}
-                />
+                <div className="pb-3 border-b border-hairline">
+                  <textarea
+                    value={freeText}
+                    onChange={(e) => setFreeText(e.target.value)}
+                    disabled={isDefault}
+                    rows={4}
+                    placeholder="このペルソナの性格や行動特性を記述してください"
+                    className="w-full bg-transparent text-text-mid font-sans text-base outline-none resize-none disabled:opacity-50"
+                    style={{ lineHeight: 1.6 }}
+                  />
+                </div>
               </div>
-
-              <div className="h-px bg-hairline" />
 
               {/* Prompt preview */}
               <PromptPreview fields={{ displayName, type, age, gender, occupation, deviationScore, freeText }} />
@@ -436,11 +458,11 @@ export function PersonaUnifiedPage() {
 
             {/* Sticky footer */}
             {!isDefault && (
-              <div className="sticky bottom-0 flex items-center justify-between px-8 py-4 border-t border-hairline bg-surface">
+              <div className="sticky bottom-0 flex items-center justify-between px-6 pt-4 pb-4 border-t border-hairline bg-base">
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="flex items-center gap-1.5 text-danger font-sans text-sm font-medium"
+                  className="flex items-center gap-1.5 rounded-md border border-danger text-danger px-4 py-2 font-sans text-sm font-medium transition-colors hover:bg-danger/10"
                 >
                   <Trash2 size={14} />
                   削除
@@ -449,7 +471,7 @@ export function PersonaUnifiedPage() {
                   <button
                     type="button"
                     onClick={() => navigate('/personas')}
-                    className="rounded-md bg-raised border border-hairline px-4 py-2 text-text-mid font-sans text-sm transition-colors hover:bg-surface"
+                    className="rounded-md border border-hairline px-4 py-2 text-text-mid font-sans text-sm transition-colors hover:bg-raised"
                   >
                     キャンセル
                   </button>
@@ -459,7 +481,7 @@ export function PersonaUnifiedPage() {
                     className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-white font-sans text-sm font-semibold disabled:opacity-50"
                   >
                     <Check size={14} />
-                    {isSaving ? '保存中...' : '保存'}
+                    {isSaving ? '保存中...' : '保存する'}
                   </button>
                 </div>
               </div>
@@ -499,63 +521,43 @@ export function PersonaUnifiedPage() {
               )}
               <div ref={bottomRef} />
             </div>
-            <div className="flex-shrink-0 px-8 py-4 flex items-end gap-3 border-t border-hairline">
-              <textarea
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isSending}
-                placeholder="メッセージを入力（Enter で送信、Shift+Enter で改行）"
-                rows={2}
-                className="flex-1 rounded-md bg-raised border border-hairline px-3 py-2.5 text-text-hi font-sans text-sm resize-none outline-none focus:ring-1 focus:ring-accent"
-              />
-              <button
-                type="button"
-                onClick={() => sendMessage(inputText)}
-                disabled={isSending || !inputText.trim()}
-                className="flex items-center justify-center rounded-md bg-accent flex-shrink-0 disabled:opacity-40"
-                style={{ width: 40, height: 40 }}
-              >
-                <Send size={16} color="#FFFFFF" />
-              </button>
+            <div className="flex-shrink-0 px-6 py-4">
+              <div className="flex items-center gap-3 rounded-md bg-base border border-hairline py-2 pl-4 pr-2">
+                <input
+                  type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={isSending}
+                  placeholder="メッセージを入力（Enter で送信）"
+                  className="flex-1 bg-transparent text-text-hi font-sans text-sm outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => sendMessage(inputText)}
+                  disabled={isSending || !inputText.trim()}
+                  className="flex items-center justify-center rounded-md bg-accent flex-shrink-0 disabled:opacity-40"
+                  style={{ width: 32, height: 32 }}
+                >
+                  <Send size={14} color="#FFFFFF" />
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
       {/* Right column: Persona identity */}
-      <div className="flex flex-col gap-5 flex-shrink-0 p-6 border-l border-hairline overflow-y-auto" style={{ width: 260 }}>
-        <div className="flex flex-col items-center gap-3">
-          <PersonaNode seed={persona.personaId} size={64} />
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-text-hi font-sans text-base font-semibold">{displayName || persona.displayName}</span>
-            <span className="text-text-lo font-sans text-xs">{(PERSONA_TYPE_LABELS as Record<string, string>)[type] ?? type}</span>
-          </div>
+      <div className="flex flex-col gap-4 flex-shrink-0 p-6 border-l border-hairline overflow-y-auto" style={{ width: 320 }}>
+        <div className="rounded-[24px] overflow-hidden flex-shrink-0 self-center">
+          <PersonaNode seed={persona.personaId} size={96} />
         </div>
-
-        <div className="h-px bg-hairline" />
-
-        <div className="flex flex-col gap-3">
-          {[
-            { label: '年齢', value: age ? `${age}歳` : '—' },
-            { label: '性別', value: gender || '—' },
-            { label: '職業', value: occupation || '—' },
-          ].map(({ label, value }) => (
-            <div key={label} className="flex items-center justify-between">
-              <span className="text-text-lo font-sans text-xs">{label}</span>
-              <span className="text-text-hi font-sans text-xs font-medium">{value}</span>
-            </div>
-          ))}
+        <div className="flex flex-col gap-1">
+          <span className="text-text-hi font-sans text-base font-semibold">{displayName || persona.displayName}</span>
+          <span className="text-text-mid font-sans text-sm">{(PERSONA_TYPE_LABELS as Record<string, string>)[type] ?? type}</span>
         </div>
-
         {freeText && (
-          <>
-            <div className="h-px bg-hairline" />
-            <div className="flex flex-col gap-1.5">
-              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>人物像</span>
-              <p className="text-text-mid font-sans text-xs leading-relaxed">{freeText}</p>
-            </div>
-          </>
+          <p className="text-text-mid font-sans text-sm" style={{ lineHeight: 1.6 }}>{freeText}</p>
         )}
       </div>
     </div>

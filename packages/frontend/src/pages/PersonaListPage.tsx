@@ -1,114 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Plus, Layers2, ChevronDown } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import { PersonaCard } from '../components/persona/PersonaCard';
-import { SourceFilterDropdown } from '../components/persona/SourceFilterDropdown';
 import { usePersonas } from '../hooks/usePersonas';
-import { categoryOf, type SourceFilterKey } from '../lib/personaFilter';
-import type { Persona, PersonaType } from '../types';
+import type { Persona } from '../types';
 
-const PERSONA_PRESETS: {
-  displayName: string;
-  type: PersonaType;
-  age: number;
-  gender: string;
-  occupation: string;
-  freeText: string;
-}[] = [
-  {
-    displayName: 'ハルト',
-    type: 'action_oriented',
-    age: 32,
-    gender: '男性',
-    occupation: '営業職',
-    freeText: '常に時間に追われており、3秒で要点が伝わらないUIは離脱する。最短手数でゴールに到達したい。',
-  },
-  {
-    displayName: 'ミサキ',
-    type: 'cautious',
-    age: 41,
-    gender: '女性',
-    occupation: '専業主婦',
-    freeText: '慎重にリスクを確認してから行動する。信頼できる情報源を重視し、衝動買いはしない。',
-  },
-  {
-    displayName: 'ソウタ',
-    type: 'info_savvy',
-    age: 20,
-    gender: '男性',
-    occupation: '大学生',
-    freeText: 'デジタルネイティブで新しい技術への順応が早い。SNSで情報収集し、UXの細部に気づく。',
-  },
-  {
-    displayName: 'アヤ',
-    type: 'efficiency',
-    age: 45,
-    gender: '女性',
-    occupation: '管理職',
-    freeText: '効率と合理性を最重視する。無駄なステップは即座にスキップし、ROIで判断する。',
-  },
-  {
-    displayName: 'ユウト',
-    type: 'cost_conscious',
-    age: 26,
-    gender: '男性',
-    occupation: '会社員',
-    freeText: 'コストパフォーマンスを徹底的に比較してから購入を決定する。レビューサイトを必ず確認する。',
-  },
-  {
-    displayName: 'リナ',
-    type: 'trend_sensitive',
-    age: 21,
-    gender: '女性',
-    occupation: '大学生',
-    freeText: 'トレンドに敏感で、おしゃれなUIデザインに強く引かれる。SNS映えを重視して選択する。',
-  },
+type FilterKey = 'all' | 'default' | 'custom';
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: 'all', label: 'すべて' },
+  { key: 'default', label: 'デフォルト' },
+  { key: 'custom', label: 'カスタム' },
 ];
 
 export function PersonaListPage() {
-  const { personas, isLoading, createPersona, deletePersona } = usePersonas();
+  const { personas, isLoading, deletePersona } = usePersonas();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<SourceFilterKey>('all');
-  const [presetOpen, setPresetOpen] = useState(false);
-  const [addingPreset, setAddingPreset] = useState<string | null>(null);
-  const presetRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!presetOpen) return;
-    function handleClickOutside(e: MouseEvent) {
-      if (presetRef.current && !presetRef.current.contains(e.target as Node)) {
-        setPresetOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [presetOpen]);
-
-  async function handleAddPreset(preset: typeof PERSONA_PRESETS[number]) {
-    setAddingPreset(preset.displayName);
-    try {
-      await createPersona({ ...preset, source: 'preset' });
-    } finally {
-      setAddingPreset(null);
-      setPresetOpen(false);
-    }
-  }
+  const [filter, setFilter] = useState<FilterKey>('all');
 
   async function handleDuplicate(persona: Persona) {
-    const copy = await createPersona({
-      displayName: `${persona.displayName}のコピー`,
-      type: persona.type,
-      source: persona.source === 'default' ? undefined : persona.source,
-      age: persona.age,
-      gender: persona.gender,
-      occupation: persona.occupation,
-      deviationScore: persona.deviationScore,
-      annualIncome: persona.annualIncome,
-      education: persona.education,
-      freeText: persona.freeText,
-    });
-    navigate(`/personas/${copy.personaId}/edit`);
+    // Navigate to edit page for duplication (handled there)
+    navigate(`/personas/${persona.personaId}/edit`);
   }
 
   if (isLoading) {
@@ -126,82 +39,40 @@ export function PersonaListPage() {
       p.displayName.includes(q) ||
       (p.occupation ?? '').includes(q) ||
       (p.freeText ?? '').includes(q);
-    const matchSource = sourceFilter === 'all' || categoryOf(p) === sourceFilter;
-    return matchQuery && matchSource;
+    const matchFilter =
+      filter === 'all' ||
+      (filter === 'default' && (p.source === 'default' || p.source === 'preset')) ||
+      (filter === 'custom' && p.source !== 'default' && p.source !== 'preset');
+    return matchQuery && matchFilter;
   });
 
   const rows: (typeof filtered)[] = [];
   for (let i = 0; i < filtered.length; i += 3) rows.push(filtered.slice(i, i + 3));
 
   return (
-    <div className="flex flex-col gap-6 p-8 pb-10">
-      {/* Page Header */}
+    <div className="flex flex-col gap-5 p-6" style={{ padding: 32 }}>
+      {/* Header */}
       <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-text-hi font-sans text-xl font-semibold">ペルソナ</h1>
-          <p className="text-text-lo font-sans text-sm">評価に使うAIペルソナを作成・管理します</p>
+        <div className="flex flex-col gap-2">
+          <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.5 }}>
+            PHASE 2 · PERSONAS
+          </span>
+          <div className="flex items-center gap-3">
+            <h1 className="text-text-hi font-sans text-xl font-semibold" style={{ fontSize: 24 }}>ペルソナ管理</h1>
+            <span
+              className="text-text-mid font-mono text-xs"
+              style={{ background: 'var(--color-bg-raised)', borderRadius: 6, padding: '4px 8px' }}
+            >
+              {filtered.length}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="relative" ref={presetRef}>
-            <button
-              type="button"
-              onClick={() => setPresetOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-md bg-raised border border-hairline px-4 py-2.5 text-text-mid font-sans text-sm font-medium transition-colors hover:bg-surface"
-            >
-              <Layers2 size={16} className="text-text-mid" />
-              プリセットから追加
-              <ChevronDown size={14} className="text-text-lo" />
-            </button>
-
-            {presetOpen && (
-              <div
-                className="absolute right-0 top-full mt-1 z-50 rounded-md overflow-hidden bg-surface border border-hairline"
-                style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.25)', minWidth: 260 }}
-              >
-                <div className="px-4 py-2.5 border-b border-hairline">
-                  <span className="text-text-lo font-mono text-xs font-semibold" style={{ letterSpacing: '0.5px' }}>
-                    確定ペルソナ 6人
-                  </span>
-                </div>
-                {PERSONA_PRESETS.map((preset) => (
-                  <button
-                    key={preset.displayName}
-                    type="button"
-                    onClick={() => handleAddPreset(preset)}
-                    disabled={!!addingPreset}
-                    className="w-full text-left px-4 py-3 transition-colors hover:bg-raised disabled:opacity-50 border-b border-hairline"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-text-hi font-sans text-sm font-semibold">
-                        {addingPreset === preset.displayName ? '追加中…' : preset.displayName}
-                      </span>
-                      <span className="text-text-lo font-sans text-xs">
-                        {preset.age}歳・{preset.gender}
-                      </span>
-                    </div>
-                    <span className="text-text-mid font-sans text-xs">{preset.occupation}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <Link
-            to="/personas/new"
-            className="flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-white font-sans text-sm font-semibold transition-opacity hover:opacity-90"
-            aria-label="ペルソナを作成"
+          <div
+            className="flex items-center gap-2"
+            style={{ width: 220, borderRadius: 10, background: 'var(--color-bg-surface)', border: '1px solid var(--color-hairline)', padding: '8px 12px' }}
           >
-            <Plus size={16} />
-            ペルソナを作成
-          </Link>
-        </div>
-      </div>
-
-      {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2 rounded-md bg-raised border border-hairline px-3 py-2.5" style={{ width: 300 }}>
-            <Search size={16} className="text-text-lo" />
+            <Search size={15} className="text-text-lo flex-shrink-0" />
             <input
               type="search"
               value={query}
@@ -210,9 +81,40 @@ export function PersonaListPage() {
               className="flex-1 bg-transparent text-text-hi font-sans text-sm outline-none"
             />
           </div>
-          <SourceFilterDropdown value={sourceFilter} onChange={setSourceFilter} />
+          <Link
+            to="/personas/new"
+            className="flex items-center gap-2 text-white font-sans text-sm font-semibold"
+            style={{ borderRadius: 10, background: 'var(--color-accent)', padding: '8px 16px' }}
+          >
+            <Plus size={16} />
+            新規ペルソナ
+          </Link>
         </div>
-        <span className="text-text-lo font-sans text-sm">{filtered.length}人のペルソナ</span>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-2">
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          return (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setFilter(f.key)}
+              className="font-mono text-xs"
+              style={{
+                borderRadius: 999,
+                padding: '8px 16px',
+                background: active ? 'var(--color-bg-raised)' : 'transparent',
+                border: active ? '1px solid var(--color-hairline)' : '1px solid transparent',
+                color: active ? 'var(--color-text-hi)' : 'var(--color-text-lo)',
+                letterSpacing: 0.5,
+              }}
+            >
+              {f.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Grid */}
@@ -228,9 +130,9 @@ export function PersonaListPage() {
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col" style={{ gap: 24 }}>
           {rows.map((row, ri) => (
-            <div key={ri} className="flex gap-5">
+            <div key={ri} className="flex" style={{ gap: 24 }}>
               {row.map((persona) => (
                 <div key={persona.personaId} style={{ flex: '1 1 0', minWidth: 0, display: 'flex' }}>
                   <PersonaCard persona={persona} onDelete={deletePersona} onDuplicate={handleDuplicate} />

@@ -72,7 +72,7 @@ describe('TestListPage (LedgerRow版)', () => {
 
   it('ダークトークンのクラスが使用されている', () => {
     renderPage();
-    const heading = screen.getByText('テスト一覧');
+    const heading = screen.getByText('A/Bテスト');
     expect(heading.className).toContain('text-text-hi');
   });
 });

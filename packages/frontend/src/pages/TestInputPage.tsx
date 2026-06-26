@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Image, Info, Link2, Camera, Maximize2, Play, Users, Check } from 'lucide-react';
+import { Image, Info, Link2, Camera, Maximize2, Play, Users, Check, X } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { Modal } from '../components/ui/Modal';
 import { testDraft, sideToDesignInput, type DesignSideData } from '../lib/testDraft';
@@ -413,7 +413,7 @@ export function TestInputPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-8 pb-10">
+    <div className="flex flex-col gap-7 py-6 px-7">
       <PersonaSelectModal
         open={personaModalOpen}
         onClose={() => setPersonaModalOpen(false)}
@@ -421,31 +421,45 @@ export function TestInputPage() {
         onSelectedChange={handleSelectedChange}
       />
 
-      <div className="flex flex-col gap-1">
-        <h1 className="text-text-hi font-sans text-xl font-semibold">新しいA/Bテスト</h1>
-        <p className="text-text-lo font-sans text-sm">比較する2案を指定し、ペルソナを選んで実行してください</p>
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-1">
+          <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '1.5px' }}>新規テスト</span>
+          <h1 className="text-text-hi font-sans text-xl font-semibold">新しい A/B テスト</h1>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate('/results')}
+          className="flex items-center justify-center rounded-md text-text-lo hover:text-text-mid transition-colors"
+          style={{ width: 32, height: 32 }}
+          aria-label="閉じる"
+        >
+          <X size={18} />
+        </button>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="test-title" className="text-text-lo font-sans text-xs">テストタイトル</label>
+      <div className="flex flex-col gap-2">
+        <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '0.8px' }}>テストタイトル</span>
         <input
           id="test-title"
           type="text"
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="例: ランディングページ A/B テスト"
-          className="rounded-md bg-raised border border-hairline px-3 py-2.5 text-text-hi font-sans text-sm outline-none focus:ring-1 focus:ring-accent"
+          className="rounded-md bg-base border border-hairline px-3 py-2.5 text-text-hi font-sans text-sm outline-none focus:border-accent"
+          style={{ borderRadius: 10 }}
         />
       </div>
 
-      <div className="flex gap-5">
-        <DesignSidePanel side="A" sideData={sideA} onSideChange={(d) => handleSideChange('A', d)} />
-        <DesignSidePanel side="B" sideData={sideB} onSideChange={(d) => handleSideChange('B', d)} />
+      <div className="flex flex-col gap-2">
+        <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '1.2px' }}>比較対象</span>
+        <div className="flex gap-7">
+          <DesignSidePanel side="A" sideData={sideA} onSideChange={(d) => handleSideChange('A', d)} />
+          <DesignSidePanel side="B" sideData={sideB} onSideChange={(d) => handleSideChange('B', d)} />
+        </div>
       </div>
 
-      {/* Persona selection */}
       <div className="flex flex-col gap-2">
-        <span className="text-text-lo font-sans text-xs">評価ペルソナ</span>
+        <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '1.2px' }}>対象ペルソナ</span>
         <button
           type="button"
           onClick={() => setPersonaModalOpen(true)}

@@ -149,16 +149,16 @@ export function TestListPage() {
     <div className="flex flex-col gap-6 p-8 pb-10">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-text-hi font-sans text-xl font-semibold">テスト一覧</h1>
-          <p className="text-text-lo font-sans text-sm">{sorted.length}件のA/Bテスト</p>
+        <div className="flex items-baseline gap-4">
+          <h1 className="text-text-hi font-sans text-xl font-semibold">A/Bテスト</h1>
+          <span className="text-text-mid font-mono text-sm">全 {sorted.length} 件</span>
         </div>
         <Link
           to="/tests/new"
           className="flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-white font-sans text-sm font-semibold transition-opacity hover:opacity-90"
         >
           <Plus size={16} />
-          新しいA/Bテスト
+          新規テスト
         </Link>
       </div>
 
@@ -212,21 +212,21 @@ export function TestListPage() {
       ) : (
         <div>
           {/* Header row */}
-          <div className="flex items-center py-2.5 px-4 border-b border-hairline">
+          <div className="flex items-center gap-8 py-2.5 px-4 border-b border-hairline">
             {selectionMode && <div style={{ width: 32 }} />}
-            <div style={{ width: 56 }}>
-              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}></span>
+            <div style={{ width: 72 }}>
+              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>プレビュー</span>
             </div>
-            <div className="flex-1">
+            <div style={{ width: 360 }}>
               <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>テスト名</span>
             </div>
-            <div style={{ width: 80 }}>
+            <div style={{ width: 72 }}>
               <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>ペルソナ</span>
             </div>
-            <div style={{ width: 100 }}>
+            <div style={{ width: 90 }}>
               <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>ステータス</span>
             </div>
-            <div style={{ width: 100 }}>
+            <div className="flex-1">
               <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>日時</span>
             </div>
             {!selectionMode && <div style={{ width: 40 }} />}
@@ -242,9 +242,8 @@ export function TestListPage() {
                 tabIndex={0}
                 onClick={() => { if (selectionMode) toggleOne(test.testId); else handleRowClick(test); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') { if (selectionMode) toggleOne(test.testId); else handleRowClick(test); } }}
-                className="flex items-center w-full text-left py-3.5 px-4 transition-colors hover:bg-raised cursor-pointer"
+                className="flex items-center gap-8 w-full text-left py-4 px-4 transition-colors hover:bg-raised cursor-pointer border-b border-hairline"
                 style={{
-                  borderTop: i > 0 ? '1px solid var(--color-hairline)' : 'none',
                   background: isChecked ? 'var(--color-accent-dim)' : 'transparent',
                 }}
               >
@@ -261,20 +260,20 @@ export function TestListPage() {
                     </div>
                   </div>
                 )}
-                <div style={{ width: 56 }}>
+                <div style={{ width: 72 }}>
                   <WinnerThumb test={test} />
                 </div>
-                <div className="flex-1 min-w-0 pr-3">
-                  <span className="block truncate text-text-hi font-sans text-sm font-medium">{test.title}</span>
+                <div style={{ width: 360 }} className="min-w-0">
+                  <span className="block truncate text-text-hi font-sans text-base font-medium">{test.title}</span>
                 </div>
-                <div style={{ width: 80 }}>
-                  <span className="text-text-mid font-sans text-sm">{test.personaIds.length}人</span>
+                <div style={{ width: 72 }}>
+                  <span className="text-text-mid font-mono text-sm">{test.personaIds.length}人</span>
                 </div>
-                <div style={{ width: 100 }}>
+                <div style={{ width: 90 }}>
                   <StatusChip status={test.status} />
                 </div>
-                <div style={{ width: 100 }}>
-                  <span className="text-text-lo font-mono text-xs">
+                <div className="flex-1">
+                  <span className="text-text-lo font-mono text-sm">
                     {new Date(test.createdAt).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
