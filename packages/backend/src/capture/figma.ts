@@ -24,6 +24,12 @@ export async function captureFigmaNode(url: string, token: string): Promise<Buff
   const apiRes = await fetch(apiUrl, { headers: { "X-Figma-Token": token } });
 
   if (!apiRes.ok) {
+    if (apiRes.status === 429) {
+      throw new FigmaCaptureError("Figma API のレート制限に達しました。しばらく待ってから再試行してください");
+    }
+    if (apiRes.status === 403) {
+      throw new FigmaCaptureError("Figma API エラー: トークンが無効か、このファイルへのアクセス権がありません");
+    }
     throw new FigmaCaptureError(`Figma API エラー: ${apiRes.status} ${apiRes.statusText}`);
   }
 
