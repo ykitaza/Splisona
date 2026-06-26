@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Image, Info, ArrowRight, Link2, Camera } from 'lucide-react';
+import { Image, Info, ArrowRight, Link2, Camera, Maximize2 } from 'lucide-react';
+import { ImageLightbox } from '../components/ImageLightbox';
 import { testDraft, sideToDesignInput, type DesignSideData } from '../lib/testDraft';
 import { captureUrl, createTest, updateTest } from '../api/tests';
 import { API_BASE } from '../api/client';
@@ -33,6 +34,7 @@ function DesignSidePanel({
   );
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureError, setCaptureError] = useState<string | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const file = sideData?.inputType === 'image_upload' ? sideData.file : null;
   const imagePreview = sideData?.inputType === 'image_upload' ? URL.createObjectURL(sideData.file) : null;
@@ -91,6 +93,8 @@ function DesignSidePanel({
   ];
 
   return (
+    <>
+      {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
     <div
       className="flex flex-col gap-3.5 rounded-md p-5"
       style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10, flex: 1 }}
@@ -150,7 +154,17 @@ function DesignSidePanel({
             }}
           >
             {imagePreview ? (
-              <img src={imagePreview} alt={`デザイン${side}プレビュー`} className="w-full h-full object-cover" />
+              <div className="relative w-full h-full group">
+                <img src={imagePreview} alt={`デザイン${side}プレビュー`} className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setLightboxSrc(imagePreview); }}
+                  className="absolute top-2 right-2 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ width: 28, height: 28, background: 'rgba(0,0,0,0.55)', border: 'none', cursor: 'pointer' }}
+                >
+                  <Maximize2 size={13} color="#FFFFFF" />
+                </button>
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-2">
                 <Image size={24} color="#9A9A9F" />
@@ -231,7 +245,14 @@ function DesignSidePanel({
           {/* Preview area */}
           <div
             className="flex items-center justify-center overflow-hidden rounded-md"
-            style={{ height: 150, background: '#F7F7F8', border: '1px solid #E6E6E8', borderRadius: 6 }}
+            style={{
+              height: 150,
+              background: '#F7F7F8',
+              border: '1px solid #E6E6E8',
+              borderRadius: 6,
+              cursor: capturedPreviewUrl ? 'zoom-in' : 'default',
+            }}
+            onClick={() => { if (capturedPreviewUrl) setLightboxSrc(capturedPreviewUrl); }}
           >
             {isCapturing ? (
               <div className="flex flex-col items-center gap-2">
@@ -267,6 +288,7 @@ function DesignSidePanel({
         </div>
       )}
     </div>
+    </>
   );
 }
 
