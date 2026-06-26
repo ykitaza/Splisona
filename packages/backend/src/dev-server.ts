@@ -129,6 +129,22 @@ app.delete("/tests/:id", async (c) => {
   return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
 });
 
+// Figma トークン検証
+app.post("/figma/verify", async (c) => {
+  const { token } = await c.req.json<{ token: string }>();
+  if (!token) return c.json({ valid: false, error: "token required" }, 400);
+  try {
+    const res = await fetch("https://api.figma.com/v1/me", {
+      headers: { "X-Figma-Token": token },
+    });
+    if (!res.ok) return c.json({ valid: false, error: `Figma API returned ${res.status}` });
+    const data = await res.json() as { id?: string; email?: string; handle?: string };
+    return c.json({ valid: true, email: data.email, handle: data.handle });
+  } catch (e) {
+    return c.json({ valid: false, error: String(e) });
+  }
+});
+
 // URL キャプチャ: Figma/サイトURLから画像を取得してローカル保存
 app.post("/tests/:id/capture", async (c) => {
   const testId = c.req.param("id");

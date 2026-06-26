@@ -69,6 +69,20 @@ export interface CaptureResponse {
   previewUrl: string;
 }
 
+export interface FigmaVerifyResponse {
+  valid: boolean;
+  email?: string;
+  handle?: string;
+  error?: string;
+}
+
+export function verifyFigmaToken(token: string): Promise<FigmaVerifyResponse> {
+  return apiRequest('/figma/verify', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
 export function captureUrl(testId: string, req: CaptureRequest): Promise<CaptureResponse> {
   const figmaToken = localStorage.getItem('chorus_figma_token') ?? undefined;
   return apiRequest(`/tests/${testId}/capture`, {
