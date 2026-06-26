@@ -1,8 +1,20 @@
 {
   "name": "@chorus/infra",
   "private": true,
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
-    "build": "echo 'infra build placeholder'"
+    "build": "tsc --noEmit",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.200.0",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "aws-cdk": "^2.200.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.3"
   }
 }
