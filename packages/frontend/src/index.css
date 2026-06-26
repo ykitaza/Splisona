@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+html, body, #root {
+  background: #0A0B0D;
+  color: #F2F4F7;
+  min-height: 100%;
+}
+
 @theme {
   --color-bg-base: #0A0B0D;
   --color-bg-surface: #131517;
