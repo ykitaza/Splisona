@@ -52,27 +52,33 @@ export function TestConfirmPage() {
         return { inputType: side.inputType as const };
       }
 
-      const test = await createTest({
-        title: draft.title,
-        designAInput: toDesignInput(sideA),
-        designBInput: toDesignInput(sideB),
-        personaIds: draft.personaIds,
-      });
+      let testId: string;
+      if (draft.resumeId) {
+        testId = draft.resumeId;
+      } else {
+        const created = await createTest({
+          title: draft.title,
+          designAInput: toDesignInput(sideA),
+          designBInput: toDesignInput(sideB),
+          personaIds: draft.personaIds,
+        });
+        testId = created.testId;
+      }
 
       const [imageKeyA, imageKeyB] = await Promise.all([
-        resolveImageKey(test.testId, 'A'),
-        resolveImageKey(test.testId, 'B'),
+        resolveImageKey(testId, 'A'),
+        resolveImageKey(testId, 'B'),
       ]);
 
-      await updateTest(test.testId, {
+      await updateTest(testId, {
         designAInput: { ...toDesignInput(sideA), imageKey: imageKeyA },
         designBInput: { ...toDesignInput(sideB), imageKey: imageKeyB },
         personaIds: draft.personaIds,
       });
 
-      await executeTest(test.testId);
+      await executeTest(testId);
       testDraft.reset();
-      navigate(`/tests/${test.testId}/running`);
+      navigate(`/tests/${testId}/running`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'テスト実行に失敗しました');
     } finally {

@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
-import { ABTEST_STATUS_LABELS, type ABTestStatus } from '../types';
+import { ABTEST_STATUS_LABELS, type ABTestStatus, type ABTest } from '../types';
 import { Plus, ArrowRight, Search, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { testDraft, type DesignSideData } from '../lib/testDraft';
 
 const STATUS_COLORS: Record<ABTestStatus, { bg: string; text: string }> = {
   draft: { bg: '#F0F1F3', text: '#666666' },
@@ -68,9 +69,36 @@ export function TestListPage() {
     });
   }
 
-  function handleClick(testId: string, status: ABTestStatus) {
+  function restoreSide(input: ABTest['designAInput']): DesignSideData | null {
+    if (!input) return null;
+    const { inputType, imageKey } = input;
+    if (inputType === 'image_upload') {
+      if (!imageKey) return null;
+      return { inputType: 'image_upload', file: new File([], 'uploaded'), imageKey };
+    }
+    if (inputType === 'figma_url') return { inputType: 'figma_url', url: '', imageKey: imageKey ?? '' };
+    if (inputType === 'site_url') return { inputType: 'site_url', url: '', imageKey: imageKey ?? '' };
+    return null;
+  }
+
+  function handleClick(testId: string, status: ABTestStatus, test?: ABTest) {
     if (status === 'running') navigate(`/tests/${testId}/running`);
     else if (status === 'completed' || status === 'failed') navigate(`/tests/${testId}/report`);
+    else if (status === 'draft' && test) {
+      const sideA = restoreSide(test.designAInput);
+      const sideB = restoreSide(test.designBInput);
+      const bothReady = !!sideA?.imageKey && !!sideB?.imageKey;
+      testDraft.resume({
+        title: test.title,
+        sideA,
+        sideB,
+        personaIds: test.personaIds,
+        resumeId: test.testId,
+      });
+      if (bothReady && test.personaIds.length > 0) navigate('/tests/new/confirm');
+      else if (bothReady) navigate('/tests/new/personas');
+      else navigate('/tests/new');
+    }
   }
 
   async function handleBulkDelete() {
@@ -235,7 +263,7 @@ export function TestListPage() {
           ) : (
             filtered.map((test, i) => {
               const colors = STATUS_COLORS[test.status];
-              const isClickable = test.status !== 'draft';
+              const isClickable = true;
               const isChecked = selected.has(test.testId);
               return (
                 <div
@@ -247,10 +275,10 @@ export function TestListPage() {
                     background: isChecked ? '#F7F8FF' : '#FFFFFF',
                     cursor: isClickable ? 'pointer' : 'default',
                   }}
-                  onClick={() => isClickable && handleClick(test.testId, test.status)}
+                  onClick={() => isClickable && handleClick(test.testId, test.status, test)}
                   role={isClickable ? 'button' : undefined}
                   tabIndex={isClickable ? 0 : undefined}
-                  onKeyDown={(e) => e.key === 'Enter' && isClickable && handleClick(test.testId, test.status)}
+                  onKeyDown={(e) => e.key === 'Enter' && isClickable && handleClick(test.testId, test.status, test)}
                 >
                   <div
                     style={{ width: 36, flexShrink: 0, display: 'flex', alignItems: 'center' }}

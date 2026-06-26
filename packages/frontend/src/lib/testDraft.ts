@@ -8,6 +8,7 @@ export interface TestDraftData {
   sideA: DesignSideData | null;
   sideB: DesignSideData | null;
   personaIds: string[];
+  resumeId?: string;
 }
 
 const _draft: TestDraftData = {
@@ -31,10 +32,14 @@ export const testDraft = {
   setPersonaIds(ids: string[]) {
     _draft.personaIds = ids;
   },
+  resume(data: TestDraftData) {
+    Object.assign(_draft, data);
+  },
   reset() {
     _draft.title = '';
     _draft.sideA = null;
     _draft.sideB = null;
     _draft.personaIds = [];
+    delete _draft.resumeId;
   },
 };
