@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Columns2, BarChart2, Settings, LogOut, ChevronsUpDown } from 'lucide-react';
+import { LayoutDashboard, Users, Columns2, BarChart2, Settings, LogOut, ChevronsUpDown, Info, X } from 'lucide-react';
 import { signOut } from 'aws-amplify/auth';
 
 const NAV_ITEMS = [
@@ -10,10 +10,79 @@ const NAV_ITEMS = [
   { to: '/results', icon: BarChart2, label: '結果レポート' },
 ];
 
+const APP_VERSION = '0.0.1';
+const GIT_HASH = '0f8b632';
+
+function AboutModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ background: 'rgba(0,0,0,0.35)' }}
+      onClick={onClose}
+    >
+      <div
+        className="flex flex-col items-center relative"
+        style={{
+          background: '#F7F7F8',
+          borderRadius: 16,
+          width: 320,
+          padding: '40px 32px 32px',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3 right-3 flex items-center justify-center rounded-full transition-colors hover:bg-[#E6E6E8]"
+          style={{ width: 24, height: 24, background: 'none', border: 'none', cursor: 'pointer' }}
+        >
+          <X size={14} color="#9A9A9F" />
+        </button>
+
+        {/* Logo */}
+        <div
+          className="flex items-center justify-center rounded-2xl mb-5"
+          style={{ width: 72, height: 72, background: '#0A0A0A', borderRadius: 18 }}
+        >
+          <span style={{ color: '#FFFFFF', fontFamily: 'Geist, sans-serif', fontSize: 36, fontWeight: 700, lineHeight: 1 }}>
+            C
+          </span>
+        </div>
+
+        {/* Name */}
+        <p style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
+          Chorus
+        </p>
+        <p style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px', marginBottom: 4 }}>
+          AI PERSONA REVIEW
+        </p>
+        <p style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 12, marginBottom: 28 }}>
+          バージョン {APP_VERSION} ({GIT_HASH})
+        </p>
+
+        {/* Buttons */}
+        <div className="flex flex-col w-full gap-2">
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-center rounded-lg py-2.5 text-sm font-medium transition-colors hover:bg-[#E6E6E8]"
+            style={{ background: '#EBEBED', borderRadius: 8, color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, textDecoration: 'none' }}
+          >
+            GitHub を開く
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AppLayout() {
   const navigate = useNavigate();
   const localUserId = import.meta.env?.VITE_LOCAL_USER_ID as string | undefined;
   const [menuOpen, setMenuOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +103,8 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen" style={{ background: '#F7F7F8' }}>
+      {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
+
       {/* Sidebar */}
       <aside
         className="flex flex-col flex-shrink-0"
@@ -94,10 +165,9 @@ export function AppLayout() {
 
         {/* User menu */}
         <div className="relative" ref={menuRef}>
-          {/* Popup */}
           {menuOpen && (
             <div
-              className="absolute bottom-full mb-2 left-0 right-0 rounded-lg overflow-hidden"
+              className="absolute bottom-full mb-2 left-0 right-0 overflow-hidden"
               style={{
                 background: '#FFFFFF',
                 border: '1px solid #E6E6E8',
@@ -129,6 +199,17 @@ export function AppLayout() {
                 設定
               </NavLink>
 
+              {/* About */}
+              <button
+                type="button"
+                onClick={() => { setMenuOpen(false); setAboutOpen(true); }}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 transition-colors hover:bg-[#F7F7F8]"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13 }}
+              >
+                <Info size={15} color="#666666" />
+                Chorus について
+              </button>
+
               <div style={{ height: 1, background: '#E6E6E8' }} />
 
               {/* Sign out */}
@@ -144,7 +225,7 @@ export function AppLayout() {
             </div>
           )}
 
-          {/* Profile bar (trigger) */}
+          {/* Profile bar */}
           <button
             type="button"
             onClick={() => setMenuOpen((o) => !o)}
