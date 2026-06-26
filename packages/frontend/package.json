@@ -1,0 +1,9 @@
+{
+  "name": "@chorus/frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo 'frontend build placeholder'",
+    "dev": "echo 'frontend dev placeholder'"
+  }
+}

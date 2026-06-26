@@ -1,0 +1,23 @@
+{
+  "name": "@chorus/backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "dev": "tsx --watch src/dev-server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.825.0",
+    "@aws-sdk/lib-dynamodb": "^3.825.0",
+    "@hono/node-server": "^2.0.6",
+    "hono": "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  }
+}

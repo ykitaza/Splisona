@@ -1,0 +1,13 @@
+{
+  "name": "chorus",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm --filter backend test",
+    "dev:backend": "pnpm --filter backend dev",
+    "db:init": "npx tsx scripts/init-local-db.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.4"
+  }
+}

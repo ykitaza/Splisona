@@ -1,0 +1,8 @@
+{
+  "name": "@chorus/infra",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo 'infra build placeholder'"
+  }
+}
