@@ -1,7 +1,7 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Check, Sparkles } from 'lucide-react';
-import { getPersona, createPersona, updatePersona, deletePersona, generateDraft } from '../api/personas';
+import { ChevronLeft, Check, Sparkles, Camera } from 'lucide-react';
+import { getPersona, createPersona, updatePersona, deletePersona, generateDraft, uploadPersonaAvatar, getAvatarUrl } from '../api/personas';
 import { getApiErrorMessage } from '../api/client';
 import { PERSONA_TYPE_LABELS, type PersonaType, type Persona } from '../types';
 import { PersonaCard } from '../components/persona/PersonaCard';
@@ -30,6 +30,8 @@ function TextInput({ id, ...props }: React.InputHTMLAttributes<HTMLInputElement>
 export function PersonaEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const [personaId, setPersonaId] = useState<string | undefined>(id);
   const isEdit = !!id;
 
   const [displayName, setDisplayName] = useState('');
@@ -41,6 +43,10 @@ export function PersonaEditPage() {
   const [annualIncome, setAnnualIncome] = useState('');
   const [education, setEducation] = useState('');
   const [freeText, setFreeText] = useState('');
+
+  const [avatarImageKey, setAvatarImageKey] = useState<string | undefined>(undefined);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isLoading, setIsLoading] = useState(isEdit);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,10 +67,54 @@ export function PersonaEditPage() {
         setAnnualIncome(p.annualIncome?.toString() ?? '');
         setEducation(p.education ?? '');
         setFreeText(p.freeText ?? '');
+        setAvatarImageKey(p.avatarImageKey);
       })
       .catch(() => setError('ペルソナの読み込みに失敗しました'))
       .finally(() => setIsLoading(false));
   }, [id, isEdit]);
+
+  async function ensureSaved(): Promise<string> {
+    if (!displayName.trim()) {
+      setValidationError('表示名は必須です');
+      throw new Error('displayName required');
+    }
+    setValidationError(null);
+    const input = {
+      displayName: displayName.trim(),
+      type,
+      age: age ? parseInt(age, 10) : undefined,
+      gender: gender || undefined,
+      occupation: occupation || undefined,
+      deviationScore: deviationScore ? parseInt(deviationScore, 10) : undefined,
+      annualIncome: annualIncome ? parseInt(annualIncome, 10) : undefined,
+      education: education || undefined,
+      freeText: freeText || undefined,
+    };
+    if (personaId) {
+      await updatePersona(personaId, input);
+      return personaId;
+    }
+    const created = await createPersona(input);
+    setPersonaId(created.personaId);
+    navigate(`/personas/${created.personaId}/edit`, { replace: true });
+    return created.personaId;
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingAvatar(true);
+    try {
+      const pid = await ensureSaved();
+      const key = await uploadPersonaAvatar(pid, file);
+      await updatePersona(pid, { avatarImageKey: key });
+      setAvatarImageKey(key);
+    } catch {
+      setError('アバターのアップロードに失敗しました');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
 
   const previewPersona: Persona = {
     personaId: id ?? 'preview',
@@ -78,6 +128,7 @@ export function PersonaEditPage() {
     annualIncome: annualIncome ? parseInt(annualIncome, 10) : undefined,
     education: education || undefined,
     freeText: freeText || undefined,
+    avatarImageKey,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -105,8 +156,8 @@ export function PersonaEditPage() {
     };
 
     try {
-      if (isEdit) {
-        await updatePersona(id, input);
+      if (personaId) {
+        await updatePersona(personaId, input);
       } else {
         await createPersona(input);
       }
@@ -119,13 +170,15 @@ export function PersonaEditPage() {
   }
 
   async function handleGenerateDraft() {
-    if (!isEdit) return;
     setIsGenerating(true);
     try {
-      const draft = await generateDraft(id);
+      const pid = await ensureSaved();
+      const draft = await generateDraft(pid);
       setFreeText(draft.freeText);
-    } catch {
-      setError('AIアシストに失敗しました');
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'displayName required') {
+        setError('AIアシストに失敗しました');
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -181,6 +234,46 @@ export function PersonaEditPage() {
             {/* Basic Card */}
             <div className="flex flex-col gap-4 rounded-md p-5" style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}>
               <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>基本情報</span>
+
+              {/* Avatar Upload */}
+              <div className="flex items-center gap-4">
+                <div className="relative flex-shrink-0">
+                  <div
+                    className="flex items-center justify-center rounded-full overflow-hidden"
+                    style={{ width: 64, height: 64, background: '#F0F1F3', borderRadius: 9999 }}
+                  >
+                    {avatarImageKey ? (
+                      <img src={getAvatarUrl(avatarImageKey)} alt="アバター" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 600 }}>
+                        {displayName ? displayName.charAt(0) : '?'}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="absolute bottom-0 right-0 flex items-center justify-center rounded-full transition-opacity disabled:opacity-50"
+                    style={{ width: 22, height: 22, background: '#0A0A0A', borderRadius: 9999, border: '2px solid #FFFFFF' }}
+                  >
+                    <Camera size={11} color="#FFFFFF" />
+                  </button>
+                </div>
+                <div>
+                  <p style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 500 }}>プロフィール写真</p>
+                  <p style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 12, marginTop: 2 }}>
+                    カメラアイコンをクリックして{personaId ? '変更' : '設定'}
+                  </p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={handleAvatarChange}
+                />
+              </div>
 
               <div className="flex flex-col gap-1.5">
                 <FieldLabel>ペルソナ名 <span style={{ color: '#D64545' }}>*</span></FieldLabel>
@@ -372,18 +465,13 @@ export function PersonaEditPage() {
               <button
                 type="button"
                 onClick={handleGenerateDraft}
-                disabled={!isEdit || isGenerating}
+                disabled={isGenerating}
                 className="flex items-center justify-center gap-2 rounded-md py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
                 style={{ background: '#3B7DD8', borderRadius: 6 }}
               >
                 <Sparkles size={14} color="#FFFFFF" />
                 {isGenerating ? '生成中...' : 'AIで下書きを生成'}
               </button>
-              {!isEdit && (
-                <p className="text-xs text-center" style={{ color: '#9A9A9F' }}>
-                  ※ 保存後に使用できます
-                </p>
-              )}
             </div>
 
             {/* Preview */}
