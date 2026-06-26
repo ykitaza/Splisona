@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Play } from 'lucide-react';
 import { testDraft } from '../lib/testDraft';
+import { API_BASE } from '../api/client';
 import { createTest, getUploadUrl, uploadToS3, updateTest, executeTest, captureUrl } from '../api/tests';
 import { Stepper } from '../components/Stepper';
 import { usePersonas } from '../hooks/usePersonas';
@@ -143,12 +144,15 @@ export function TestConfirmPage() {
                   className="flex-shrink-0 rounded-md overflow-hidden flex items-center justify-center"
                   style={{ width: 72, height: 54, background: '#F0F1F3', borderRadius: 6 }}
                 >
-                  {draft.sideA?.inputType === 'image_upload' && side === 'A' && (
-                    <img src={URL.createObjectURL(draft.sideA.file)} alt="A案" className="w-full h-full object-cover" />
-                  )}
-                  {draft.sideB?.inputType === 'image_upload' && side === 'B' && (
-                    <img src={URL.createObjectURL(draft.sideB.file)} alt="B案" className="w-full h-full object-cover" />
-                  )}
+                  {(() => {
+                    const sideData = side === 'A' ? draft.sideA : draft.sideB;
+                    if (!sideData) return null;
+                    if (sideData.inputType === 'image_upload')
+                      return <img src={URL.createObjectURL(sideData.file)} alt={`${side}案`} className="w-full h-full object-cover" />;
+                    if (sideData.imageKey)
+                      return <img src={`${API_BASE}/stub-upload/${sideData.imageKey}`} alt={`${side}案`} className="w-full h-full object-cover" />;
+                    return null;
+                  })()}
                 </div>
                 <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                   <div className="flex items-center gap-2">
