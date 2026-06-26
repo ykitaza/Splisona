@@ -3,14 +3,136 @@ import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join, extname } from "node:path";
-import { listPersonas, createPersona, getPersona, updatePersona, deletePersona } from "./persona/handler.js";
+import { listPersonas, createPersona, getPersona, updatePersona, deletePersona, generateDraft } from "./persona/handler.js";
+import { interviewPersona } from "./interview/handler.js";
 import { createTest, listTests, getTest, updateTest, deleteTest, getProgress } from "./abtest/handler.js";
 import { getReport, exportReport } from "./report/handler.js";
-import { getItem, putItem, queryByPK, abtestKey, evaluationKey } from "./shared/dynamo.js";
+import { getItem, putItem, deleteItem, queryByPK, abtestKey, evaluationKey } from "./shared/dynamo.js";
+import { bedrockClient, MODEL_ID } from "./shared/bedrock.js";
+import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
+import { chunkArray } from "./evaluation/orchestrator.js";
 import type { ABTestRecord, PersonaRecord, EvaluationRecord } from "./shared/types.js";
 
 const LOCAL_UPLOAD_DIR = "/tmp/chorus-uploads";
 mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
+
+const USE_LOCAL_BEDROCK = process.env.LOCAL_BEDROCK === "true";
+
+function getImageFormat(key: string): "png" | "jpeg" | "gif" | "webp" {
+  const ext = extname(key).slice(1).toLowerCase();
+  if (ext === "jpg") return "jpeg";
+  if (ext === "jpeg" || ext === "gif" || ext === "webp") return ext;
+  return "png";
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const localEvaluateTool: any = {
+  toolSpec: {
+    name: "evaluate_designs",
+    description: "デザインA/Bのどちらがペルソナ視点で優れているかを評価する",
+    inputSchema: {
+      json: {
+        type: "object",
+        properties: {
+          winner: { type: "string", enum: ["A", "B", "none"] },
+          confidence: { type: "number", minimum: 0, maximum: 100 },
+          reason: { type: "string" },
+          scores: {
+            type: "object",
+            properties: {
+              usability: { type: "number" },
+              aesthetics: { type: "number" },
+              clarity: { type: "number" },
+              engagement: { type: "number" },
+            },
+            required: ["usability", "aesthetics", "clarity", "engagement"],
+          },
+        },
+        required: ["winner", "reason", "scores"],
+      },
+    },
+  },
+};
+
+async function evaluateLocalBedrock(
+  testId: string,
+  personaId: string,
+  userId: string,
+  imageKeyA: string,
+  imageKeyB: string
+): Promise<void> {
+  const persona = await getItem<PersonaRecord>({ PK: `USER#${userId}`, SK: `PERSONA#${personaId}` });
+  const personaDisplayName = persona?.displayName ?? personaId;
+
+  const imageABuf = readFileSync(imageKeyToPath(imageKeyA));
+  const imageBBuf = readFileSync(imageKeyToPath(imageKeyB));
+
+  const prompt = [
+    `あなたは「${personaDisplayName}」というペルソナです。`,
+    `タイプ: ${persona?.type ?? "consumer"}`,
+    persona?.occupation ? `職業: ${persona.occupation}` : null,
+    persona?.freeText ? `詳細: ${persona.freeText}` : null,
+    "",
+    "最初の画像がデザインA、次の画像がデザインBです。",
+    "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。reason は必ず日本語で記述してください。",
+  ].filter((l) => l !== null).join("\n");
+
+  const command = new ConverseCommand({
+    modelId: MODEL_ID,
+    inferenceConfig: { temperature: 0.2 },
+    messages: [{
+      role: "user",
+      content: [
+        { text: prompt },
+        { image: { format: getImageFormat(imageKeyA), source: { bytes: imageABuf } } },
+        { image: { format: getImageFormat(imageKeyB), source: { bytes: imageBBuf } } },
+      ],
+    }],
+    toolConfig: {
+      tools: [localEvaluateTool],
+      toolChoice: { tool: { name: "evaluate_designs" } },
+    },
+  });
+
+  try {
+    const response = await bedrockClient.send(command) as {
+      stopReason: string;
+      output?: { message?: { content?: Array<{ toolUse?: { name: string; input: unknown } }> } };
+    };
+    const toolUseBlock = response.output?.message?.content?.find(
+      (c) => c.toolUse?.name === "evaluate_designs"
+    );
+    if (!toolUseBlock?.toolUse) throw new Error("evaluate_designs not found in response");
+
+    const input = toolUseBlock.toolUse.input as {
+      winner: "A" | "B";
+      confidence?: number;
+      reason: string;
+      scores: { usability: number; aesthetics: number; clarity: number; engagement: number };
+    };
+    await putItem({
+      ...evaluationKey(testId, personaId),
+      winner: input.winner,
+      confidence: input.confidence ?? 0,
+      reason: input.reason,
+      scores: input.scores,
+      status: "completed",
+      personaDisplayName,
+      evaluatedAt: new Date().toISOString(),
+    } as unknown as Record<string, unknown>);
+  } catch {
+    await putItem({
+      ...evaluationKey(testId, personaId),
+      winner: "A",
+      confidence: 0,
+      reason: "",
+      scores: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
+      status: "failed",
+      personaDisplayName,
+      evaluatedAt: new Date().toISOString(),
+    } as unknown as Record<string, unknown>);
+  }
+}
 
 function imageKeyToPath(key: string): string {
   return join(LOCAL_UPLOAD_DIR, key.replace(/\//g, "_"));
@@ -80,8 +202,12 @@ app.delete("/personas/:id", async (c) => {
   return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
 });
 
-// AIアシスト下書き: Bedrockなしスタブ
+// AIアシスト下書き: LOCAL_BEDROCK=true のとき実Bedrockを呼ぶ
 app.post("/personas/:id/draft", async (c) => {
+  if (USE_LOCAL_BEDROCK) {
+    const res = await generateDraft(toEvent(c.req, { id: c.req.param("id") }));
+    return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+  }
   const userId = c.req.header("x-local-user-id")!;
   const personaId = c.req.param("id");
   const persona = await getItem<PersonaRecord>({ PK: `USER#${userId}`, SK: `PERSONA#${personaId}` });
@@ -92,8 +218,13 @@ app.post("/personas/:id/draft", async (c) => {
   });
 });
 
-// インタビューチャット: Bedrockなしスタブ（テキストストリーム）
+// インタビューチャット: LOCAL_BEDROCK=true のとき実Bedrockを呼ぶ
 app.post("/personas/:id/interview", async (c) => {
+  if (USE_LOCAL_BEDROCK) {
+    const body = await c.req.text();
+    const res = await interviewPersona({ ...toEvent(c.req, { id: c.req.param("id") }, body), body });
+    return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+  }
   const userId = c.req.header("x-local-user-id")!;
   const personaId = c.req.param("id");
   const persona = await getItem<PersonaRecord>({ PK: `USER#${userId}`, SK: `PERSONA#${personaId}` });
@@ -211,7 +342,7 @@ app.get("/tests/:id/progress", async (c) => {
   return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
 });
 
-// 評価実行: Bedrockなしスタブ（DynamoDBに即時フェイク評価結果を保存）
+// 評価実行: LOCAL_BEDROCK=true のとき実Bedrock（画像base64渡し）、それ以外はスタブ
 app.post("/tests/:id/execute", async (c) => {
   const userId = c.req.header("x-local-user-id")!;
   const testId = c.req.param("id");
@@ -220,32 +351,66 @@ app.post("/tests/:id/execute", async (c) => {
   if (!test) return c.json({ error: "NOT_FOUND" }, 404);
   if (test.status === "running") return c.json({ error: "CONFLICT" }, 409);
 
+  // 再実行時に古い評価レコードを削除してクリーンな状態でスタート
+  const oldEvals = await queryByPK(`ABTEST#${testId}`, "EVAL#");
+  await Promise.all(
+    oldEvals.map((e: unknown) =>
+      deleteItem({ PK: `ABTEST#${testId}`, SK: (e as { SK: string }).SK })
+    )
+  );
+
+  if (USE_LOCAL_BEDROCK) {
+    if (!test.designAImageKey || !test.designBImageKey) {
+      return c.json({ error: "VALIDATION_ERROR", message: "Both design images must be set" }, 400);
+    }
+    if (!test.personaIds?.length) {
+      return c.json({ error: "VALIDATION_ERROR", message: "At least one persona must be selected" }, 400);
+    }
+    const now = new Date().toISOString();
+    await putItem({ ...test, status: "running", updatedAt: now } as unknown as Record<string, unknown>);
+    // 非同期で実行（レスポンスを待たずに返す）
+    (async () => {
+      const batches = chunkArray(test.personaIds!, 5);
+      for (const batch of batches) {
+        await Promise.allSettled(
+          batch.map((personaId) =>
+            evaluateLocalBedrock(testId, personaId, userId, test.designAImageKey!, test.designBImageKey!)
+          )
+        );
+      }
+      await putItem({ ...test, status: "completed", updatedAt: new Date().toISOString() } as unknown as Record<string, unknown>);
+    })();
+    return c.json({ started: true });
+  }
+
   const now = new Date().toISOString();
   await putItem({ ...test, status: "running", updatedAt: now } as unknown as Record<string, unknown>);
 
-  const personaIds: string[] = test.personaIds ?? [];
-  for (const personaId of personaIds) {
-    const persona = await getItem<PersonaRecord>({ PK: `USER#${userId}`, SK: `PERSONA#${personaId}` });
-    const winner = Math.random() > 0.5 ? "A" : "B";
-    const evalRecord: EvaluationRecord = {
-      ...evaluationKey(testId, personaId),
-      winner: winner as "A" | "B",
-      confidence: Math.floor(Math.random() * 35) + 60,
-      reason: `[ローカルスタブ] ${persona?.displayName ?? personaId}視点での評価。デザイン${winner}の方が視認性・操作性に優れていると判断しました。`,
-      scores: {
-        usability: Math.floor(Math.random() * 3) + 7,
-        aesthetics: Math.floor(Math.random() * 3) + 6,
-        clarity: Math.floor(Math.random() * 3) + 7,
-        engagement: Math.floor(Math.random() * 3) + 6,
-      },
-      status: "completed",
-      personaDisplayName: persona?.displayName ?? personaId,
-      evaluatedAt: now,
-    };
-    await putItem(evalRecord as unknown as Record<string, unknown>);
-  }
-
-  await putItem({ ...test, status: "completed", updatedAt: now } as unknown as Record<string, unknown>);
+  // 非同期で実行（レスポンスを待たずに返す）
+  (async () => {
+    const personaIds: string[] = test.personaIds ?? [];
+    for (const personaId of personaIds) {
+      const persona = await getItem<PersonaRecord>({ PK: `USER#${userId}`, SK: `PERSONA#${personaId}` });
+      const winner = Math.random() > 0.5 ? "A" : "B";
+      const evalRecord: EvaluationRecord = {
+        ...evaluationKey(testId, personaId),
+        winner: winner as "A" | "B",
+        confidence: Math.floor(Math.random() * 35) + 60,
+        reason: `[ローカルスタブ] ${persona?.displayName ?? personaId}視点での評価。デザイン${winner}の方が視認性・操作性に優れていると判断しました。`,
+        scores: {
+          usability: Math.floor(Math.random() * 3) + 7,
+          aesthetics: Math.floor(Math.random() * 3) + 6,
+          clarity: Math.floor(Math.random() * 3) + 7,
+          engagement: Math.floor(Math.random() * 3) + 6,
+        },
+        status: "completed",
+        personaDisplayName: persona?.displayName ?? personaId,
+        evaluatedAt: now,
+      };
+      await putItem(evalRecord as unknown as Record<string, unknown>);
+    }
+    await putItem({ ...test, status: "completed", updatedAt: now } as unknown as Record<string, unknown>);
+  })();
 
   return c.json({ started: true });
 });
