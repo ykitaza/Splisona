@@ -62,10 +62,51 @@ export async function getPersona(event: ApiGatewayEvent & { pathParameters?: Rec
   }
 }
 
+export async function updatePersona(event: ApiGatewayEvent & { pathParameters?: Record<string, string>; body?: string }): Promise<LambdaResponse> {
+  try {
+    const userId = getUserId(event);
+    const personaId = event.pathParameters?.id ?? "";
+    const input = JSON.parse(event.body ?? "{}");
+
+    if ("displayName" in input && !input.displayName?.trim()) {
+      return badRequest("displayName is required", ["displayName"]) as LambdaResponse;
+    }
+
+    const existing = await getItem<PersonaRecord>(personaKey(userId, personaId) as unknown as Record<string, string>);
+    if (!existing) return json(404, { error: "NOT_FOUND" });
+
+    const now = new Date().toISOString();
+    const updated: PersonaRecord = {
+      ...existing,
+      ...Object.fromEntries(
+        Object.entries({
+          displayName: input.displayName,
+          type: input.type,
+          age: input.age,
+          gender: input.gender,
+          occupation: input.occupation,
+          deviationScore: input.deviationScore,
+          annualIncome: input.annualIncome,
+          education: input.education,
+          freeText: input.freeText,
+        }).filter(([, v]) => v !== undefined)
+      ),
+      updatedAt: now,
+    } as PersonaRecord;
+
+    await putItem(updated as unknown as Record<string, unknown>);
+    return json(200, toPersona(updated));
+  } catch (e) {
+    return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+  }
+}
+
 export async function deletePersona(event: ApiGatewayEvent & { pathParameters?: Record<string, string> }): Promise<LambdaResponse> {
   try {
     const userId = getUserId(event);
     const personaId = event.pathParameters?.id ?? "";
+    const existing = await getItem<PersonaRecord>(personaKey(userId, personaId) as unknown as Record<string, string>);
+    if (!existing) return json(404, { error: "NOT_FOUND" });
     await deleteItem(personaKey(userId, personaId) as unknown as Record<string, string>);
     return json(200, { deleted: true });
   } catch (e) {

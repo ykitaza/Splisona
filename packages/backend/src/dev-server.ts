@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { listPersonas, createPersona, getPersona, deletePersona } from "./persona/handler.js";
+import { listPersonas, createPersona, getPersona, updatePersona, deletePersona } from "./persona/handler.js";
 
 const app = new Hono();
 
@@ -39,6 +39,12 @@ app.post("/personas", async (c) => {
 
 app.get("/personas/:id", async (c) => {
   const res = await getPersona(toEvent(c.req, { id: c.req.param("id") }));
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.put("/personas/:id", async (c) => {
+  const body = await c.req.text();
+  const res = await updatePersona({ ...toEvent(c.req, { id: c.req.param("id") }, body), body });
   return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
 });
 

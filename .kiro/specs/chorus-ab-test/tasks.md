@@ -83,7 +83,7 @@
 
 - [ ] 2. バックエンド: ドメインサービスを実装する
 
-- [ ] 2.1 ペルソナ CRUD サービスを実装する
+- [x] 2.1 ペルソナ CRUD サービスを実装する
   - `GET /personas`、`POST /personas`、`GET /personas/{id}`、`PUT /personas/{id}`、`DELETE /personas/{id}` を実装する
   - `PK=USER#sub`、`SK=PERSONA#id` のキースキーマで DynamoDB に保存・取得する
   - `displayName` 未入力時に 400、他ユーザーのペルソナアクセス時に 404 を返す
