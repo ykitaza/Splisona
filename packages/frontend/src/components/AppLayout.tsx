@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Columns2, BarChart2, Settings, LogOut, ChevronsUpDown, Info, X, PanelLeft, PanelLeftClose } from 'lucide-react';
+import { LayoutDashboard, Users, Columns2, Settings, LogOut, ChevronsUpDown, Info, X, PanelLeft, PanelLeftClose } from 'lucide-react';
 import { signOut } from 'aws-amplify/auth';
 
 const NAV_ITEMS = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'ダッシュボード' },
   { to: '/personas', icon: Users, label: 'ペルソナ' },
   { to: '/tests/new', icon: Columns2, label: 'A/Bテスト' },
-  { to: '/results', icon: BarChart2, label: '結果レポート' },
 ];
 
 const APP_VERSION = '0.0.1';
