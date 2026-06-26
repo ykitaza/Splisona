@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { listTests } from '../api/tests';
+import { useState, useEffect, useCallback } from 'react';
+import { listTests, deleteTest as apiDeleteTest } from '../api/tests';
 import type { ABTest } from '../types';
 
 export function useABTests() {
@@ -14,5 +14,15 @@ export function useABTests() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  return { tests, isLoading, error };
+  const deleteTest = useCallback(async (id: string) => {
+    await apiDeleteTest(id);
+    setTests((prev) => prev.filter((t) => t.testId !== id));
+  }, []);
+
+  const deleteTests = useCallback(async (ids: string[]) => {
+    await Promise.all(ids.map(apiDeleteTest));
+    setTests((prev) => prev.filter((t) => !ids.includes(t.testId)));
+  }, []);
+
+  return { tests, isLoading, error, deleteTest, deleteTests };
 }

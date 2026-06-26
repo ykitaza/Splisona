@@ -25,6 +25,10 @@ export function updateTest(id: string, input: UpdateABTestInput): Promise<ABTest
   return apiRequest(`/tests/${id}`, { method: 'PUT', body: JSON.stringify(input) });
 }
 
+export function deleteTest(id: string): Promise<{ deleted: boolean }> {
+  return apiRequest(`/tests/${id}`, { method: 'DELETE' });
+}
+
 export function getUploadUrl(id: string, req: UploadUrlRequest): Promise<UploadUrlResponse> {
   return apiRequest(`/tests/${id}/upload-url`, { method: 'POST', body: JSON.stringify(req) });
 }

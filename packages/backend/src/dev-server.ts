@@ -4,7 +4,7 @@ import { serve } from "@hono/node-server";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join, extname } from "node:path";
 import { listPersonas, createPersona, getPersona, updatePersona, deletePersona } from "./persona/handler.js";
-import { createTest, listTests, getTest, updateTest, getProgress } from "./abtest/handler.js";
+import { createTest, listTests, getTest, updateTest, deleteTest, getProgress } from "./abtest/handler.js";
 import { getReport, exportReport } from "./report/handler.js";
 import { getItem, putItem, queryByPK, abtestKey, evaluationKey } from "./shared/dynamo.js";
 import type { ABTestRecord, PersonaRecord, EvaluationRecord } from "./shared/types.js";
@@ -121,6 +121,11 @@ app.get("/tests/:id", async (c) => {
 app.put("/tests/:id", async (c) => {
   const body = await c.req.text();
   const res = await updateTest({ ...toEvent(c.req, { id: c.req.param("id") }, body), body });
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.delete("/tests/:id", async (c) => {
+  const res = await deleteTest(toEvent(c.req, { id: c.req.param("id") }));
   return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
 });
 
