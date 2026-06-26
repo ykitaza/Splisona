@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronUp, ChevronDown, ChevronsUpDown, Trash2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ABTEST_STATUS_LABELS, type ABTestStatus, type ABTest, type DesignInput, type ReportSummary } from '../types';
 import { testDraft, type DesignSideData } from '../lib/testDraft';
@@ -307,7 +307,6 @@ export function ABTestTable({
                     <Trash2 size={13} color="#D64545" />
                   </button>
                 )}
-                <ArrowRight size={16} color="#9A9A9F" />
               </div>
             )}
           </div>
