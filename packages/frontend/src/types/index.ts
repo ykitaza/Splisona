@@ -76,3 +76,65 @@ export interface ABTest {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CreateABTestInput {
+  title: string;
+  designAInput: DesignInput;
+  designBInput: DesignInput;
+  personaIds: string[];
+}
+
+export type UpdateABTestInput = Partial<CreateABTestInput>;
+
+export interface UploadUrlRequest {
+  side: "A" | "B";
+  contentType: "image/png" | "image/jpeg" | "image/webp";
+}
+
+export interface UploadUrlResponse {
+  uploadUrl: string;
+  imageKey: string;
+}
+
+export interface ProgressResponse {
+  total: number;
+  completed: number;
+  failed: number;
+  status: ABTestStatus;
+}
+
+export interface EvaluationScores {
+  usability: number;
+  aesthetics: number;
+  clarity: number;
+  engagement: number;
+}
+
+export interface EvaluationResult {
+  personaId: string;
+  personaDisplayName: string;
+  winner: "A" | "B";
+  confidence: number;
+  reason: string;
+  scores: EvaluationScores;
+  status: "completed" | "failed";
+}
+
+export interface ReportSummary {
+  winner: "A" | "B" | "tie";
+  supportRateA: number;
+  supportRateB: number;
+  totalPersonas: number;
+  completedPersonas: number;
+  avgScores: {
+    A: EvaluationScores;
+    B: EvaluationScores;
+  };
+  winnersReasonSummary: string;
+}
+
+export interface ReportResponse {
+  abTest: ABTest;
+  summary: ReportSummary;
+  evaluations: EvaluationResult[];
+}
