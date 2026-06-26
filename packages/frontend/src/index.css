@@ -1,5 +1,47 @@
 @import "tailwindcss";
 
+@theme {
+  --color-bg-base: #0A0B0D;
+  --color-bg-surface: #131517;
+  --color-bg-raised: #1C1F23;
+  --color-hairline: #FFFFFF14;
+  --color-text-hi: #F2F4F7;
+  --color-text-mid: #9BA1AC;
+  --color-text-lo: #5B616B;
+  --color-accent: #6E78D9;
+  --color-accent-dim: #6E78D926;
+  --color-win-a: #6E78D9;
+  --color-win-b: #C9974F;
+  --color-win-b-dim: #C9974F26;
+  --color-danger: #E06A6A;
+  --color-danger-dim: #E06A6A26;
+  --color-success: #54B587;
+  --color-success-dim: #54B58726;
+  --color-draw: #3A3D42;
+
+  --font-sans: 'Geist', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 24px;
+  --spacing-6: 32px;
+  --spacing-7: 48px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+  --text-display: 40px;
+}
+
 @keyframes ai-scan {
   0%   { transform: translateY(-100%); }
   100% { transform: translateY(200%); }

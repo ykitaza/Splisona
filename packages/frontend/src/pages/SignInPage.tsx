@@ -8,7 +8,7 @@ export function SignInPage() {
 
   useEffect(() => {
     if (localUserId) {
-      navigate('/dashboard', { replace: true });
+      navigate('/personas', { replace: true });
     }
   }, [localUserId, navigate]);
 
@@ -26,7 +26,7 @@ export function SignInPage() {
 
     try {
       await signIn({ username: email, password });
-      navigate('/dashboard', { replace: true });
+      navigate('/personas', { replace: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'サインインに失敗しました';
       setError(message);

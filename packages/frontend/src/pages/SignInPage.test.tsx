@@ -17,7 +17,7 @@ function renderSignInPage() {
     <MemoryRouter initialEntries={['/signin']}>
       <Routes>
         <Route path="/signin" element={<SignInPage />} />
-        <Route path="/dashboard" element={<div>ダッシュボード</div>} />
+        <Route path="/personas" element={<div>ペルソナ一覧</div>} />
       </Routes>
     </MemoryRouter>
   );
@@ -35,7 +35,7 @@ describe('SignInPage', () => {
     expect(screen.getByRole('button', { name: /サインイン/i })).toBeInTheDocument();
   });
 
-  it('有効な認証情報でサインインするとダッシュボードへ遷移する', async () => {
+  it('有効な認証情報でサインインするとペルソナ一覧へ遷移する', async () => {
     mockSignIn.mockResolvedValue({ isSignedIn: true, nextStep: { signInStep: 'DONE' } } as never);
     renderSignInPage();
 
@@ -44,7 +44,7 @@ describe('SignInPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /サインイン/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('ダッシュボード')).toBeInTheDocument();
+      expect(screen.getByText('ペルソナ一覧')).toBeInTheDocument();
     });
   });
 

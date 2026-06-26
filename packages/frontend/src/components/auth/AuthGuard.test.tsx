@@ -11,11 +11,11 @@ const mockUseAuth = vi.mocked(useAuth);
 function renderWithRouter(authenticated: boolean, loading = false) {
   mockUseAuth.mockReturnValue({ isAuthenticated: authenticated, isLoading: loading });
   return render(
-    <MemoryRouter initialEntries={['/dashboard']}>
+    <MemoryRouter initialEntries={['/personas']}>
       <Routes>
         <Route path="/signin" element={<div>サインイン画面</div>} />
         <Route element={<AuthGuard />}>
-          <Route path="/dashboard" element={<div>ダッシュボード</div>} />
+          <Route path="/personas" element={<div>ペルソナ一覧</div>} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -26,7 +26,7 @@ describe('AuthGuard', () => {
   it('未認証ユーザーはサインイン画面へリダイレクトされる', () => {
     renderWithRouter(false);
     expect(screen.getByText('サインイン画面')).toBeInTheDocument();
-    expect(screen.queryByText('ダッシュボード')).not.toBeInTheDocument();
+    expect(screen.queryByText('ペルソナ一覧')).not.toBeInTheDocument();
   });
 
   it('ローディング中はスピナーを表示する', () => {
