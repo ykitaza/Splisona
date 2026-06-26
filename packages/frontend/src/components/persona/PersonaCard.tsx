@@ -118,7 +118,7 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
-            className="flex items-center justify-center rounded-md transition-colors hover:bg-raised"
+            className="flex items-center justify-center rounded-md transition-colors hover:bg-raised outline-none"
             style={{ width: 30, height: 30 }}
           >
             <MoreHorizontal size={18} className="text-text-lo" />
@@ -134,7 +134,7 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
                   key={item.label}
                   type="button"
                   onClick={item.onClick}
-                  className="w-full text-left px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+                  className="w-full text-left px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised outline-none"
                   style={{ color: item.danger ? 'var(--color-danger)' : 'var(--color-text-hi)' }}
                 >
                   {item.label}
@@ -146,21 +146,17 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
       </div>
 
       {/* Personality */}
-      {persona.freeText && (
-        <p className="text-text-mid font-sans text-base" style={{ lineHeight: 1.5 }}>
-          {persona.freeText}
-        </p>
-      )}
+      <p className="text-text-mid font-sans text-base flex-1" style={{ lineHeight: 1.5 }}>
+        {persona.freeText || ' '}
+      </p>
 
       {/* Divider */}
       <div className="h-px bg-hairline" />
 
       {/* Demographics */}
-      {demographics && (
-        <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.3 }}>
-          {demographics}
-        </span>
-      )}
+      <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.3 }}>
+        {demographics || ' '}
+      </span>
     </div>
   );
 }

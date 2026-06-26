@@ -46,9 +46,6 @@ export function PersonaListPage() {
     return matchQuery && matchFilter;
   });
 
-  const rows: (typeof filtered)[] = [];
-  for (let i = 0; i < filtered.length; i += 3) rows.push(filtered.slice(i, i + 3));
-
   return (
     <div className="flex flex-col gap-5 p-6" style={{ padding: 32 }}>
       {/* Header */}
@@ -130,19 +127,9 @@ export function PersonaListPage() {
           )}
         </div>
       ) : (
-        <div className="flex flex-col" style={{ gap: 24 }}>
-          {rows.map((row, ri) => (
-            <div key={ri} className="flex" style={{ gap: 24 }}>
-              {row.map((persona) => (
-                <div key={persona.personaId} style={{ flex: '1 1 0', minWidth: 0, display: 'flex' }}>
-                  <PersonaCard persona={persona} onDelete={deletePersona} onDuplicate={handleDuplicate} />
-                </div>
-              ))}
-              {row.length < 3 &&
-                Array.from({ length: 3 - row.length }).map((_, i) => (
-                  <div key={`empty-${i}`} style={{ flex: '1 1 0' }} />
-                ))}
-            </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          {filtered.map((persona) => (
+            <PersonaCard key={persona.personaId} persona={persona} onDelete={deletePersona} onDuplicate={handleDuplicate} />
           ))}
         </div>
       )}
