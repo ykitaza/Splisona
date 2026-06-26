@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Check } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Check } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { RadarChart } from '../components/report/RadarChart';
 import { AttributeHeatmap } from '../components/report/AttributeHeatmap';
 import { MethodPopover, SourcePopover } from '../components/report/Popovers';
+import { HelpDot } from '../components/report/HelpDot';
 import { getReport, executeTest, exportTest } from '../api/tests';
 import { usePersonas } from '../hooks/usePersonas';
+import { getNodeColor } from '../components/persona/PersonaNode';
 import { API_BASE } from '../api/client';
 import type { ReportResponse, EvaluationScores, DesignInput } from '../types';
 
@@ -18,32 +20,31 @@ const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
   trust: '信頼感',
 };
 
-function SegmentBar({ rateA, rateB, rateNone }: { rateA: number; rateB: number; rateNone: number }) {
-  const pctA = Math.round(rateA * 100);
-  const pctB = Math.round(rateB * 100);
-  const pctNone = Math.round(rateNone * 100);
+function SegmentBar({ countA, countB, countNone }: { countA: number; countB: number; countNone: number }) {
+  const total = countA + countB + countNone;
+  if (total === 0) return null;
   return (
-    <div data-testid="segment-bar" className="flex flex-col gap-2">
-      <div className="flex overflow-hidden rounded-sm" style={{ height: 8 }}>
-        {pctA > 0 && <div style={{ width: `${pctA}%`, background: 'var(--color-win-a, #6E78D9)' }} />}
-        {pctNone > 0 && <div style={{ width: `${pctNone}%`, background: 'var(--color-draw, #3A3D42)' }} />}
-        {pctB > 0 && <div style={{ width: `${pctB}%`, background: 'var(--color-win-b, #C9974F)' }} />}
+    <div data-testid="segment-bar" className="flex flex-col" style={{ gap: 12 }}>
+      <div className="flex overflow-hidden" style={{ height: 16, borderRadius: 999, gap: 2 }}>
+        {countA > 0 && <div style={{ flex: countA, background: '#6E78D9A0' }} />}
+        {countNone > 0 && <div style={{ flex: countNone, background: '#3A3D4280' }} />}
+        {countB > 0 && <div style={{ flex: countB, background: '#C9974FA0' }} />}
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-win-a" />
-          <span className="text-text-mid font-sans text-sm">A: {pctA}%</span>
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#6E78D9A0' }} />
+          <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>A 勝利 · {countA}</span>
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-win-b" />
-          <span className="text-text-mid font-sans text-sm">B: {pctB}%</span>
-        </span>
-        {pctNone > 0 && (
+        {countNone > 0 && (
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-draw" />
-            <span className="text-text-mid font-sans text-sm">引分: {pctNone}%</span>
+            <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#3A3D4280' }} />
+            <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>引分 · {countNone}</span>
           </span>
         )}
+        <span className="flex items-center gap-1.5">
+          <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>{countB} · B 勝利</span>
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#C9974FA0' }} />
+        </span>
       </div>
     </div>
   );
@@ -52,14 +53,14 @@ function SegmentBar({ rateA, rateB, rateNone }: { rateA: number; rateB: number; 
 function ReasonGroup({ caption, color, reasons }: { caption: string; color: string; reasons: string[] }) {
   if (reasons.length === 0) return null;
   return (
-    <div className="flex flex-col gap-2.5">
-      <span className="font-mono text-xs font-semibold" style={{ color, letterSpacing: '0.5px' }}>
+    <div className="flex flex-col" style={{ gap: 10 }}>
+      <span className="font-sans font-semibold" style={{ color, fontSize: 13 }}>
         {caption}
       </span>
       {reasons.map((reason, i) => (
-        <div key={i} className="flex items-start gap-2">
-          <Check size={15} color={color} style={{ flexShrink: 0, marginTop: 2 }} />
-          <span className="text-text-mid font-sans text-sm leading-relaxed">{reason}</span>
+        <div key={i} className="flex items-start" style={{ gap: 9 }}>
+          <Check size={14} color={color} style={{ flexShrink: 0, marginTop: 2 }} />
+          <span className="text-text-mid font-sans text-sm" style={{ lineHeight: 1.5 }}>{reason}</span>
         </div>
       ))}
     </div>
@@ -125,15 +126,23 @@ function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
 }) {
   const [lightbox, setLightbox] = useState(false);
   const imageUrl = input.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
-  const accentColor = side === 'A' ? 'var(--color-win-a, #6E78D9)' : 'var(--color-win-b, #C9974F)';
+  const borderColor = isWinner
+    ? (side === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)')
+    : 'var(--color-hairline)';
 
   return (
     <>
       {lightbox && imageUrl && <ImageLightbox src={imageUrl} alt={`${side}案`} onClose={() => setLightbox(false)} />}
-      <div className="flex flex-col overflow-hidden flex-1" style={{ borderLeft: isWinner ? `2px solid ${accentColor}` : 'none' }}>
+      <div
+        className="flex flex-col flex-1"
+        style={{ gap: 16, paddingLeft: 16, borderLeft: `2px solid ${borderColor}` }}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-text-hi font-mono text-xs font-semibold" style={{ letterSpacing: 0.5 }}>{side}案</span>
+        </div>
         <div
-          className="flex items-center justify-center overflow-hidden flex-shrink-0 rounded-md"
-          style={{ height: 200, background: 'var(--color-raised, #1C1F23)', cursor: imageUrl ? 'zoom-in' : 'default' }}
+          className="flex items-center justify-center overflow-hidden flex-shrink-0"
+          style={{ height: 180, borderRadius: 10, border: '1px solid var(--color-hairline)', cursor: imageUrl ? 'zoom-in' : 'default' }}
           onClick={() => { if (imageUrl) setLightbox(true); }}
         >
           {imageUrl ? (
@@ -145,12 +154,10 @@ function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
             </div>
           )}
         </div>
-        <div className="flex flex-col gap-1.5 pt-3">
-          <span className="text-text-hi font-mono text-xs font-semibold">{side}案</span>
-          <DesignSourceInfo input={input} />
-          <span className="text-text-mid font-sans text-sm">
-            {totalCount}人中{supportCount}人が支持
-          </span>
+        <DesignSourceInfo input={input} />
+        <div className="h-px bg-hairline" />
+        <div className="flex items-center justify-between">
+          <span className="text-text-mid font-sans text-sm">{totalCount}人中{supportCount}人が支持</span>
         </div>
       </div>
     </>
@@ -205,57 +212,72 @@ export function TestReportPage() {
   const winnerLabel = summary.winner === 'tie' ? '引き分け' : `${summary.winner}案の勝ち`;
   const supportCountA = Math.round(summary.supportRateA * summary.totalPersonas);
   const supportCountB = Math.round(summary.supportRateB * summary.totalPersonas);
-  const winnerSupportCount = summary.winner === 'A' ? supportCountA : summary.winner === 'B' ? supportCountB : 0;
+  const countNone = summary.totalPersonas - supportCountA - supportCountB;
 
   return (
-    <div className="flex flex-col gap-7 p-8 pb-10">
-      {/* Page Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1.5">
-          <Link to="/results" className="flex items-center gap-1 text-text-lo font-sans text-xs">
-            <ChevronLeft size={14} className="text-text-lo" />
-            結果一覧
-          </Link>
-          <h1 className="text-text-hi font-sans text-xl font-semibold">テスト結果</h1>
-          <p className="text-text-lo font-sans text-sm">
-            {abTest.title} · {new Date(abTest.createdAt).toLocaleDateString('ja-JP')} 実行
-          </p>
+    <div className="flex flex-col p-8 pb-10" style={{ gap: 32 }}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col" style={{ gap: 7 }}>
+          <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.5 }}>
+            PHASE 2 · RESULTS
+          </span>
+          <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>
+            結果レポート
+          </h1>
+          <div className="flex items-center" style={{ gap: 9 }}>
+            <span className="text-text-mid font-sans" style={{ fontSize: 13 }}>{abTest.title}</span>
+            <span className="text-text-lo font-mono text-xs">·</span>
+            <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.3 }}>{summary.totalPersonas} ペルソナ</span>
+            <span className="text-text-lo font-mono text-xs">·</span>
+            <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.3 }}>
+              {new Date(abTest.createdAt).toLocaleDateString('ja-JP')} 実行
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center" style={{ gap: 10 }}>
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-2 rounded-md bg-raised border border-hairline px-4 py-2 text-text-hi font-sans text-sm transition-colors hover:bg-surface"
+            className="flex items-center bg-surface border border-hairline text-text-mid font-sans font-medium transition-colors hover:text-text-hi"
+            style={{ gap: 8, borderRadius: 10, padding: '10px 15px', fontSize: 13 }}
           >
-            <Download size={15} className="text-text-mid" />
-            エクスポート
+            <Download size={15} />
+            書き出し
           </button>
           <button
             type="button"
             disabled={isRerunning}
             onClick={handleRerun}
-            className="flex items-center gap-2 rounded-md bg-raised border border-hairline px-4 py-2 text-text-hi font-sans text-sm transition-colors hover:bg-surface disabled:opacity-40"
+            className="flex items-center bg-surface border border-hairline text-text-mid font-sans font-medium transition-colors hover:text-text-hi disabled:opacity-40"
+            style={{ gap: 8, borderRadius: 10, padding: '10px 15px', fontSize: 13 }}
           >
-            <RefreshCw size={15} className="text-text-mid" />
+            <RefreshCw size={15} />
             再実行
           </button>
         </div>
       </div>
 
-      {/* Verdict */}
-      <div className="flex flex-col gap-5">
-        <div className="flex items-baseline gap-3">
-          <span className="text-text-hi font-sans text-xl font-bold">{winnerLabel}</span>
-          <div className="flex items-center gap-1.5">
-            <MethodPopover />
-            <SourcePopover />
+      {/* 総合結果 card */}
+      <div
+        className="flex flex-col bg-base border border-hairline"
+        style={{ gap: 16, borderRadius: 14, padding: 20 }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col" style={{ gap: 10 }}>
+            <div className="flex items-baseline gap-3">
+              <span className="text-text-hi font-sans text-xl font-bold">{winnerLabel}</span>
+              <div className="flex items-center gap-1.5">
+                <MethodPopover />
+                <SourcePopover />
+              </div>
+            </div>
+            <p className="text-text-mid font-sans text-sm">
+              {summary.completedPersonas}/{summary.totalPersonas}人が評価完了
+            </p>
           </div>
         </div>
-        <SegmentBar rateA={summary.supportRateA} rateB={summary.supportRateB} rateNone={summary.supportRateNone ?? 0} />
-        <p className="text-text-mid font-sans text-sm">
-          {summary.completedPersonas}/{summary.totalPersonas}人が評価完了
-          {summary.winner !== 'tie' && ` · ${summary.totalPersonas}人中${winnerSupportCount}人が${summary.winner}を支持`}
-        </p>
+        <SegmentBar countA={supportCountA} countB={supportCountB} countNone={countNone} />
 
         {summary.winnersReasonSummary && (
           <div className="flex items-start gap-2.5 px-4 py-3 rounded-md bg-accent-dim">
@@ -267,135 +289,154 @@ export function TestReportPage() {
 
       <div className="h-px bg-hairline" />
 
-      {/* Design comparison */}
-      <div className="flex flex-col gap-4">
-        <span className="text-text-hi font-sans text-base font-semibold">比較したデザイン</span>
-        <div className="flex items-start gap-6 min-w-0">
+      {/* 比較したデザイン */}
+      <div className="flex flex-col" style={{ gap: 14 }}>
+        <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>比較したデザイン</span>
+        <div className="flex min-w-0" style={{ gap: 32 }}>
           <DesignCard side="A" input={abTest.designAInput} isWinner={summary.winner === 'A'} supportCount={supportCountA} totalCount={summary.totalPersonas} />
           <DesignCard side="B" input={abTest.designBInput} isWinner={summary.winner === 'B'} supportCount={supportCountB} totalCount={summary.totalPersonas} />
         </div>
       </div>
 
-      <div className="h-px bg-hairline" />
-
-      {/* Analysis row: reasons + score bars + radar */}
-      <div className="flex gap-6">
+      {/* 分析: 2カラム (理由 | レーダー) */}
+      <div className="flex" style={{ gap: 24 }}>
         {/* 評価のまとめ */}
-        <div className="flex flex-col gap-4 flex-1">
-          <span className="text-text-hi font-sans text-base font-semibold">評価のまとめ</span>
+        <div
+          className="flex flex-col flex-1"
+          style={{ gap: 12, paddingRight: 24, borderRight: '1px solid var(--color-hairline)' }}
+        >
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>評価のまとめ</span>
+            <HelpDot content="各ペルソナの評価理由をAI要約した結果です" />
+          </div>
           {summary.reasonSummaryA.length === 0 && summary.reasonSummaryB.length === 0 ? (
             <p className="text-text-lo font-sans text-sm">—</p>
           ) : (
-            <>
-              <ReasonGroup caption="A案が支持された理由" color="var(--color-win-a, #6E78D9)" reasons={summary.reasonSummaryA} />
-              <ReasonGroup caption="B案が評価された点" color="var(--color-win-b, #C9974F)" reasons={summary.reasonSummaryB} />
-            </>
+            <div className="flex flex-col" style={{ gap: 12, paddingTop: 36 }}>
+              <ReasonGroup caption="A が支持された理由" color="var(--color-win-a, #6E78D9)" reasons={summary.reasonSummaryA} />
+              <ReasonGroup caption="B が評価された点" color="var(--color-win-b, #C9974F)" reasons={summary.reasonSummaryB} />
+            </div>
           )}
         </div>
 
         {/* 評価軸別の比較 */}
-        <div className="flex flex-col gap-5 flex-1">
-          <span className="text-text-hi font-sans text-base font-semibold">評価軸別の比較</span>
-          {(Object.keys(SCORE_LABELS) as (keyof EvaluationScores)[]).map((key) => (
-            <ScoreBars key={key} label={SCORE_LABELS[key]} scoreA={summary.avgScores.A[key]} scoreB={summary.avgScores.B[key]} />
-          ))}
-        </div>
-
-        {/* Radar Chart */}
-        <div className="flex flex-col gap-3 items-center">
-          <span className="text-text-hi font-sans text-base font-semibold">レーダーチャート</span>
-          <RadarChart scoresA={summary.avgScores.A} scoresB={summary.avgScores.B} />
+        <div
+          className="flex flex-col flex-1"
+          style={{ gap: 12, paddingLeft: 24 }}
+        >
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>評価軸別の比較</span>
+            <HelpDot content="5軸の平均スコアをレーダーチャートで比較" />
+          </div>
+          <div className="flex flex-col items-center" style={{ gap: 16 }}>
+            <RadarChart scoresA={summary.avgScores.A} scoresB={summary.avgScores.B} />
+            <div className="flex items-center" style={{ gap: 20 }}>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-win-a" />
+                <span className="text-text-mid font-mono text-xs">A案</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-win-b" />
+                <span className="text-text-mid font-mono text-xs">B案</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-
-      <div className="h-px bg-hairline" />
 
       {/* Attribute Heatmap */}
       {personas.length > 0 && evaluations.length > 0 && (
-        <div className="flex flex-col gap-4">
-          <span className="text-text-hi font-sans text-base font-semibold">属性別分析</span>
-          <AttributeHeatmap evaluations={evaluations} personas={personas} groupBy="type" />
-        </div>
+        <AttributeHeatmap evaluations={evaluations} personas={personas} groupBy="type" />
       )}
 
-      {personas.length > 0 && evaluations.length > 0 && <div className="h-px bg-hairline" />}
-
-      {/* Persona Table */}
-      <div className="flex flex-col gap-3">
-        <span className="text-text-hi font-sans text-base font-semibold">ペルソナ別の評価</span>
-        <div>
-          <div className="flex items-center py-3 px-4 border-b border-hairline">
-            <div style={{ width: 180 }}>
-              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>ペルソナ</span>
-            </div>
-            <div style={{ width: 80 }}>
-              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>勝者</span>
-            </div>
-            <div className="flex-1">
-              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>コメント</span>
-            </div>
-            <div style={{ width: 32 }} />
+      {/* ペルソナ別の評価 */}
+      <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>ペルソナ別の評価</span>
+      <div className="bg-base border border-hairline overflow-hidden" style={{ borderRadius: 14 }}>
+        <div className="flex items-center px-4 border-b border-hairline bg-base" style={{ gap: 16, padding: '12px 16px' }}>
+          <div style={{ width: 250 }}>
+            <span className="text-text-lo font-mono" style={{ fontSize: 10, letterSpacing: 0.8 }}>PERSONA</span>
           </div>
-          {evaluations.map((ev, i) => {
-            const isExpanded = expandedId === ev.personaId;
-            return (
-              <div key={ev.personaId} style={{ borderTop: i > 0 ? '1px solid var(--color-hairline, #FFFFFF14)' : 'none' }}>
-                <button
-                  type="button"
-                  onClick={() => setExpandedId(isExpanded ? null : ev.personaId)}
-                  className="flex items-start w-full text-left py-4 px-4 transition-colors hover:bg-raised"
-                  aria-expanded={isExpanded}
-                >
-                  <div style={{ width: 180 }}>
-                    <span className="text-text-hi font-sans text-sm font-medium">{ev.personaDisplayName}</span>
-                    {ev.status === 'failed' && <span className="block text-xs text-danger mt-0.5">失敗</span>}
-                  </div>
-                  <div style={{ width: 80 }}>
-                    {ev.status !== 'failed' && (
-                      <span
-                        className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold"
-                        style={{
-                          background: ev.winner === 'A' ? 'var(--color-accent-dim)' : ev.winner === 'B' ? 'var(--color-win-b-dim)' : 'var(--color-raised)',
-                          color: ev.winner === 'A' ? 'var(--color-win-a)' : ev.winner === 'B' ? 'var(--color-win-b)' : 'var(--color-text-lo)',
-                        }}
-                      >
-                        {ev.winner === 'none' ? 'なし' : `${ev.winner}案`}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className="text-text-mid font-sans text-sm leading-relaxed"
-                      style={isExpanded ? {} : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-                    >
-                      {ev.reason || '—'}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-center" style={{ width: 32 }}>
-                    <ChevronDown size={16} className="text-text-lo" style={{ transition: 'transform 0.15s', transform: isExpanded ? 'rotate(180deg)' : 'none' }} />
-                  </div>
-                </button>
-                {isExpanded && (
-                  <div className="flex flex-col gap-4 bg-raised" style={{ padding: '4px 16px 20px 196px' }}>
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>コメント全文</span>
-                      <p className="text-text-hi font-sans text-sm leading-relaxed whitespace-pre-wrap">{ev.reason || '—'}</p>
-                    </div>
-                    {ev.status !== 'failed' && ev.scoresA && ev.scoresB && (
-                      <div className="flex flex-col gap-3.5">
-                        <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>評価軸別スコア</span>
-                        {(Object.keys(SCORE_LABELS) as (keyof EvaluationScores)[]).map((key) => (
-                          <ScoreBars key={key} label={SCORE_LABELS[key]} scoreA={ev.scoresA[key]} scoreB={ev.scoresB[key]} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          <div style={{ width: 96 }}>
+            <span className="text-text-lo font-mono" style={{ fontSize: 10, letterSpacing: 0.8 }}>勝者</span>
+          </div>
+          <div className="flex-1">
+            <span className="text-text-lo font-mono" style={{ fontSize: 10, letterSpacing: 0.8 }}>コメント</span>
+          </div>
         </div>
+        {evaluations.map((ev, i) => {
+          const isExpanded = expandedId === ev.personaId;
+          const dotColor = getNodeColor(ev.personaId);
+          return (
+            <div key={ev.personaId}>
+              {i > 0 && <div className="h-px bg-hairline" />}
+              <button
+                type="button"
+                onClick={() => setExpandedId(isExpanded ? null : ev.personaId)}
+                className="flex items-center w-full text-left transition-colors hover:bg-raised"
+                style={{ gap: 16, padding: '16px 16px' }}
+                aria-expanded={isExpanded}
+              >
+                <div className="flex items-center" style={{ width: 250, gap: 11 }}>
+                  <span className="inline-block flex-shrink-0 rounded-full" style={{ width: 11, height: 11, background: dotColor }} />
+                  <div className="flex flex-col" style={{ gap: 2 }}>
+                    <span className="text-text-hi font-sans text-sm font-medium">{ev.personaDisplayName}</span>
+                    {ev.status === 'failed' && <span className="text-xs text-danger">失敗</span>}
+                  </div>
+                </div>
+                <div style={{ width: 96 }}>
+                  {ev.status !== 'failed' && (
+                    <span
+                      className="inline-flex items-center justify-center text-xs font-bold"
+                      style={{
+                        borderRadius: 999,
+                        padding: '4px 11px',
+                        background: ev.winner === 'A' ? '#6E78D922' : ev.winner === 'B' ? '#C9974F22' : 'var(--color-raised)',
+                        color: ev.winner === 'A' ? 'var(--color-win-a)' : ev.winner === 'B' ? 'var(--color-win-b)' : 'var(--color-text-lo)',
+                      }}
+                    >
+                      {ev.winner === 'none' ? '—' : `${ev.winner}案`}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-text-mid font-sans text-sm"
+                    style={{
+                      lineHeight: 1.5,
+                      ...(isExpanded ? {} : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }),
+                    }}
+                  >
+                    {ev.reason || '—'}
+                  </p>
+                </div>
+                <div className="flex items-center justify-center" style={{ width: 32 }}>
+                  <ChevronDown size={16} className="text-text-lo" style={{ transition: 'transform 0.15s', transform: isExpanded ? 'rotate(180deg)' : 'none' }} />
+                </div>
+              </button>
+              {isExpanded && (
+                <div className="flex flex-col gap-4 bg-raised" style={{ padding: '4px 16px 20px 277px' }}>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>コメント全文</span>
+                    <p className="text-text-hi font-sans text-sm whitespace-pre-wrap" style={{ lineHeight: 1.5 }}>{ev.reason || '—'}</p>
+                  </div>
+                  {ev.status !== 'failed' && ev.scoresA && ev.scoresB && (
+                    <div className="flex flex-col gap-3.5">
+                      <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>評価軸別スコア</span>
+                      {(Object.keys(SCORE_LABELS) as (keyof EvaluationScores)[]).map((key) => (
+                        <ScoreBars key={key} label={SCORE_LABELS[key]} scoreA={ev.scoresA[key]} scoreB={ev.scoresB[key]} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+
+      <p className="text-text-lo font-sans text-xs">
+        ペルソナ名をクリックで属性、行末の ? で使用モデル・解決済みプロンプト・各軸スコアを表示。各まとめ見出しの ? で生成元、エクスポートに全メタデータを含みます。
+      </p>
     </div>
   );
 }

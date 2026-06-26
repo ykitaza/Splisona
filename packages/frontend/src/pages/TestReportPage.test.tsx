@@ -128,7 +128,7 @@ describe('TestReportPage', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByText(/4人中3人がAを支持/)).toBeInTheDocument();
+      expect(screen.getAllByText(/4人中3人が支持/).length).toBeGreaterThanOrEqual(1);
     });
   });
 });
