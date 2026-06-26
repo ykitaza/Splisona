@@ -39,7 +39,7 @@ app.options("*", (c) => {
   c.res.headers.set("Access-Control-Allow-Origin", "*");
   c.res.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   c.res.headers.set("Access-Control-Allow-Headers", "Content-Type,Authorization,x-local-user-id");
-  return c.text("", 204);
+  return c.body(null, 204);
 });
 
 // ローカル用モック認証ミドルウェア（x-local-user-id を信頼）
@@ -145,44 +145,33 @@ app.post("/figma/verify", async (c) => {
   }
 });
 
-// URL キャプチャ: Figma/サイトURLから画像を取得してローカル保存
+// URL キャプチャ: S3 の代わりにローカルディスクに保存（dev のみ）
+// 本番 Lambda では capture/handler.ts を直接マウントする
 app.post("/tests/:id/capture", async (c) => {
-  const testId = c.req.param("id");
-  const { side, inputType, url, figmaToken: reqToken } = await c.req.json<{ side: string; inputType: string; url: string; figmaToken?: string }>();
-  const figmaToken = reqToken || process.env.FIGMA_TOKEN;
-  const imageKey = `local/${testId}-${side}-capture-${Date.now()}.png`;
+  const { side, inputType, url, figmaToken: reqToken } = await c.req.json<{
+    side: string; inputType: string; url: string; figmaToken?: string;
+  }>();
+
+  const imageKey = `local/${c.req.param("id")}-${side}-capture-${Date.now()}.png`;
   const filePath = imageKeyToPath(imageKey);
 
-  if (inputType === "figma_url" && figmaToken) {
-    try {
-      const match = url.match(/figma\.com\/(?:design|file)\/([^/?]+)/) ;
-      const nodeIdRaw = new URL(url).searchParams.get("node-id") ?? "";
-      // URL は "123-456" 形式だが Figma API レスポンスのキーは "123:456" 形式
-      const nodeIdCanonical = nodeIdRaw.replace(/-/g, ":");
-      const fileKey = match?.[1];
-      if (fileKey) {
-        const apiUrl = `https://api.figma.com/v1/images/${fileKey}?ids=${encodeURIComponent(nodeIdRaw)}&format=png`;
-        const apiRes = await fetch(apiUrl, { headers: { "X-Figma-Token": figmaToken } });
-        const data = await apiRes.json() as { images?: Record<string, string> };
-        const imgUrl = data.images?.[nodeIdCanonical] ?? data.images?.[nodeIdRaw];
-        if (imgUrl) {
-          const imgRes = await fetch(imgUrl);
-          const buf = Buffer.from(await imgRes.arrayBuffer());
-          writeFileSync(filePath, buf);
-          return c.json({ imageKey, previewUrl: `http://localhost:${port}/stub-upload/${imageKey}` });
-        }
-      }
-    } catch {
-      /* fall through to stub */
+  try {
+    if (inputType === "figma_url") {
+      const { captureFigmaNode } = await import("./capture/figma.js");
+      const token = reqToken ?? process.env.FIGMA_TOKEN ?? "";
+      const buf = await captureFigmaNode(url, token);
+      writeFileSync(filePath, buf);
+    } else if (inputType === "site_url") {
+      const { captureWebsite } = await import("./capture/screenshot.js");
+      const buf = await captureWebsite(url);
+      writeFileSync(filePath, buf);
+    } else {
+      return c.json({ error: `unsupported inputType: ${inputType}` }, 400);
     }
+  } catch (e) {
+    return c.json({ error: e instanceof Error ? e.message : String(e) }, 422);
   }
 
-  // 1x1 グレー (#CCCCCC) のスタブ PNG
-  const stubPng = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==",
-    "base64"
-  );
-  writeFileSync(filePath, stubPng);
   return c.json({ imageKey, previewUrl: `http://localhost:${port}/stub-upload/${imageKey}` });
 });
 
