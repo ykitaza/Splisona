@@ -7,6 +7,7 @@ import { listPersonas, createPersona, getPersona, updatePersona, deletePersona, 
 import { interviewPersona } from "./interview/handler.js";
 import { createTest, listTests, getTest, updateTest, deleteTest, getProgress } from "./abtest/handler.js";
 import { getReport, exportReport, generateReasonSummaryFields } from "./report/handler.js";
+import { getSettings, putSettings } from "./settings/handler.js";
 import { getItem, putItem, deleteItem, queryByPK, abtestKey, evaluationKey } from "./shared/dynamo.js";
 import { bedrockClient, MODEL_ID } from "./shared/bedrock.js";
 import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
@@ -45,8 +46,9 @@ const localEvaluateTool: any = {
               aesthetics: { type: "number", minimum: 0, maximum: 100 },
               clarity: { type: "number", minimum: 0, maximum: 100 },
               engagement: { type: "number", minimum: 0, maximum: 100 },
+              trust: { type: "number", minimum: 0, maximum: 100 },
             },
-            required: ["usability", "aesthetics", "clarity", "engagement"],
+            required: ["usability", "aesthetics", "clarity", "engagement", "trust"],
           },
           scoresB: {
             type: "object",
@@ -56,8 +58,9 @@ const localEvaluateTool: any = {
               aesthetics: { type: "number", minimum: 0, maximum: 100 },
               clarity: { type: "number", minimum: 0, maximum: 100 },
               engagement: { type: "number", minimum: 0, maximum: 100 },
+              trust: { type: "number", minimum: 0, maximum: 100 },
             },
-            required: ["usability", "aesthetics", "clarity", "engagement"],
+            required: ["usability", "aesthetics", "clarity", "engagement", "trust"],
           },
         },
         required: ["winner", "reason", "scoresA", "scoresB"],
@@ -121,8 +124,8 @@ async function evaluateLocalBedrock(
       winner: "A" | "B";
       confidence?: number;
       reason: string;
-      scoresA: { usability: number; aesthetics: number; clarity: number; engagement: number };
-      scoresB: { usability: number; aesthetics: number; clarity: number; engagement: number };
+      scoresA: { usability: number; aesthetics: number; clarity: number; engagement: number; trust: number };
+      scoresB: { usability: number; aesthetics: number; clarity: number; engagement: number; trust: number };
     };
     await putItem({
       ...evaluationKey(testId, personaId),
@@ -142,8 +145,8 @@ async function evaluateLocalBedrock(
       winner: "none",
       confidence: 0,
       reason: "",
-      scoresA: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
-      scoresB: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
+      scoresA: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0, trust: 0 },
+      scoresB: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0, trust: 0 },
       status: "failed",
       personaDisplayName,
       evaluatedAt: new Date().toISOString(),
@@ -431,7 +434,7 @@ app.post("/tests/:id/execute", async (c) => {
       const scoreFor = (isWinner: boolean) => {
         const base = isWinner ? 70 : 45;
         const r = () => base + Math.floor(Math.random() * 25);
-        return { usability: r(), aesthetics: r(), clarity: r(), engagement: r() };
+        return { usability: r(), aesthetics: r(), clarity: r(), engagement: r(), trust: r() };
       };
       const evalRecord: EvaluationRecord = {
         ...evaluationKey(testId, personaId),
@@ -462,6 +465,17 @@ app.get("/tests/:id/report", async (c) => {
 
 app.get("/tests/:id/export", async (c) => {
   const res = await exportReport(toEvent(c.req, { id: c.req.param("id") }));
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.get("/settings", async (c) => {
+  const res = await getSettings(toEvent(c.req));
+  return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
+});
+
+app.put("/settings", async (c) => {
+  const body = await c.req.text();
+  const res = await putSettings({ ...toEvent(c.req, {}, body), body });
   return c.body(res.body, res.statusCode as 200, res.headers as Record<string, string>);
 });
 

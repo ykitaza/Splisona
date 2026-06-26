@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Users, Columns2, BarChart3, Settings, LogOut, ChevronsUpDown, Info, X, PanelLeft, PanelLeftClose } from 'lucide-react';
 import { signOut } from 'aws-amplify/auth';
+import { SettingsModal } from './SettingsModal';
 
 const NAV_ITEMS = [
   { to: '/personas', icon: Users, label: 'ペルソナ' },
@@ -16,7 +17,7 @@ const COLLAPSE_BREAKPOINT = 1024;
 function AboutModal({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50 bg-black/35"
+      className="fixed inset-0 flex items-center justify-center z-50 bg-black/50"
       onClick={onClose}
     >
       <div
@@ -32,7 +33,7 @@ function AboutModal({ onClose }: { onClose: () => void }) {
         >
           <X size={14} className="text-text-lo" />
         </button>
-        <div className="flex items-center justify-center mb-5 rounded-lg" style={{ width: 72, height: 72, background: '#0A0A0A', borderRadius: 18 }}>
+        <div className="flex items-center justify-center mb-5 rounded-lg bg-base" style={{ width: 72, height: 72, borderRadius: 18 }}>
           <span className="text-text-hi font-sans text-4xl font-bold leading-none">C</span>
         </div>
         <p className="text-text-hi font-sans text-xl font-bold mb-1.5">Chorus</p>
@@ -49,6 +50,7 @@ export function AppLayout() {
   const [collapsed, setCollapsed] = useState(() => window.innerWidth < COLLAPSE_BREAKPOINT);
   const [menuOpen, setMenuOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -79,6 +81,7 @@ export function AppLayout() {
   return (
     <div className="flex h-screen bg-base">
       {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <aside
         className="flex flex-col flex-shrink-0 bg-surface border-r border-hairline transition-[width,padding] duration-200 ease-out overflow-hidden"
@@ -167,6 +170,14 @@ export function AppLayout() {
                 <p className="text-text-hi font-sans text-sm font-semibold">山田 太郎</p>
                 <p className="text-text-lo font-sans text-xs">デザイナー</p>
               </div>
+              <button
+                type="button"
+                onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 transition-colors hover:bg-raised text-text-hi font-sans text-sm"
+              >
+                <Settings size={15} className="text-text-mid" />
+                設定
+              </button>
               <button
                 type="button"
                 onClick={() => { setMenuOpen(false); setAboutOpen(true); }}

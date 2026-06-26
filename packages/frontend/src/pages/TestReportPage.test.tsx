@@ -11,6 +11,10 @@ vi.mock('../api/tests', () => ({
   executeTest: vi.fn(),
 }));
 
+vi.mock('../hooks/usePersonas', () => ({
+  usePersonas: vi.fn(() => ({ personas: [], isLoading: false, createPersona: vi.fn(), deletePersona: vi.fn() })),
+}));
+
 import { getReport, executeTest } from '../api/tests';
 const mockGetReport = vi.mocked(getReport);
 const mockExecuteTest = vi.mocked(executeTest);
@@ -35,8 +39,8 @@ const mockReport: ReportResponse = {
     totalPersonas: 4,
     completedPersonas: 4,
     avgScores: {
-      A: { usability: 8, aesthetics: 7, clarity: 9, engagement: 8 },
-      B: { usability: 6, aesthetics: 7, clarity: 6, engagement: 6 },
+      A: { usability: 8, aesthetics: 7, clarity: 9, engagement: 8, trust: 7 },
+      B: { usability: 6, aesthetics: 7, clarity: 6, engagement: 6, trust: 5 },
     },
     winnersReasonSummary: '',
     reasonSummaryA: ['情報の優先順位が明確で迷わない'],
@@ -49,8 +53,8 @@ const mockReport: ReportResponse = {
       winner: 'A',
       confidence: 85,
       reason: 'シンプルで見やすい',
-      scoresA: { usability: 80, aesthetics: 70, clarity: 90, engagement: 80 },
-      scoresB: { usability: 55, aesthetics: 65, clarity: 50, engagement: 60 },
+      scoresA: { usability: 80, aesthetics: 70, clarity: 90, engagement: 80, trust: 75 },
+      scoresB: { usability: 55, aesthetics: 65, clarity: 50, engagement: 60, trust: 45 },
       status: 'completed',
     },
     {
@@ -59,8 +63,8 @@ const mockReport: ReportResponse = {
       winner: 'B',
       confidence: 60,
       reason: 'カラフルで好き',
-      scoresA: { usability: 60, aesthetics: 55, clarity: 60, engagement: 58 },
-      scoresB: { usability: 70, aesthetics: 85, clarity: 65, engagement: 75 },
+      scoresA: { usability: 60, aesthetics: 55, clarity: 60, engagement: 58, trust: 55 },
+      scoresB: { usability: 70, aesthetics: 85, clarity: 65, engagement: 75, trust: 70 },
       status: 'completed',
     },
   ],
@@ -97,5 +101,34 @@ describe('TestReportPage', () => {
     renderPage();
 
     expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+
+  it('3セグメントバーが表示され DonutChart が存在しない', async () => {
+    mockGetReport.mockResolvedValue(mockReport);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('segment-bar')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('🏆 WINNER')).not.toBeInTheDocument();
+  });
+
+  it('5軸の評価ラベルが表示される（信頼感を含む）', async () => {
+    mockGetReport.mockResolvedValue(mockReport);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getAllByText('信頼感').length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it('N人中M人がAを支持のテキストが表示される', async () => {
+    mockGetReport.mockResolvedValue(mockReport);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/4人中3人がAを支持/)).toBeInTheDocument();
+    });
   });
 });

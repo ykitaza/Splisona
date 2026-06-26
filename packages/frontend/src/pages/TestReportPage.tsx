@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Trophy, Check } from 'lucide-react';
+import { ChevronLeft, ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Check } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
+import { RadarChart } from '../components/report/RadarChart';
+import { AttributeHeatmap } from '../components/report/AttributeHeatmap';
+import { MethodPopover, SourcePopover } from '../components/report/Popovers';
 import { getReport, executeTest, exportTest } from '../api/tests';
+import { usePersonas } from '../hooks/usePersonas';
 import { API_BASE } from '../api/client';
 import type { ReportResponse, EvaluationScores, DesignInput } from '../types';
 
@@ -11,35 +15,35 @@ const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
   aesthetics: '見た目',
   clarity: '明確さ',
   engagement: '訴求力',
+  trust: '信頼感',
 };
 
-function DonutChart({ rateA, rateB, rateNone }: { rateA: number; rateB: number; rateNone: number }) {
-  const size = 120;
-  const r = 44;
-  const cx = size / 2;
-  const cy = size / 2;
-  const circumference = 2 * Math.PI * r;
-  const dashA = circumference * rateA;
-  const dashB = circumference * rateB;
-  const dashNone = circumference * rateNone;
-
+function SegmentBar({ rateA, rateB, rateNone }: { rateA: number; rateB: number; rateNone: number }) {
+  const pctA = Math.round(rateA * 100);
+  const pctB = Math.round(rateB * 100);
+  const pctNone = Math.round(rateNone * 100);
   return (
-    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E6E6E8" strokeWidth={16} />
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#3B7DD8" strokeWidth={16}
-          strokeDasharray={`${dashA} ${circumference}`} />
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E0883A" strokeWidth={16}
-          strokeDasharray={`${dashB} ${circumference}`}
-          strokeDashoffset={-dashA} />
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#C4C4C8" strokeWidth={16}
-          strokeDasharray={`${dashNone} ${circumference}`}
-          strokeDashoffset={-(dashA + dashB)} />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700 }}>
-          {Math.round(rateA * 100)}%
+    <div data-testid="segment-bar" className="flex flex-col gap-2">
+      <div className="flex overflow-hidden rounded-sm" style={{ height: 8 }}>
+        {pctA > 0 && <div style={{ width: `${pctA}%`, background: 'var(--color-win-a, #6E78D9)' }} />}
+        {pctNone > 0 && <div style={{ width: `${pctNone}%`, background: 'var(--color-draw, #3A3D42)' }} />}
+        {pctB > 0 && <div style={{ width: `${pctB}%`, background: 'var(--color-win-b, #C9974F)' }} />}
+      </div>
+      <div className="flex items-center gap-4">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-win-a" />
+          <span className="text-text-mid font-sans text-sm">A: {pctA}%</span>
         </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-win-b" />
+          <span className="text-text-mid font-sans text-sm">B: {pctB}%</span>
+        </span>
+        {pctNone > 0 && (
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-draw" />
+            <span className="text-text-mid font-sans text-sm">引分: {pctNone}%</span>
+          </span>
+        )}
       </div>
     </div>
   );
@@ -49,53 +53,39 @@ function ReasonGroup({ caption, color, reasons }: { caption: string; color: stri
   if (reasons.length === 0) return null;
   return (
     <div className="flex flex-col gap-2.5">
-      <span style={{ color, fontFamily: 'Geist Mono, monospace', fontSize: 11, fontWeight: 600, letterSpacing: '0.5px' }}>
+      <span className="font-mono text-xs font-semibold" style={{ color, letterSpacing: '0.5px' }}>
         {caption}
       </span>
       {reasons.map((reason, i) => (
         <div key={i} className="flex items-start gap-2">
           <Check size={15} color={color} style={{ flexShrink: 0, marginTop: 2 }} />
-          <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13, lineHeight: 1.5 }}>
-            {reason}
-          </span>
+          <span className="text-text-mid font-sans text-sm leading-relaxed">{reason}</span>
         </div>
       ))}
     </div>
   );
 }
 
-function ScoreBars({
-  label,
-  scoreA,
-  scoreB,
-  colorA,
-  colorB,
-}: {
-  label: string;
-  scoreA: number;
-  scoreB: number;
-  colorA: string;
-  colorB: string;
-}) {
+function ScoreBars({ label, scoreA, scoreB }: { label: string; scoreA: number; scoreB: number }) {
   const total = scoreA + scoreB;
   const aRatio = total > 0 ? (scoreA / total) * 100 : 50;
   const bRatio = total > 0 ? (scoreB / total) * 100 : 50;
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>{label}</span>
+        <span className="text-text-mid font-sans text-sm">{label}</span>
         <div className="flex items-center gap-3">
-          <span style={{ color: colorA, fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
+          <span className="text-win-a font-mono text-xs font-semibold" style={{ minWidth: 44, textAlign: 'right' }}>
             A {scoreA.toFixed(1)}
           </span>
-          <span style={{ color: colorB, fontFamily: 'Geist Mono, monospace', fontSize: 12, fontWeight: 600, minWidth: 44, textAlign: 'right' }}>
+          <span className="text-win-b font-mono text-xs font-semibold" style={{ minWidth: 44, textAlign: 'right' }}>
             B {scoreB.toFixed(1)}
           </span>
         </div>
       </div>
-      <div className="flex overflow-hidden rounded-full" style={{ height: 6, background: '#F0F1F3' }}>
-        <div style={{ width: `${aRatio}%`, height: '100%', background: colorA }} />
-        <div style={{ width: `${bRatio}%`, height: '100%', background: colorB }} />
+      <div className="flex overflow-hidden rounded-full" style={{ height: 6, background: 'var(--color-bg-raised, #1C1F23)' }}>
+        <div style={{ width: `${aRatio}%`, height: '100%', background: 'var(--color-win-a, #6E78D9)' }} />
+        <div style={{ width: `${bRatio}%`, height: '100%', background: 'var(--color-win-b, #C9974F)' }} />
       </div>
     </div>
   );
@@ -104,112 +94,65 @@ function ScoreBars({
 function DesignSourceInfo({ input }: { input: DesignInput }) {
   if (input.inputType === 'figma_url') {
     return (
-      <a
-        href={input.figmaUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-1.5 min-w-0 hover:opacity-70 transition-opacity"
-        style={{ color: '#9A9A9F', textDecoration: 'none' }}
-      >
-        <PenTool size={13} color="#9A9A9F" style={{ flexShrink: 0 }} />
-        <span className="truncate" style={{ fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>
-          {input.figmaUrl ?? 'Figma URL'}
-        </span>
+      <a href={input.figmaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 min-w-0 text-text-lo hover:opacity-70 transition-opacity">
+        <PenTool size={13} className="text-text-lo flex-shrink-0" />
+        <span className="truncate font-mono text-xs">{input.figmaUrl ?? 'Figma URL'}</span>
       </a>
     );
   }
   if (input.inputType === 'site_url') {
     return (
-      <a
-        href={input.siteUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-1.5 min-w-0 hover:opacity-70 transition-opacity"
-        style={{ color: '#9A9A9F', textDecoration: 'none' }}
-      >
-        <Globe size={13} color="#9A9A9F" style={{ flexShrink: 0 }} />
-        <span className="truncate" style={{ fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>
-          {input.siteUrl ?? 'サイトURL'}
-        </span>
+      <a href={input.siteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 min-w-0 text-text-lo hover:opacity-70 transition-opacity">
+        <Globe size={13} className="text-text-lo flex-shrink-0" />
+        <span className="truncate font-mono text-xs">{input.siteUrl ?? 'サイトURL'}</span>
       </a>
     );
   }
   return (
-    <div className="flex items-center gap-1.5">
-      <Image size={13} color="#9A9A9F" style={{ flexShrink: 0 }} />
-      <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>画像アップロード</span>
+    <div className="flex items-center gap-1.5 text-text-lo">
+      <Image size={13} className="flex-shrink-0" />
+      <span className="font-mono text-xs">画像アップロード</span>
     </div>
   );
 }
 
-function DesignCard({
-  side,
-  input,
-  isWinner,
-  supportRate,
-  supportCount,
-  totalCount,
-}: {
+function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
   side: 'A' | 'B';
   input: DesignInput;
   isWinner: boolean;
-  supportRate: number;
   supportCount: number;
   totalCount: number;
 }) {
   const [lightbox, setLightbox] = useState(false);
-  const accentColor = side === 'A' ? '#3B7DD8' : '#E0883A';
-  const softColor = side === 'A' ? '#E8F0FB' : '#FBF0E4';
-  const borderColor = isWinner ? accentColor : '#E6E6E8';
-  const borderWidth = isWinner ? 2 : 1;
-
   const imageUrl = input.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
+  const accentColor = side === 'A' ? 'var(--color-win-a, #6E78D9)' : 'var(--color-win-b, #C9974F)';
 
   return (
     <>
       {lightbox && imageUrl && <ImageLightbox src={imageUrl} alt={`${side}案`} onClose={() => setLightbox(false)} />}
-    <div
-      className="flex flex-col overflow-hidden flex-1"
-      style={{ borderRadius: 10, border: `${borderWidth}px solid ${borderColor}`, background: '#FFFFFF' }}
-    >
-      <div
-        className="flex items-center justify-center overflow-hidden flex-shrink-0"
-        style={{ height: 240, background: '#F0F1F3', cursor: imageUrl ? 'zoom-in' : 'default' }}
-        onClick={() => { if (imageUrl) setLightbox(true); }}
-      >
-        {imageUrl ? (
-          <img src={imageUrl} alt={`${side}案`} className="w-full h-full object-cover" />
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            <Image size={32} color="#D4D4D8" />
-            <span style={{ color: '#D4D4D8', fontFamily: 'Geist, sans-serif', fontSize: 12 }}>画像なし</span>
-          </div>
-        )}
-      </div>
-      <div className="flex flex-col gap-2.5 p-4">
-        <div className="flex items-center justify-between">
-          <span
-            className="rounded-full px-3 py-1 text-xs font-semibold"
-            style={{ background: softColor, color: accentColor, borderRadius: 9999 }}
-          >
-            {side}案
-          </span>
-          {isWinner && (
-            <span
-              className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
-              style={{ background: accentColor, color: '#FFFFFF', borderRadius: 9999 }}
-            >
-              <Trophy size={11} color="#FFFFFF" />
-              勝者
-            </span>
+      <div className="flex flex-col overflow-hidden flex-1" style={{ borderLeft: isWinner ? `2px solid ${accentColor}` : 'none' }}>
+        <div
+          className="flex items-center justify-center overflow-hidden flex-shrink-0 rounded-md"
+          style={{ height: 200, background: 'var(--color-bg-raised, #1C1F23)', cursor: imageUrl ? 'zoom-in' : 'default' }}
+          onClick={() => { if (imageUrl) setLightbox(true); }}
+        >
+          {imageUrl ? (
+            <img src={imageUrl} alt={`${side}案`} className="w-full h-full object-cover" />
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <Image size={32} className="text-text-lo" />
+              <span className="text-text-lo font-sans text-xs">画像なし</span>
+            </div>
           )}
         </div>
-        <DesignSourceInfo input={input} />
-        <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 500 }}>
-          {totalCount}人中{supportCount}人が支持 ・ {Math.round(supportRate * 100)}%
-        </span>
+        <div className="flex flex-col gap-1.5 pt-3">
+          <span className="text-text-hi font-mono text-xs font-semibold">{side}案</span>
+          <DesignSourceInfo input={input} />
+          <span className="text-text-mid font-sans text-sm">
+            {totalCount}人中{supportCount}人が支持
+          </span>
+        </div>
       </div>
-    </div>
     </>
   );
 }
@@ -220,6 +163,7 @@ export function TestReportPage() {
   const [report, setReport] = useState<ReportResponse | null>(null);
   const [isRerunning, setIsRerunning] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { personas } = usePersonas();
 
   useEffect(() => {
     if (!id) return;
@@ -252,246 +196,167 @@ export function TestReportPage() {
   if (!report) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div role="status" className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+        <div role="status" className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
       </div>
     );
   }
 
   const { abTest, summary, evaluations } = report;
-  const pctA = Math.round(summary.supportRateA * 100);
-  const pctB = Math.round(summary.supportRateB * 100);
-  const winnerLabel =
-    summary.winner === 'tie' ? '引き分け' : `${summary.winner}案の勝ち`;
-  const winnerColor = summary.winner === 'A' ? '#3B7DD8' : summary.winner === 'B' ? '#E0883A' : '#9A9A9F';
-  const pctNone = Math.round((summary.supportRateNone ?? 0) * 100);
-
+  const winnerLabel = summary.winner === 'tie' ? '引き分け' : `${summary.winner}案の勝ち`;
   const supportCountA = Math.round(summary.supportRateA * summary.totalPersonas);
   const supportCountB = Math.round(summary.supportRateB * summary.totalPersonas);
+  const winnerSupportCount = summary.winner === 'A' ? supportCountA : summary.winner === 'B' ? supportCountB : 0;
 
   return (
-    <div className="flex flex-col gap-6 p-8 pb-10">
+    <div className="flex flex-col gap-7 p-8 pb-10">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1.5">
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-1"
-            style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 12 }}
-          >
-            <ChevronLeft size={14} color="#9A9A9F" />
-            ダッシュボード
+          <Link to="/results" className="flex items-center gap-1 text-text-lo font-sans text-xs">
+            <ChevronLeft size={14} className="text-text-lo" />
+            結果一覧
           </Link>
-          <h1 style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 28, fontWeight: 600 }}>
-            テスト結果
-          </h1>
-          <p style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-            {abTest.title} ・ {new Date(abTest.createdAt).toLocaleDateString('ja-JP')} 実行
+          <h1 className="text-text-hi font-sans text-xl font-semibold">テスト結果</h1>
+          <p className="text-text-lo font-sans text-sm">
+            {abTest.title} · {new Date(abTest.createdAt).toLocaleDateString('ja-JP')} 実行
           </p>
         </div>
         <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50"
-            style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, color: '#1A1A1A' }}
+            className="flex items-center gap-2 rounded-md bg-raised border border-hairline px-4 py-2 text-text-hi font-sans text-sm transition-colors hover:bg-surface"
           >
-            <Download size={15} color="#1A1A1A" />
+            <Download size={15} className="text-text-mid" />
             エクスポート
           </button>
           <button
             type="button"
             disabled={isRerunning}
             onClick={handleRerun}
-            className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 disabled:opacity-40"
-            style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, color: '#1A1A1A' }}
+            className="flex items-center gap-2 rounded-md bg-raised border border-hairline px-4 py-2 text-text-hi font-sans text-sm transition-colors hover:bg-surface disabled:opacity-40"
           >
-            <RefreshCw size={15} color="#1A1A1A" />
+            <RefreshCw size={15} className="text-text-mid" />
             再実行
           </button>
         </div>
       </div>
 
-      {/* Verdict Card（比較したデザインを統合） */}
-      <div
-        className="flex flex-col gap-6 rounded-md p-6"
-        style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex flex-col gap-2 flex-1">
-            <span
-              style={{ color: winnerColor, fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px' }}
-            >
-              {summary.winner !== 'tie' ? '🏆 WINNER' : '— DRAW'}
-            </span>
-            <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 28, fontWeight: 700 }}>
-              {winnerLabel}
-            </span>
-            <div className="flex items-center gap-4 mt-1">
-              <span className="flex items-center gap-1.5">
-                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 9999, background: '#3B7DD8' }} />
-                <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>A: {pctA}%</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 9999, background: '#E0883A' }} />
-                <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>B: {pctB}%</span>
-              </span>
-              {pctNone > 0 && (
-                <span className="flex items-center gap-1.5">
-                  <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 9999, background: '#C4C4C8' }} />
-                  <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>なし: {pctNone}%</span>
-                </span>
-              )}
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-                {summary.completedPersonas}/{summary.totalPersonas}人が評価完了
-              </span>
-            </div>
+      {/* Verdict */}
+      <div className="flex flex-col gap-5">
+        <div className="flex items-baseline gap-3">
+          <span className="text-text-hi font-sans text-xl font-bold">{winnerLabel}</span>
+          <div className="flex items-center gap-1.5">
+            <MethodPopover />
+            <SourcePopover />
           </div>
-          <DonutChart rateA={summary.supportRateA} rateB={summary.supportRateB} rateNone={summary.supportRateNone ?? 0} />
         </div>
+        <SegmentBar rateA={summary.supportRateA} rateB={summary.supportRateB} rateNone={summary.supportRateNone ?? 0} />
+        <p className="text-text-mid font-sans text-sm">
+          {summary.completedPersonas}/{summary.totalPersonas}人が評価完了
+          {summary.winner !== 'tie' && ` · ${summary.totalPersonas}人中${winnerSupportCount}人が${summary.winner}を支持`}
+        </p>
 
         {summary.winnersReasonSummary && (
-          <div
-            className="flex items-start gap-2.5 rounded-md px-4 py-3"
-            style={{ background: '#E8F0FB', borderRadius: 6 }}
-          >
-            <Lightbulb size={18} color="#3B7DD8" style={{ flexShrink: 0, marginTop: 1 }} />
-            <p style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-              主な理由: {summary.winnersReasonSummary}
-            </p>
+          <div className="flex items-start gap-2.5 px-4 py-3 rounded-md bg-accent-dim">
+            <Lightbulb size={18} className="text-accent flex-shrink-0 mt-0.5" />
+            <p className="text-text-hi font-sans text-sm">主な理由: {summary.winnersReasonSummary}</p>
           </div>
         )}
+      </div>
 
-        <div style={{ borderTop: '1px solid #E6E6E8' }} />
+      <div className="h-px bg-hairline" />
 
-        <div className="flex flex-col gap-3">
-          <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600 }}>
-            比較したデザイン
-          </span>
-          <div className="flex items-center gap-6 min-w-0">
-            <DesignCard
-              side="A"
-              input={abTest.designAInput}
-              isWinner={summary.winner === 'A'}
-              supportRate={summary.supportRateA}
-              supportCount={supportCountA}
-              totalCount={summary.totalPersonas}
-            />
-<DesignCard
-              side="B"
-              input={abTest.designBInput}
-              isWinner={summary.winner === 'B'}
-              supportRate={summary.supportRateB}
-              supportCount={supportCountB}
-              totalCount={summary.totalPersonas}
-            />
-          </div>
+      {/* Design comparison */}
+      <div className="flex flex-col gap-4">
+        <span className="text-text-hi font-sans text-base font-semibold">比較したデザイン</span>
+        <div className="flex items-start gap-6 min-w-0">
+          <DesignCard side="A" input={abTest.designAInput} isWinner={summary.winner === 'A'} supportCount={supportCountA} totalCount={summary.totalPersonas} />
+          <DesignCard side="B" input={abTest.designBInput} isWinner={summary.winner === 'B'} supportCount={supportCountB} totalCount={summary.totalPersonas} />
         </div>
       </div>
 
-      {/* Summary Row: 評価のまとめ + 評価軸別の比較 */}
+      <div className="h-px bg-hairline" />
+
+      {/* Analysis row: reasons + score bars + radar */}
       <div className="flex gap-6">
         {/* 評価のまとめ */}
-        <div
-          className="flex flex-col gap-4 rounded-md p-6 flex-1"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
-        >
-          <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 600 }}>
-            評価のまとめ
-          </span>
+        <div className="flex flex-col gap-4 flex-1">
+          <span className="text-text-hi font-sans text-base font-semibold">評価のまとめ</span>
           {summary.reasonSummaryA.length === 0 && summary.reasonSummaryB.length === 0 ? (
-            <p style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>—</p>
+            <p className="text-text-lo font-sans text-sm">—</p>
           ) : (
             <>
-              <ReasonGroup
-                caption="A案が支持された理由"
-                color="#3B7DD8"
-                reasons={summary.reasonSummaryA}
-              />
-              <ReasonGroup
-                caption="B案が評価された点"
-                color="#E0883A"
-                reasons={summary.reasonSummaryB}
-              />
+              <ReasonGroup caption="A案が支持された理由" color="var(--color-win-a, #6E78D9)" reasons={summary.reasonSummaryA} />
+              <ReasonGroup caption="B案が評価された点" color="var(--color-win-b, #C9974F)" reasons={summary.reasonSummaryB} />
             </>
           )}
         </div>
 
         {/* 評価軸別の比較 */}
-        <div
-          className="flex flex-col gap-5 rounded-md p-6 flex-1"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
-        >
-          <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 600 }}>
-            評価軸別の比較
-          </span>
+        <div className="flex flex-col gap-5 flex-1">
+          <span className="text-text-hi font-sans text-base font-semibold">評価軸別の比較</span>
           {(Object.keys(SCORE_LABELS) as (keyof EvaluationScores)[]).map((key) => (
-            <ScoreBars
-              key={key}
-              label={SCORE_LABELS[key]}
-              scoreA={summary.avgScores.A[key]}
-              scoreB={summary.avgScores.B[key]}
-              colorA="#3B7DD8"
-              colorB="#E0883A"
-            />
+            <ScoreBars key={key} label={SCORE_LABELS[key]} scoreA={summary.avgScores.A[key]} scoreB={summary.avgScores.B[key]} />
           ))}
+        </div>
+
+        {/* Radar Chart */}
+        <div className="flex flex-col gap-3 items-center">
+          <span className="text-text-hi font-sans text-base font-semibold">レーダーチャート</span>
+          <RadarChart scoresA={summary.avgScores.A} scoresB={summary.avgScores.B} />
         </div>
       </div>
 
+      <div className="h-px bg-hairline" />
+
+      {/* Attribute Heatmap */}
+      {personas.length > 0 && evaluations.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <span className="text-text-hi font-sans text-base font-semibold">属性別分析</span>
+          <AttributeHeatmap evaluations={evaluations} personas={personas} groupBy="type" />
+        </div>
+      )}
+
+      {personas.length > 0 && evaluations.length > 0 && <div className="h-px bg-hairline" />}
+
       {/* Persona Table */}
       <div className="flex flex-col gap-3">
-        <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 600 }}>
-          ペルソナ別の評価
-        </span>
-        <div
-          className="overflow-hidden rounded-md"
-          style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 10 }}
-        >
-          <div
-            className="flex items-center"
-            style={{ background: '#F0F1F3', padding: '12px 16px' }}
-          >
+        <span className="text-text-hi font-sans text-base font-semibold">ペルソナ別の評価</span>
+        <div>
+          <div className="flex items-center py-3 px-4 border-b border-hairline">
             <div style={{ width: 180 }}>
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>ペルソナ</span>
+              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>ペルソナ</span>
             </div>
             <div style={{ width: 80 }}>
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>勝者</span>
+              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>勝者</span>
             </div>
             <div className="flex-1">
-              <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>コメント</span>
+              <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>コメント</span>
             </div>
             <div style={{ width: 32 }} />
           </div>
-          <div className="overflow-x-auto">
-            {evaluations.map((ev, i) => {
-              const isExpanded = expandedId === ev.personaId;
-              return (
-              <div
-                key={ev.personaId}
-                style={{ borderTop: i > 0 ? '1px solid #E6E6E8' : 'none' }}
-              >
+          {evaluations.map((ev, i) => {
+            const isExpanded = expandedId === ev.personaId;
+            return (
+              <div key={ev.personaId} style={{ borderTop: i > 0 ? '1px solid var(--color-hairline, #FFFFFF14)' : 'none' }}>
                 <button
                   type="button"
                   onClick={() => setExpandedId(isExpanded ? null : ev.personaId)}
-                  className="flex items-start w-full text-left transition-colors hover:bg-gray-50"
-                  style={{ padding: '16px 16px' }}
+                  className="flex items-start w-full text-left py-4 px-4 transition-colors hover:bg-raised"
                   aria-expanded={isExpanded}
                 >
                   <div style={{ width: 180 }}>
-                    <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 500 }}>
-                      {ev.personaDisplayName}
-                    </span>
-                    {ev.status === 'failed' && (
-                      <span className="block text-xs mt-0.5" style={{ color: '#D64545' }}>失敗</span>
-                    )}
+                    <span className="text-text-hi font-sans text-sm font-medium">{ev.personaDisplayName}</span>
+                    {ev.status === 'failed' && <span className="block text-xs text-danger mt-0.5">失敗</span>}
                   </div>
                   <div style={{ width: 80 }}>
                     {ev.status !== 'failed' && (
                       <span
                         className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold"
                         style={{
-                          background: ev.winner === 'A' ? '#E8F0FB' : ev.winner === 'B' ? '#FBF0E4' : '#F0F1F3',
-                          color: ev.winner === 'A' ? '#3B7DD8' : ev.winner === 'B' ? '#E0883A' : '#9A9A9F',
-                          borderRadius: 9999,
+                          background: ev.winner === 'A' ? 'var(--color-accent-dim)' : ev.winner === 'B' ? 'var(--color-win-b-dim)' : 'var(--color-bg-raised)',
+                          color: ev.winner === 'A' ? 'var(--color-win-a)' : ev.winner === 'B' ? 'var(--color-win-b)' : 'var(--color-text-lo)',
                         }}
                       >
                         {ev.winner === 'none' ? 'なし' : `${ev.winner}案`}
@@ -500,63 +365,35 @@ export function TestReportPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p
-                      style={{
-                        color: '#666666',
-                        fontFamily: 'Geist, sans-serif',
-                        fontSize: 13,
-                        lineHeight: 1.5,
-                        ...(isExpanded
-                          ? {}
-                          : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }),
-                      }}
+                      className="text-text-mid font-sans text-sm leading-relaxed"
+                      style={isExpanded ? {} : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
                     >
                       {ev.reason || '—'}
                     </p>
                   </div>
                   <div className="flex items-center justify-center" style={{ width: 32 }}>
-                    <ChevronDown
-                      size={16}
-                      color="#9A9A9F"
-                      style={{ transition: 'transform 0.15s', transform: isExpanded ? 'rotate(180deg)' : 'none' }}
-                    />
+                    <ChevronDown size={16} className="text-text-lo" style={{ transition: 'transform 0.15s', transform: isExpanded ? 'rotate(180deg)' : 'none' }} />
                   </div>
                 </button>
                 {isExpanded && (
-                  <div
-                    className="flex flex-col gap-4"
-                    style={{ padding: '4px 16px 20px 196px', background: '#FAFAFB' }}
-                  >
+                  <div className="flex flex-col gap-4 bg-raised" style={{ padding: '4px 16px 20px 196px' }}>
                     <div className="flex flex-col gap-1.5">
-                      <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>
-                        コメント全文
-                      </span>
-                      <p style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                        {ev.reason || '—'}
-                      </p>
+                      <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>コメント全文</span>
+                      <p className="text-text-hi font-sans text-sm leading-relaxed whitespace-pre-wrap">{ev.reason || '—'}</p>
                     </div>
                     {ev.status !== 'failed' && ev.scoresA && ev.scoresB && (
                       <div className="flex flex-col gap-3.5">
-                        <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>
-                          評価軸別スコア
-                        </span>
+                        <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: '0.5px' }}>評価軸別スコア</span>
                         {(Object.keys(SCORE_LABELS) as (keyof EvaluationScores)[]).map((key) => (
-                          <ScoreBars
-                            key={key}
-                            label={SCORE_LABELS[key]}
-                            scoreA={ev.scoresA[key]}
-                            scoreB={ev.scoresB[key]}
-                            colorA="#4F9D69"
-                            colorB="#4F9D69"
-                          />
+                          <ScoreBars key={key} label={SCORE_LABELS[key]} scoreA={ev.scoresA[key]} scoreB={ev.scoresB[key]} />
                         ))}
                       </div>
                     )}
                   </div>
                 )}
               </div>
-              );
-            })}
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>

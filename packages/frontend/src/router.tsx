@@ -5,6 +5,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { PersonaListPage } from './pages/PersonaListPage';
 import { PersonaEditPage } from './pages/PersonaEditPage';
 import { PersonaDetailPage } from './pages/PersonaDetailPage';
+import { PersonaUnifiedPage } from './pages/PersonaUnifiedPage';
 import { TestInputPage } from './pages/TestInputPage';
 import { TestRunningPage } from './pages/TestRunningPage';
 import { TestReportPage } from './pages/TestReportPage';
@@ -19,8 +20,8 @@ export const routeConfig = [
       { path: '/dashboard', element: <Navigate to="/personas" replace /> },
       { path: '/personas', element: <PersonaListPage /> },
       { path: '/personas/new', element: <PersonaEditPage /> },
-      { path: '/personas/:id', element: <PersonaDetailPage /> },
-      { path: '/personas/:id/edit', element: <PersonaEditPage /> },
+      { path: '/personas/:id', element: <PersonaUnifiedPage /> },
+      { path: '/personas/:id/edit', element: <PersonaUnifiedPage /> },
       { path: '/tests/new', element: <TestInputPage /> },
       { path: '/tests/:id/running', element: <TestRunningPage /> },
       { path: '/tests/:id/report', element: <TestReportPage /> },

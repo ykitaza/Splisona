@@ -120,6 +120,7 @@ export interface EvaluationScores {
   aesthetics: number;
   clarity: number;
   engagement: number;
+  trust: number;
 }
 
 export interface EvaluationResult {

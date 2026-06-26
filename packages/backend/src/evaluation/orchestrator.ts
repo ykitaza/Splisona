@@ -40,8 +40,9 @@ const evaluateDesignsTool: any = {
               aesthetics: { type: "number", minimum: 0, maximum: 100 },
               clarity: { type: "number", minimum: 0, maximum: 100 },
               engagement: { type: "number", minimum: 0, maximum: 100 },
+              trust: { type: "number", minimum: 0, maximum: 100 },
             },
-            required: ["usability", "aesthetics", "clarity", "engagement"],
+            required: ["usability", "aesthetics", "clarity", "engagement", "trust"],
           },
           scoresB: {
             type: "object",
@@ -51,8 +52,9 @@ const evaluateDesignsTool: any = {
               aesthetics: { type: "number", minimum: 0, maximum: 100 },
               clarity: { type: "number", minimum: 0, maximum: 100 },
               engagement: { type: "number", minimum: 0, maximum: 100 },
+              trust: { type: "number", minimum: 0, maximum: 100 },
             },
-            required: ["usability", "aesthetics", "clarity", "engagement"],
+            required: ["usability", "aesthetics", "clarity", "engagement", "trust"],
           },
         },
         required: ["winner", "reason", "scoresA", "scoresB"],
@@ -141,8 +143,8 @@ async function evaluateOnePersona(
       winner: "A" | "B";
       confidence?: number;
       reason: string;
-      scoresA: { usability: number; aesthetics: number; clarity: number; engagement: number };
-      scoresB: { usability: number; aesthetics: number; clarity: number; engagement: number };
+      scoresA: { usability: number; aesthetics: number; clarity: number; engagement: number; trust: number };
+      scoresB: { usability: number; aesthetics: number; clarity: number; engagement: number; trust: number };
     };
 
     const evalRecord: EvaluationRecord = {
@@ -163,8 +165,8 @@ async function evaluateOnePersona(
       winner: "none",
       confidence: 0,
       reason: "",
-      scoresA: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
-      scoresB: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 },
+      scoresA: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0, trust: 0 },
+      scoresB: { usability: 0, aesthetics: 0, clarity: 0, engagement: 0, trust: 0 },
       status: "failed",
       personaDisplayName,
       evaluatedAt: new Date().toISOString(),

@@ -99,7 +99,6 @@ export function PersonaListPage() {
     const copy = await createPersona({
       displayName: `${persona.displayName}のコピー`,
       type: persona.type,
-      // デフォルトの複製は編集可能な自分用ペルソナにする（ロックを引き継がない）
       source: persona.source === 'default' ? undefined : persona.source,
       age: persona.age,
       gender: persona.gender,
@@ -115,7 +114,7 @@ export function PersonaListPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div role="status" className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+        <div role="status" className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
       </div>
     );
   }
@@ -139,34 +138,28 @@ export function PersonaListPage() {
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
-          <h1 style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 28, fontWeight: 600 }}>
-            ペルソナ
-          </h1>
-          <p style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 14 }}>
-            評価に使うAIペルソナを作成・管理します
-          </p>
+          <h1 className="text-text-hi font-sans text-xl font-semibold">ペルソナ</h1>
+          <p className="text-text-lo font-sans text-sm">評価に使うAIペルソナを作成・管理します</p>
         </div>
         <div className="flex items-center gap-3">
-          {/* プリセットから追加 */}
           <div className="relative" ref={presetRef}>
             <button
               type="button"
               onClick={() => setPresetOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[#F0ECF9]"
-              style={{ background: '#FFFFFF', border: '1px solid #C4B5FD', borderRadius: 6, color: '#7C3AED', fontFamily: 'Geist, sans-serif' }}
+              className="flex items-center gap-2 rounded-md bg-raised border border-hairline px-4 py-2.5 text-text-mid font-sans text-sm font-medium transition-colors hover:bg-surface"
             >
-              <Layers2 size={16} color="#7C3AED" />
+              <Layers2 size={16} className="text-text-mid" />
               プリセットから追加
-              <ChevronDown size={14} color="#7C3AED" />
+              <ChevronDown size={14} className="text-text-lo" />
             </button>
 
             {presetOpen && (
               <div
-                className="absolute right-0 top-full mt-1 z-50 rounded-md overflow-hidden"
-                style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', boxShadow: '0 4px 16px rgba(0,0,0,0.10)', minWidth: 260 }}
+                className="absolute right-0 top-full mt-1 z-50 rounded-md overflow-hidden bg-surface border border-hairline"
+                style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.25)', minWidth: 260 }}
               >
-                <div className="px-4 py-2.5" style={{ borderBottom: '1px solid #F0F1F3' }}>
-                  <span style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 11, fontWeight: 600, letterSpacing: '0.5px' }}>
+                <div className="px-4 py-2.5 border-b border-hairline">
+                  <span className="text-text-lo font-mono text-xs font-semibold" style={{ letterSpacing: '0.5px' }}>
                     確定ペルソナ 6人
                   </span>
                 </div>
@@ -176,20 +169,17 @@ export function PersonaListPage() {
                     type="button"
                     onClick={() => handleAddPreset(preset)}
                     disabled={!!addingPreset}
-                    className="w-full text-left px-4 py-3 transition-colors hover:bg-[#F7F7F8] disabled:opacity-50"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'block', borderBottom: '1px solid #F7F7F8' }}
+                    className="w-full text-left px-4 py-3 transition-colors hover:bg-raised disabled:opacity-50 border-b border-hairline"
                   >
                     <div className="flex items-center justify-between">
-                      <span style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 13, fontWeight: 600 }}>
+                      <span className="text-text-hi font-sans text-sm font-semibold">
                         {addingPreset === preset.displayName ? '追加中…' : preset.displayName}
                       </span>
-                      <span style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 11 }}>
+                      <span className="text-text-lo font-sans text-xs">
                         {preset.age}歳・{preset.gender}
                       </span>
                     </div>
-                    <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 11 }}>
-                      {preset.occupation}
-                    </span>
+                    <span className="text-text-mid font-sans text-xs">{preset.occupation}</span>
                   </button>
                 ))}
               </div>
@@ -198,11 +188,10 @@ export function PersonaListPage() {
 
           <Link
             to="/personas/new"
-            className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90"
-            style={{ background: '#0A0A0A', borderRadius: 6 }}
+            className="flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-white font-sans text-sm font-semibold transition-opacity hover:opacity-90"
             aria-label="ペルソナを作成"
           >
-            <Plus size={16} color="#FFFFFF" />
+            <Plus size={16} />
             ペルソナを作成
           </Link>
         </div>
@@ -211,35 +200,29 @@ export function PersonaListPage() {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div
-            className="flex items-center gap-2 rounded-md px-3 py-2.5"
-            style={{ background: '#FFFFFF', border: '1px solid #E6E6E8', borderRadius: 6, width: 300 }}
-          >
-            <Search size={16} color="#9A9A9F" />
+          <div className="flex items-center gap-2 rounded-md bg-raised border border-hairline px-3 py-2.5" style={{ width: 300 }}>
+            <Search size={16} className="text-text-lo" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="ペルソナを検索"
-              className="flex-1 bg-transparent text-sm outline-none"
-              style={{ color: '#1A1A1A', fontFamily: 'Geist, sans-serif', fontSize: 14 }}
+              className="flex-1 bg-transparent text-text-hi font-sans text-sm outline-none"
             />
           </div>
           <SourceFilterDropdown value={sourceFilter} onChange={setSourceFilter} />
         </div>
-        <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-          {filtered.length}人のペルソナ
-        </span>
+        <span className="text-text-lo font-sans text-sm">{filtered.length}人のペルソナ</span>
       </div>
 
       {/* Grid */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <p style={{ color: '#9A9A9F', fontFamily: 'Geist, sans-serif', fontSize: 14 }}>
+          <p className="text-text-lo font-sans text-sm">
             {query ? '該当するペルソナがありません' : 'ペルソナがありません'}
           </p>
           {!query && (
-            <Link to="/personas/new" className="mt-3 text-sm font-medium" style={{ color: '#3B7DD8' }}>
+            <Link to="/personas/new" className="mt-3 text-accent font-sans text-sm font-medium">
               最初のペルソナを作成する
             </Link>
           )}

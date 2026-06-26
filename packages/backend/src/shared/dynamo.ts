@@ -35,6 +35,10 @@ export function evaluationKey(testId: string, personaId: string) {
   return { PK: `ABTEST#${testId}`, SK: `EVAL#${personaId}` } as const;
 }
 
+export function settingsKey(userId: string, section: string) {
+  return { PK: `USER#${userId}`, SK: `SETTINGS#${section}` } as const;
+}
+
 export async function getItem<T>(key: Record<string, string>): Promise<T | undefined> {
   const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: key }));
   return res.Item as T | undefined;

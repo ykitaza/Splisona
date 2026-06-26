@@ -45,8 +45,8 @@ async function seedEvaluation(testId: string, personaId: string, winner: "A" | "
     winner,
     confidence: 80,
     reason: "理由",
-    scoresA: { usability: 8, aesthetics: 7, clarity: 9, engagement: 6 },
-    scoresB: { usability: 5, aesthetics: 6, clarity: 5, engagement: 7 },
+    scoresA: { usability: 8, aesthetics: 7, clarity: 9, engagement: 6, trust: 7 },
+    scoresB: { usability: 5, aesthetics: 6, clarity: 5, engagement: 7, trust: 5 },
     status: "completed",
     personaDisplayName: `ペルソナ${personaId}`,
     evaluatedAt: new Date().toISOString(),
@@ -116,26 +116,51 @@ describe("Report handler", () => {
       expect(res.statusCode).toBe(404);
     });
 
-    it("avgScores が全 completed 評価の A案/B案 平均を返す", async () => {
+    it("avgScores が全 completed 評価の A案/B案 平均を返す（5軸）", async () => {
       const userId = "user-report-4";
       const testId = "test-report-4";
       await seedTest(userId, testId, { personaIds: ["p1", "p2"] });
       await seedEvaluation(testId, "p1", "A", {
-        scoresA: { usability: 8, aesthetics: 6, clarity: 9, engagement: 7 },
-        scoresB: { usability: 4, aesthetics: 5, clarity: 3, engagement: 6 },
+        scoresA: { usability: 8, aesthetics: 6, clarity: 9, engagement: 7, trust: 8 },
+        scoresB: { usability: 4, aesthetics: 5, clarity: 3, engagement: 6, trust: 4 },
       });
       await seedEvaluation(testId, "p2", "B", {
-        scoresA: { usability: 6, aesthetics: 8, clarity: 7, engagement: 9 },
-        scoresB: { usability: 2, aesthetics: 7, clarity: 5, engagement: 8 },
+        scoresA: { usability: 6, aesthetics: 8, clarity: 7, engagement: 9, trust: 6 },
+        scoresB: { usability: 2, aesthetics: 7, clarity: 5, engagement: 8, trust: 2 },
       });
 
       const res = await getReport(makeEvent(userId, testId));
       const body = JSON.parse(res.body);
       const avgA = body.summary.avgScores.A;
       const avgB = body.summary.avgScores.B;
-      // A案平均 = (8+6)/2 = 7, B案平均 = (4+2)/2 = 3
       expect(avgA.usability).toBe(7);
       expect(avgB.usability).toBe(3);
+      expect(avgA.trust).toBe(7);
+      expect(avgB.trust).toBe(3);
+    });
+
+    it("trust が未定義の既存データでも avgScores.trust が 0 で返る", async () => {
+      const userId = "user-report-5";
+      const testId = "test-report-5";
+      await seedTest(userId, testId, { personaIds: ["p1"] });
+      await putItem({
+        PK: `ABTEST#${testId}`,
+        SK: `EVAL#p1`,
+        winner: "A",
+        confidence: 80,
+        reason: "理由",
+        scoresA: { usability: 8, aesthetics: 7, clarity: 9, engagement: 6 },
+        scoresB: { usability: 5, aesthetics: 6, clarity: 5, engagement: 7 },
+        status: "completed",
+        personaDisplayName: "旧ペルソナ",
+        evaluatedAt: new Date().toISOString(),
+      } as unknown as Record<string, unknown>);
+
+      const res = await getReport(makeEvent(userId, testId));
+      const body = JSON.parse(res.body);
+      expect(res.statusCode).toBe(200);
+      expect(body.summary.avgScores.A.trust).toBe(0);
+      expect(body.summary.avgScores.B.trust).toBe(0);
     });
   });
 
@@ -152,7 +177,7 @@ describe("Report handler", () => {
       expect(res.headers?.["Content-Type"]).toBe("text/csv");
 
       const lines = res.body.trim().split("\n");
-      expect(lines[0]).toBe("personaId,displayName,winner,confidence,reason,A_usability,A_aesthetics,A_clarity,A_engagement,B_usability,B_aesthetics,B_clarity,B_engagement,status");
+      expect(lines[0]).toBe("personaId,displayName,winner,confidence,reason,A_usability,A_aesthetics,A_clarity,A_engagement,A_trust,B_usability,B_aesthetics,B_clarity,B_engagement,B_trust,status");
       expect(lines).toHaveLength(3);
     });
 

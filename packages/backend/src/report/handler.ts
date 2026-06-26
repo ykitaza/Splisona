@@ -28,7 +28,7 @@ function toABTest(r: ABTestRecord) {
 }
 
 function zeroScores() {
-  return { usability: 0, aesthetics: 0, clarity: 0, engagement: 0 };
+  return { usability: 0, aesthetics: 0, clarity: 0, engagement: 0, trust: 0 };
 }
 
 function computeSummary(evaluations: EvaluationRecord[], totalPersonas: number) {
@@ -60,6 +60,7 @@ function computeSummary(evaluations: EvaluationRecord[], totalPersonas: number) 
         aesthetics: acc.aesthetics + s.aesthetics,
         clarity: acc.clarity + s.clarity,
         engagement: acc.engagement + s.engagement,
+        trust: acc.trust + (s.trust ?? 0),
       };
     }, zeroScores());
 
@@ -70,6 +71,7 @@ function computeSummary(evaluations: EvaluationRecord[], totalPersonas: number) 
           aesthetics: sum.aesthetics / count,
           clarity: sum.clarity / count,
           engagement: sum.engagement / count,
+          trust: sum.trust / count,
         }
       : zeroScores();
 
@@ -270,7 +272,7 @@ export async function exportReport(
     const evaluations = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
 
     const header =
-      "personaId,displayName,winner,confidence,reason,A_usability,A_aesthetics,A_clarity,A_engagement,B_usability,B_aesthetics,B_clarity,B_engagement,status";
+      "personaId,displayName,winner,confidence,reason,A_usability,A_aesthetics,A_clarity,A_engagement,A_trust,B_usability,B_aesthetics,B_clarity,B_engagement,B_trust,status";
     const rows = evaluations.map((e) => {
       const personaId = e.SK.replace("EVAL#", "");
       const a = e.scoresA ?? zeroScores();
@@ -285,10 +287,12 @@ export async function exportReport(
         String(a.aesthetics),
         String(a.clarity),
         String(a.engagement),
+        String(a.trust ?? 0),
         String(b.usability),
         String(b.aesthetics),
         String(b.clarity),
         String(b.engagement),
+        String(b.trust ?? 0),
         e.status,
       ];
       return cols.join(",");
