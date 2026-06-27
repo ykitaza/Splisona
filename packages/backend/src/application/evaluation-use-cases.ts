@@ -19,7 +19,7 @@ export class EvaluationUseCases {
   async executeTest(
     userId: string,
     testId: string,
-    opts?: { buildImageSource?: (key: string) => ImageSource; onAbort?: AbortSignal },
+    opts?: { buildImageSource?: (key: string) => ImageSource | Promise<ImageSource>; onAbort?: AbortSignal },
   ): Promise<void> {
     const test = await this.testRepo.findById(userId, testId);
     if (!test) throw new NotFoundError("ABTest");
@@ -53,9 +53,11 @@ export class EvaluationUseCases {
     const batches = chunkArray(test.personaIds, 25);
     for (const batch of batches) {
       if (opts?.onAbort?.aborted) break;
+      const imageA = await buildSrc(test.designAImageKey!);
+      const imageB = await buildSrc(test.designBImageKey!);
       await Promise.allSettled(
         batch.map((personaId) =>
-          this.evaluateOnePersona(testId, personaId, userId, buildSrc(test.designAImageKey!), buildSrc(test.designBImageKey!))
+          this.evaluateOnePersona(testId, personaId, userId, imageA, imageB)
         )
       );
     }
