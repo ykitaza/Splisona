@@ -168,7 +168,7 @@ export function TestRowMenu({
 }) {
   return (
     <div
-      className="absolute right-0 top-full mt-1 bg-surface border border-hairline rounded-lg overflow-hidden z-30"
+      className="absolute right-0 top-full mt-1 bg-surface border border-hairline rounded-lg overflow-visible z-30"
       style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 200 }}
       onClick={(e) => e.stopPropagation()}
     >

@@ -288,7 +288,7 @@ export function ProjectListPage() {
   }
 
   return (
-    <div className="flex flex-col" style={{ padding: '48px 128px', gap: 24, height: '100%' }}>
+    <div className="flex flex-col" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', gap: 24, height: '100%' }}>
       {modalOpen && <CreateProjectModal onClose={() => setModalOpen(false)} onCreate={handleCreate} />}
       {editTarget && (
         <EditProjectModal

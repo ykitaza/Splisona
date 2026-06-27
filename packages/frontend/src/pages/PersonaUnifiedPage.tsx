@@ -294,7 +294,7 @@ export function PersonaUnifiedPage() {
         {/* Tab content */}
         {(tab === 'edit' || tab === 'detail') ? (
           <form onSubmit={handleSave} noValidate className="flex flex-col flex-1 overflow-y-auto">
-            <div className="flex flex-col gap-6 pb-24" style={{ padding: '48px 128px', paddingBottom: 96 }}>
+            <div className="flex flex-col gap-6 pb-24" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', paddingBottom: 96 }}>
               {error && (
                 <div role="alert" className="rounded-md bg-danger/10 text-danger px-4 py-3 font-sans text-sm">
                   {error}
@@ -501,7 +501,7 @@ export function PersonaUnifiedPage() {
         ) : (
           /* Interview tab */
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto flex flex-col" style={{ padding: '48px 128px', gap: 24 }}>
+            <div className="flex-1 overflow-y-auto flex flex-col" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', gap: 24 }}>
               {messages.length === 0 && !isSending && !chatError && (
                 <div className="flex flex-col items-center justify-center flex-1 py-16">
                   <p className="text-text-lo font-sans text-sm">{persona.displayName}に話しかけてみましょう</p>

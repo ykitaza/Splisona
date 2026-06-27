@@ -85,25 +85,25 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
       tabIndex={0}
       onClick={() => navigate(`/personas/${persona.personaId}`)}
       onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/personas/${persona.personaId}`); }}
-      className="flex flex-col gap-4 bg-surface cursor-pointer group"
-      style={{ borderRadius: 14, padding: 24, border: '1px solid var(--card-border, #FFFFFF0F)', width: '100%', flex: 1, transition: 'background 150ms, border-color 150ms', ['--card-border' as string]: '#FFFFFF0F' }}
+      className="flex flex-col gap-3 bg-surface cursor-pointer group"
+      style={{ borderRadius: 14, padding: '16px 20px', border: '1px solid var(--card-border, #FFFFFF0F)', width: '100%', flex: 1, transition: 'background 150ms, border-color 150ms', ['--card-border' as string]: '#FFFFFF0F' }}
       onMouseEnter={(e) => { e.currentTarget.style.background = '#1C1F23'; e.currentTarget.style.borderColor = '#FFFFFF29'; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = ''; e.currentTarget.style.borderColor = '#FFFFFF0F'; }}
     >
       {/* Top */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div
           className="flex items-center justify-center flex-shrink-0 bg-raised"
           style={{
-            width: 64, height: 64, borderRadius: 16,
+            width: 48, height: 48, borderRadius: 12,
             border: '1px solid #FFFFFF1F',
             boxShadow: `0 0 12px ${glowColor}40`,
           }}
         >
-          <PersonaNode seed={persona.personaId} size={38} avatarUrl={persona.avatarImageKey ? getAvatarUrl(persona.avatarImageKey) : undefined} />
+          <PersonaNode seed={persona.personaId} size={28} avatarUrl={persona.avatarImageKey ? getAvatarUrl(persona.avatarImageKey) : undefined} />
         </div>
-        <div className="flex flex-col gap-2 flex-1 min-w-0">
-          <span className="text-text-hi font-sans font-semibold truncate" style={{ fontSize: 18 }}>
+        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+          <span className="text-text-hi font-sans font-semibold truncate" style={{ fontSize: 16 }}>
             {persona.displayName}
           </span>
           <div className="flex items-center gap-2">
@@ -167,12 +167,10 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
       </div>
 
       {/* Personality */}
-      <p className="text-text-mid font-sans text-base" style={{ lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+      <p className="text-text-mid font-sans text-sm" style={{ lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
         {persona.freeText || ' '}
       </p>
 
-      {/* Divider */}
-      <div className="h-px bg-hairline" />
 
       {/* Demographics */}
       <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.3 }}>

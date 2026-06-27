@@ -361,6 +361,9 @@ export function TestReportPage() {
     setIsRerunning(true);
     try {
       const cloned = await cloneTest(id);
+      if (parentProject) {
+        await addTestToProject(parentProject.projectId, cloned.testId);
+      }
       testDraft.resume({
         title: '',
         sideA: designInputToSideData(cloned.designAInput),
@@ -368,7 +371,7 @@ export function TestReportPage() {
         personaIds: cloned.personaIds,
         resumeId: cloned.testId,
       });
-      navigate('/tests/new');
+      navigate(parentProject ? `/tests/new?projectId=${parentProject.projectId}` : '/tests/new');
     } finally {
       setIsRerunning(false);
     }
@@ -402,7 +405,7 @@ export function TestReportPage() {
   const countNone = summary.totalPersonas - supportCountA - supportCountB;
 
   return (
-    <div className="flex flex-col p-8" style={{ gap: 32 }}>
+    <div className="flex flex-col" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', gap: 32 }}>
       {/* Breadcrumb */}
       <div className="flex items-center" style={{ gap: 10 }}>
         {parentProject ? (

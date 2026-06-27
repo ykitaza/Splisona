@@ -161,7 +161,7 @@ export function TestRunningPage() {
   const statusGlow = isDone ? (isFailed ? '#E06A6AAA' : '#54B587AA') : '#6E78D9AA';
 
   return (
-    <div className="flex flex-col" style={{ padding: '48px 128px', gap: 32, height: '100%' }}>
+    <div className="flex flex-col" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', gap: 32, height: '100%' }}>
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex flex-col" style={{ gap: 7 }}>

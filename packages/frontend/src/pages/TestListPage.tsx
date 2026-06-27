@@ -22,17 +22,15 @@ function restoreSide(input: ABTest['designAInput']): DesignSideData | null {
 }
 
 function RowMenu({
-  testId,
   parentProject,
-  availableProjects,
+  allProjects,
   onRename,
   onAddToProject,
   onRemoveFromProject,
   onDelete,
 }: {
-  testId: string;
   parentProject: Project | null;
-  availableProjects: Project[];
+  allProjects: Project[];
   onRename: () => void;
   onAddToProject: (projectId: string) => void;
   onRemoveFromProject: () => void;
@@ -61,46 +59,59 @@ function RowMenu({
             icon={<Pencil size={14} style={{ color: '#9BA1AC' }} />}
             label="名前を変更"
           />
-          {parentProject ? (
+          {(() => {
+            const targets = parentProject
+              ? allProjects.filter((p) => p.projectId !== parentProject.projectId)
+              : allProjects;
+            if (targets.length === 0 && !parentProject) return null;
+            return (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setSubOpen((o) => !o)}
+                  className="flex items-center justify-between w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+                  style={{ color: targets.length === 0 ? '#5B616B' : '#E1E4EA' }}
+                  disabled={targets.length === 0}
+                >
+                  <span className="flex items-center" style={{ gap: 10 }}>
+                    <FolderPlus size={14} style={{ color: '#9BA1AC' }} />
+                    {parentProject ? 'プロジェクトを変更' : 'プロジェクトに追加'}
+                  </span>
+                  {targets.length > 0 && (
+                    <ChevronDown size={12} style={{ color: '#5B616B', transform: 'rotate(-90deg)' }} />
+                  )}
+                </button>
+                {subOpen && targets.length > 0 && (
+                  <div
+                    className="absolute right-full top-0 mr-1 bg-surface border border-hairline rounded-lg overflow-hidden"
+                    style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 180 }}
+                  >
+                    {targets.map((p) => (
+                      <button
+                        key={p.projectId}
+                        type="button"
+                        onClick={async () => {
+                          if (parentProject) await onRemoveFromProject();
+                          setOpen(false); setSubOpen(false); onAddToProject(p.projectId);
+                        }}
+                        className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised truncate"
+                        style={{ color: '#E1E4EA' }}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          {parentProject && (
             <TestRowMenuButton
               onClick={() => { setOpen(false); onRemoveFromProject(); }}
               icon={<FolderMinus size={14} style={{ color: '#9BA1AC' }} />}
               label="プロジェクトから削除"
             />
-          ) : availableProjects.length > 0 ? (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setSubOpen((o) => !o)}
-                className="flex items-center justify-between w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-                style={{ color: '#E1E4EA' }}
-              >
-                <span className="flex items-center" style={{ gap: 10 }}>
-                  <FolderPlus size={14} style={{ color: '#9BA1AC' }} />
-                  プロジェクトに追加
-                </span>
-                <ChevronDown size={12} style={{ color: '#5B616B', transform: 'rotate(-90deg)' }} />
-              </button>
-              {subOpen && (
-                <div
-                  className="absolute right-full top-0 mr-1 bg-surface border border-hairline rounded-lg overflow-hidden"
-                  style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 180 }}
-                >
-                  {availableProjects.map((p) => (
-                    <button
-                      key={p.projectId}
-                      type="button"
-                      onClick={() => { setOpen(false); setSubOpen(false); onAddToProject(p.projectId); }}
-                      className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised truncate"
-                      style={{ color: '#E1E4EA' }}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : null}
+          )}
           <TestRowMenuDivider />
           <TestRowMenuButton
             onClick={() => { setOpen(false); onDelete(); }}
@@ -221,7 +232,7 @@ export function TestListPage() {
   }
 
   return (
-    <div className="flex flex-col" style={{ padding: '48px 128px', gap: 32, height: '100%' }}>
+    <div className="flex flex-col" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', gap: 32, height: '100%' }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-baseline" style={{ gap: 12 }}>
@@ -407,9 +418,8 @@ export function TestListPage() {
                 )}
                 menu={
                   <RowMenu
-                    testId={test.testId}
                     parentProject={parent}
-                    availableProjects={allProjects.filter((p) => !p.testIds.includes(test.testId))}
+                    allProjects={allProjects}
                     onRename={() => { setRenameValue(test.title); setRenamingId(test.testId); }}
                     onAddToProject={async (projectId) => { await addTestToProject(projectId, test.testId); refreshProjects(); }}
                     onRemoveFromProject={async () => { if (parent) { await removeTestFromProject(parent.projectId, test.testId); refreshProjects(); } }}
