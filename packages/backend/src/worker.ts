@@ -216,6 +216,18 @@ app.get("/tests/:id/progress", async (c) => {
 
 // --- Upload route (R2 direct upload) ---
 
+app.get("/images/*", async (c) => {
+  try {
+    const key = c.req.path.slice("/images/".length);
+    const obj = await (c.env.IMAGES as unknown as { get(key: string): Promise<{ body: ReadableStream; httpMetadata?: { contentType?: string } } | null> }).get(key);
+    if (!obj) return c.text("Not Found", 404);
+    const contentType = obj.httpMetadata?.contentType ?? "image/png";
+    return new Response(obj.body, { headers: { "Content-Type": contentType, "Cache-Control": "public, max-age=31536000" } });
+  } catch (e) {
+    return c.json({ error: String(e) }, 500);
+  }
+});
+
 app.put("/upload/*", async (c) => {
   try {
     const container = createCloudflareContainer(c.env);

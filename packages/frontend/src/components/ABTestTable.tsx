@@ -7,7 +7,7 @@ import { API_BASE } from '../api/client';
 // ─── shared sub-components ───────────────────────────────────────────────────
 
 function DesignThumb({ input, label }: { input: DesignInput; label: string }) {
-  const src = input.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
+  const src = input.imageKey ? `${API_BASE}/images/${input.imageKey}` : null;
   return (
     <div
       className="overflow-hidden flex-shrink-0"

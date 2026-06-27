@@ -127,7 +127,7 @@ function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
   totalCount: number;
 }) {
   const [lightbox, setLightbox] = useState(false);
-  const imageUrl = input.imageKey ? `${API_BASE}/stub-upload/${input.imageKey}` : null;
+  const imageUrl = input.imageKey ? `${API_BASE}/images/${input.imageKey}` : null;
   const borderColor = isWinner
     ? (side === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)')
     : 'var(--color-hairline)';

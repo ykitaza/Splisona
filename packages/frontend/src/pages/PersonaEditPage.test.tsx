@@ -9,7 +9,7 @@ vi.mock('../api/personas', () => ({
   updatePersona: vi.fn(),
   generateDraft: vi.fn(),
   uploadPersonaAvatar: vi.fn(),
-  getAvatarUrl: vi.fn((key: string) => `http://localhost:3001/stub-upload/${key}`),
+  getAvatarUrl: vi.fn((key: string) => `http://localhost:3001/images/${key}`),
 }));
 
 import { createPersona } from '../api/personas';

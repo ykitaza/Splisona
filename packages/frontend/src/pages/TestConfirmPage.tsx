@@ -146,7 +146,7 @@ export function TestConfirmPage() {
                     if (sideData.inputType === 'image_upload')
                       return <img src={URL.createObjectURL(sideData.file)} alt={`${side}案`} className="w-full h-full object-cover" />;
                     if (sideData.imageKey)
-                      return <img src={`${API_BASE}/stub-upload/${sideData.imageKey}`} alt={`${side}案`} className="w-full h-full object-cover" />;
+                      return <img src={`${API_BASE}/images/${sideData.imageKey}`} alt={`${side}案`} className="w-full h-full object-cover" />;
                     return null;
                   })()}
                 </div>

@@ -28,6 +28,6 @@ export class R2StorageService implements StorageService {
   }
 
   getPreviewUrl(key: string): string {
-    return `${this.publicUrl}/${key}`;
+    return `${this.workerUrl}/images/${key}`;
   }
 }

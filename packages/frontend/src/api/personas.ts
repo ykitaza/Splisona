@@ -36,7 +36,7 @@ export async function uploadPersonaAvatar(id: string, file: File): Promise<strin
 }
 
 export function getAvatarUrl(avatarImageKey: string): string {
-  return `${API_BASE}/stub-upload/${avatarImageKey}`;
+  return `${API_BASE}/images/${avatarImageKey}`;
 }
 
 export function sendInterviewMessage(

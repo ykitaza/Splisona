@@ -44,7 +44,7 @@ function DesignSidePanel({
   const file = sideData?.inputType === 'image_upload' ? sideData.file : null;
   const imagePreview = sideData?.inputType === 'image_upload' ? URL.createObjectURL(sideData.file) : null;
   const capturedImageKey = sideData?.inputType !== 'image_upload' ? sideData?.imageKey : null;
-  const capturedPreviewUrl = capturedImageKey ? `${API_BASE}/stub-upload/${capturedImageKey}` : null;
+  const capturedPreviewUrl = capturedImageKey ? `${API_BASE}/images/${capturedImageKey}` : null;
 
   const isReady =
     sideData !== null &&
