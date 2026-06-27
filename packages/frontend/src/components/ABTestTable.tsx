@@ -1,6 +1,6 @@
 import { ChevronUp, ChevronDown, ChevronsUpDown, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { ABTEST_STATUS_LABELS, type ABTestStatus, type ABTest, type DesignInput, type ReportSummary } from '../types';
+import type { ABTest, DesignInput } from '../types';
 import { testDraft, type DesignSideData } from '../lib/testDraft';
 import { API_BASE } from '../api/client';
 
@@ -18,65 +18,9 @@ function DesignThumb({ input, label }: { input: DesignInput; label: string }) {
   );
 }
 
-// ─── status chip (list mode) ─────────────────────────────────────────────────
-
-const STATUS_COLORS: Record<ABTestStatus, { bg: string; text: string }> = {
-  draft:     { bg: '#F0F1F3', text: '#666666' },
-  running:   { bg: '#E8F0FB', text: '#3B7DD8' },
-  completed: { bg: '#E6F4EC', text: '#2E9E5B' },
-  failed:    { bg: '#FDEAEA', text: '#D64545' },
-};
-
-function StatusChip({ status }: { status: ABTestStatus }) {
-  const { bg, text } = STATUS_COLORS[status];
-  return (
-    <span
-      className="inline-block rounded-full px-2.5 py-0.5"
-      style={{ background: bg, color: text, fontFamily: 'Geist, sans-serif', fontSize: 11, fontWeight: 500, borderRadius: 9999 }}
-    >
-      {ABTEST_STATUS_LABELS[status]}
-    </span>
-  );
-}
-
-// ─── result chip (dashboard mode) ────────────────────────────────────────────
-
-function ResultChip({ status, summary }: { status: ABTestStatus; summary?: ReportSummary }) {
-  if (status !== 'completed' || !summary) {
-    return <StatusChip status={status} />;
-  }
-  if (summary.winner === 'tie') {
-    return (
-      <span
-        className="inline-block rounded-full px-2.5 py-0.5"
-        style={{ background: '#F0F1F3', color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 12, fontWeight: 600, borderRadius: 9999 }}
-      >
-        引き分け
-      </span>
-    );
-  }
-  const isA = summary.winner === 'A';
-  const rate = Math.round((isA ? summary.supportRateA : summary.supportRateB) * 100);
-  return (
-    <span
-      className="inline-block rounded-full px-2.5 py-0.5"
-      style={{
-        background: isA ? '#E8F0FB' : '#FBF0E4',
-        color: isA ? '#3B7DD8' : '#E0883A',
-        fontFamily: 'Geist, sans-serif',
-        fontSize: 12,
-        fontWeight: 600,
-        borderRadius: 9999,
-      }}
-    >
-      {isA ? 'A' : 'B'}案 {rate}%
-    </span>
-  );
-}
-
 // ─── sort icon ───────────────────────────────────────────────────────────────
 
-export type SortKey = 'title' | 'status' | 'createdAt';
+export type SortKey = 'title' | 'createdAt';
 export type SortDir = 'asc' | 'desc';
 
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey?: SortKey; sortDir?: SortDir }) {
@@ -102,21 +46,16 @@ function restoreSide(input: ABTest['designAInput']): DesignSideData | null {
 
 type Props = {
   tests: ABTest[];
-  /** 'dashboard': WtKvE仕様（チェック・アクションなし、結果列、余白大）
-   *  'list': BIIB5仕様（チェック・アクションあり、ステータス列、余白小） */
   mode?: 'dashboard' | 'list';
   sortKey?: SortKey;
   sortDir?: SortDir;
   onSort?: (col: SortKey) => void;
-  /** true のときのみチェックボックス列を表示 */
   selectionMode?: boolean;
   selected?: Set<string>;
   onToggleAll?: (checked: boolean) => void;
   onToggleOne?: (id: string) => void;
   onDelete?: (e: React.MouseEvent, id: string) => void;
   isDeleting?: boolean;
-  /** dashboard mode で完了済みテストの勝者情報を渡す */
-  summaries?: Record<string, ReportSummary>;
 };
 
 export function ABTestTable({
@@ -131,19 +70,13 @@ export function ABTestTable({
   onToggleOne,
   onDelete,
   isDeleting,
-  summaries = {},
 }: Props) {
   const navigate = useNavigate();
   const isDashboard = mode === 'dashboard';
-  // 選択モード時のみテスト名列を右にインデントしてチェックボックス分の余白を確保
   const selecting = !isDashboard && selectionMode;
 
-  // column config per mode
-  const personaW  = isDashboard ? 90  : 80;
-  const resultW   = isDashboard ? 140 : 110;
   const hPad      = isDashboard ? '12px 20px' : '10px 16px';
   const rPad      = isDashboard ? '15px 20px' : '13px 16px';
-  const resultLbl = isDashboard ? '結果' : 'ステータス';
   const dateLbl   = isDashboard ? '日付' : '日時';
 
   function handleRowClick(test: ABTest) {
@@ -217,11 +150,6 @@ export function ABTestTable({
           <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>プレビュー</span>
         </div>
 
-        <div style={{ width: personaW, flexShrink: 0 }}>
-          <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11, letterSpacing: '0.5px' }}>ペルソナ</span>
-        </div>
-
-        <SortableHdr col="status" label={resultLbl} w={resultW} />
         <SortableHdr col="createdAt" label={dateLbl} w={120} />
 
         {!isDashboard && <div style={{ width: 64, flexShrink: 0 }} />}
@@ -269,19 +197,6 @@ export function ABTestTable({
               <DesignThumb input={test.designAInput} label="A" />
               <span style={{ color: '#9A9A9F', fontFamily: 'Geist Mono, monospace', fontSize: 11 }}>vs</span>
               <DesignThumb input={test.designBInput} label="B" />
-            </div>
-
-            <div style={{ width: personaW, flexShrink: 0 }}>
-              <span style={{ color: '#666666', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-                {test.personaIds.length}人
-              </span>
-            </div>
-
-            <div style={{ width: resultW, flexShrink: 0 }}>
-              {isDashboard
-                ? <ResultChip status={test.status} summary={summaries[test.testId]} />
-                : <StatusChip status={test.status} />
-              }
             </div>
 
             <div style={{ width: 120, flexShrink: 0 }}>

@@ -17,6 +17,16 @@ export const PERSONA_TYPE_LABELS: Record<PersonaType, string> = {
   other: "その他",
 };
 
+export const PERSONA_TYPE_DESCRIPTIONS: Record<PersonaType, string> = {
+  action_oriented: "直感や第一印象で素早く判断する。視覚的なインパクトやCTAの目立ちやすさを重視する。",
+  cautious: "リスクを避け、情報を十分に確認してから判断する。信頼性や安心感を重視する。",
+  info_savvy: "最新トレンドや詳細情報を積極的に収集する。情報量の多さやデータの透明性を重視する。",
+  efficiency: "最短経路で目的を達成したい。導線のわかりやすさや操作ステップの少なさを重視する。",
+  cost_conscious: "費用対効果を最も重視する。価格表示の明確さや割引・特典の訴求を評価する。",
+  trend_sensitive: "流行やビジュアルの洗練度に敏感。デザインの新しさやブランドイメージを重視する。",
+  other: "上記に当てはまらない独自の評価軸を持つ。",
+};
+
 export interface Persona {
   personaId: string;
   userId: string;
@@ -149,6 +159,21 @@ export interface ReportSummary {
   reasonSummaryA: string[];
   reasonSummaryB: string[];
   reasonSummaryStatus?: "generating" | "ready";
+}
+
+export interface Project {
+  projectId: string;
+  userId: string;
+  name: string;
+  description: string;
+  testIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectDetail {
+  project: Project;
+  tests: ABTest[];
 }
 
 export interface ReportResponse {

@@ -11,7 +11,9 @@ import { EvaluationUseCases } from "../../application/evaluation-use-cases.js";
 import { ReportUseCases } from "../../application/report-use-cases.js";
 import { SettingsUseCases } from "../../application/settings-use-cases.js";
 import { CaptureUseCases } from "../../application/capture-use-cases.js";
+import { ProjectUseCases } from "../../application/project-use-cases.js";
 import type { AppContainer } from "../../container.js";
+import type { ProjectRepository } from "../../domain/ports/project-repository.js";
 import type { D1Database } from "./d1-types.js";
 
 export interface CloudflareEnv {
@@ -50,11 +52,17 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
     async () => { throw new Error("Website capture not supported on Workers"); },
   );
 
+  const projectRepo = new Proxy({} as ProjectRepository, {
+    get: () => () => { throw new Error("ProjectRepository not configured for D1 yet"); },
+  });
+  const projectUseCases = new ProjectUseCases(projectRepo, testRepo);
+
   return {
     personaRepo,
     testRepo,
     evalRepo,
     settingsRepo,
+    projectRepo,
     aiService,
     storageService,
     personaUseCases,
@@ -64,6 +72,7 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
     reportUseCases,
     settingsUseCases,
     captureUseCases,
+    projectUseCases,
     imageBucket: "",
     modelId,
   };

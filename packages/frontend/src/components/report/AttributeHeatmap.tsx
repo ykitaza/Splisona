@@ -45,7 +45,7 @@ export function AttributeHeatmap({ evaluations, personas, groupBy: initialGroupB
 
   const data = useMemo(() => {
     const personaMap = new Map(personas.map((p) => [p.personaId, p]));
-    const groups = new Map<string, { count: number; winRates: Record<keyof EvaluationScores, { wins: number; total: number }> }>();
+    const groups = new Map<string, { count: number; sums: Record<keyof EvaluationScores, { a: number; b: number; n: number }> }>();
 
     for (const ev of evaluations) {
       if (ev.status !== 'completed' || !ev.scoresA || !ev.scoresB) continue;
@@ -53,31 +53,29 @@ export function AttributeHeatmap({ evaluations, personas, groupBy: initialGroupB
       if (!persona) continue;
       const label = groupLabel(persona, groupBy);
       if (!groups.has(label)) {
-        const empty = () => ({ wins: 0, total: 0 });
+        const empty = () => ({ a: 0, b: 0, n: 0 });
         groups.set(label, {
           count: 0,
-          winRates: { usability: empty(), aesthetics: empty(), clarity: empty(), engagement: empty(), trust: empty() },
+          sums: { usability: empty(), aesthetics: empty(), clarity: empty(), engagement: empty(), trust: empty() },
         });
       }
       const g = groups.get(label)!;
       g.count++;
       for (const axis of AXES) {
-        const a = ev.scoresA[axis.key] ?? 0;
-        const b = ev.scoresB[axis.key] ?? 0;
-        g.winRates[axis.key].total++;
-        if (side === 'A' && a > b) g.winRates[axis.key].wins++;
-        if (side === 'B' && b > a) g.winRates[axis.key].wins++;
-        if (a === b) g.winRates[axis.key].wins += 0.5;
+        g.sums[axis.key].a += ev.scoresA[axis.key] ?? 0;
+        g.sums[axis.key].b += ev.scoresB[axis.key] ?? 0;
+        g.sums[axis.key].n++;
       }
     }
 
-    return Array.from(groups.entries()).map(([label, { count, winRates }]) => ({
+    return Array.from(groups.entries()).map(([label, { count, sums }]) => ({
       label,
       count,
-      rates: Object.fromEntries(
+      scores: Object.fromEntries(
         AXES.map((axis) => {
-          const { wins, total } = winRates[axis.key];
-          return [axis.key, total > 0 ? Math.round((wins / total) * 100) : 0];
+          const { a, b, n } = sums[axis.key];
+          const avg = n > 0 ? (side === 'A' ? a / n : b / n) : 0;
+          return [axis.key, Math.round(avg)];
         })
       ) as Record<keyof EvaluationScores, number>,
     }));
@@ -115,7 +113,7 @@ export function AttributeHeatmap({ evaluations, personas, groupBy: initialGroupB
               <button
                 key={s}
                 type="button"
-                aria-label={`${s} 勝率`}
+                aria-label={`${s} スコア`}
                 aria-pressed={side === s}
                 onClick={() => setSide(s)}
                 className="font-mono text-xs font-semibold transition-colors"
@@ -125,7 +123,7 @@ export function AttributeHeatmap({ evaluations, personas, groupBy: initialGroupB
                   color: side === s ? c : 'var(--color-text-lo)',
                 }}
               >
-                {s} 勝率
+                {s} スコア
               </button>
             );
           })}
@@ -156,8 +154,8 @@ export function AttributeHeatmap({ evaluations, personas, groupBy: initialGroupB
               <span className="text-text-lo font-mono text-xs">n={row.count}</span>
             </div>
             {AXES.map((axis) => {
-              const pct = row.rates[axis.key];
-              const alpha = pct / 100;
+              const score = row.scores[axis.key];
+              const alpha = score / 100;
               return (
                 <div key={axis.key} className="flex-1" style={{ padding: '0 4px' }}>
                   <div
@@ -170,7 +168,7 @@ export function AttributeHeatmap({ evaluations, personas, groupBy: initialGroupB
                       transition: 'background 0.3s',
                     }}
                   >
-                    {pct}%
+                    {score}
                   </div>
                 </div>
               );

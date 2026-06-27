@@ -14,10 +14,12 @@ import { EvaluationUseCases } from "./application/evaluation-use-cases.js";
 import { ReportUseCases } from "./application/report-use-cases.js";
 import { SettingsUseCases } from "./application/settings-use-cases.js";
 import { CaptureUseCases } from "./application/capture-use-cases.js";
+import { ProjectUseCases } from "./application/project-use-cases.js";
 import type { PersonaRepository } from "./domain/ports/persona-repository.js";
 import type { ABTestRepository } from "./domain/ports/abtest-repository.js";
 import type { EvaluationRepository } from "./domain/ports/evaluation-repository.js";
 import type { SettingsRepository } from "./domain/ports/settings-repository.js";
+import type { ProjectRepository } from "./domain/ports/project-repository.js";
 import type { AIService } from "./domain/ports/ai-service.js";
 import type { StorageService } from "./domain/ports/storage-service.js";
 
@@ -26,6 +28,7 @@ export interface AppContainer {
   testRepo: ABTestRepository;
   evalRepo: EvaluationRepository;
   settingsRepo: SettingsRepository;
+  projectRepo: ProjectRepository;
   aiService: AIService;
   storageService: StorageService;
 
@@ -36,6 +39,7 @@ export interface AppContainer {
   reportUseCases: ReportUseCases;
   settingsUseCases: SettingsUseCases;
   captureUseCases: CaptureUseCases;
+  projectUseCases: ProjectUseCases;
 
   imageBucket: string;
   modelId: string;
@@ -51,6 +55,7 @@ export interface ContainerConfig {
   testRepo?: ABTestRepository;
   evalRepo?: EvaluationRepository;
   settingsRepo?: SettingsRepository;
+  projectRepo?: ProjectRepository;
   aiService?: AIService;
   storageService?: StorageService;
   captureFigmaNode?: (url: string, token: string) => Promise<Buffer>;
@@ -71,6 +76,9 @@ export function createContainer(config: ContainerConfig = {}): AppContainer {
   const testRepo = config.testRepo ?? new DynamoABTestRepository(db);
   const evalRepo = config.evalRepo ?? new DynamoEvaluationRepository(db);
   const settingsRepo = config.settingsRepo ?? new DynamoSettingsRepository(db);
+  const projectRepo = config.projectRepo ?? new Proxy({} as ProjectRepository, {
+    get: () => () => { throw new Error("ProjectRepository not configured"); },
+  });
 
   const aiService = config.aiService ?? new BedrockAIService(
     new BedrockRuntimeClient({ region }), modelId,
@@ -90,6 +98,7 @@ export function createContainer(config: ContainerConfig = {}): AppContainer {
   const evaluationUseCases = new EvaluationUseCases(testRepo, evalRepo, personaRepo, settingsRepo, aiService, imageBucket);
   const reportUseCases = new ReportUseCases(testRepo, evalRepo);
   const settingsUseCases = new SettingsUseCases(settingsRepo);
+  const projectUseCases = new ProjectUseCases(projectRepo, testRepo);
 
   const captureFigmaNode = config.captureFigmaNode ?? (async () => { throw new Error("Figma capture not configured"); });
   const captureWebsite = config.captureWebsite ?? (async () => { throw new Error("Website capture not configured"); });
@@ -100,6 +109,7 @@ export function createContainer(config: ContainerConfig = {}): AppContainer {
     testRepo,
     evalRepo,
     settingsRepo,
+    projectRepo,
     aiService,
     storageService,
     personaUseCases,
@@ -109,6 +119,7 @@ export function createContainer(config: ContainerConfig = {}): AppContainer {
     reportUseCases,
     settingsUseCases,
     captureUseCases,
+    projectUseCases,
     imageBucket,
     modelId,
   };

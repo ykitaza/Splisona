@@ -6,6 +6,7 @@ import { testDraft } from '../lib/testDraft';
 import { updateTest } from '../api/tests';
 import { PERSONA_TYPE_LABELS } from '../types';
 import { PersonaNode, getNodeColor } from '../components/persona/PersonaNode';
+import { getAvatarUrl } from '../api/personas';
 
 export function TestPersonaSelectPage() {
   const navigate = useNavigate();
@@ -175,7 +176,7 @@ export function TestPersonaSelectPage() {
                     boxShadow: checked ? `0 0 8px ${glowColor}40` : 'none',
                   }}
                 >
-                  <PersonaNode seed={persona.personaId} size={20} />
+                  <PersonaNode seed={persona.personaId} size={20} avatarUrl={persona.avatarImageKey ? getAvatarUrl(persona.avatarImageKey) : undefined} />
                 </div>
                 {/* Name + attrs */}
                 <div className="flex flex-col flex-1 min-w-0" style={{ gap: 2 }}>

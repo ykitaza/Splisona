@@ -1,14 +1,16 @@
 import { useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Image, ImagePlus, Info, Link2, Camera, Maximize2, Play, SlidersHorizontal, Check, X } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { Modal } from '../components/ui/Modal';
 import { testDraft, sideToDesignInput, type DesignSideData } from '../lib/testDraft';
 import { captureUrl, createTest, updateTest, executeTest, getUploadUrl, uploadToS3 } from '../api/tests';
+import { addTestToProject } from '../api/projects';
 import { usePersonas } from '../hooks/usePersonas';
 import { API_BASE, ApiError } from '../api/client';
 import { PERSONA_TYPE_LABELS } from '../types';
 import { PersonaNode } from '../components/persona/PersonaNode';
+import { getAvatarUrl } from '../api/personas';
 
 type TabType = 'image' | 'figma_url' | 'site_url';
 
@@ -22,7 +24,7 @@ function DesignSidePanel({
   onSideChange: (data: DesignSideData | null) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const dropRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
   const [dropHover, setDropHover] = useState(false);
   const accentColor = side === 'A' ? 'var(--color-win-a, #6E78D9)' : 'var(--color-win-b, #C9974F)';
 
@@ -41,14 +43,15 @@ function DesignSidePanel({
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
-  const file = sideData?.inputType === 'image_upload' ? sideData.file : null;
-  const imagePreview = sideData?.inputType === 'image_upload' ? URL.createObjectURL(sideData.file) : null;
-  const capturedImageKey = sideData?.inputType !== 'image_upload' ? sideData?.imageKey : null;
-  const capturedPreviewUrl = capturedImageKey ? `${API_BASE}/images/${capturedImageKey}` : null;
+  const file = sideData?.inputType === 'image_upload' && sideData.file.size > 0 ? sideData.file : null;
+  const imagePreview = file ? URL.createObjectURL(file) : null;
+  const existingImageKey = sideData?.imageKey || null;
+  const existingPreviewUrl = !imagePreview && existingImageKey ? `${API_BASE}/images/${existingImageKey}` : null;
+  const previewSrc = imagePreview || existingPreviewUrl;
 
   const isReady =
     sideData !== null &&
-    (sideData.inputType === 'image_upload' || !!sideData.imageKey);
+    (sideData.inputType === 'image_upload' ? (!!file || !!sideData.imageKey) : !!sideData.imageKey);
 
   function handleTabChange(tab: TabType) {
     setActiveTab(tab);
@@ -137,9 +140,10 @@ function DesignSidePanel({
 
         {activeTab === 'image' && (
           <>
-            <button
+            <div
               ref={dropRef}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => inputRef.current?.click()}
               onPaste={(e) => {
                 const f = Array.from(e.clipboardData.files).find((f) => f.type.startsWith('image/'));
@@ -156,18 +160,18 @@ function DesignSidePanel({
               className="w-full overflow-hidden rounded-md transition-all outline-none"
               style={{
                 height: 354,
-                border: file ? '1px solid var(--color-accent)' : dropHover ? '1px solid #9BA1AC' : '1px solid #5B616B',
+                border: previewSrc ? '1px solid var(--color-accent)' : dropHover ? '1px solid #9BA1AC' : '1px solid #5B616B',
                 background: 'var(--color-raised)',
                 cursor: 'pointer',
               }}
             >
-              {imagePreview ? (
+              {previewSrc ? (
                 <div className="relative w-full h-full group">
-                  <img src={imagePreview} alt={`デザイン${side}プレビュー`} className="w-full h-full object-cover" />
+                  <img src={previewSrc} alt={`デザイン${side}プレビュー`} className="w-full h-full object-cover" />
                   <div className="absolute top-2 right-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ gap: 4 }}>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); setLightboxSrc(imagePreview); }}
+                      onClick={(e) => { e.stopPropagation(); setLightboxSrc(previewSrc); }}
                       className="flex items-center justify-center rounded-md"
                       style={{ width: 28, height: 28, background: 'rgba(0,0,0,0.55)' }}
                     >
@@ -192,13 +196,13 @@ function DesignSidePanel({
                   )}
                 </div>
               )}
-            </button>
+            </div>
 
-            {file && (
+            {(file || existingPreviewUrl) && (
               <div className="flex items-center gap-2 rounded-md bg-raised px-3 py-2.5">
                 <Image size={16} className="text-text-lo" />
-                <span className="flex-1 truncate text-text-hi font-mono text-xs">{file.name}</span>
-                <span className="text-text-lo font-sans text-xs">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
+                <span className="flex-1 truncate text-text-hi font-mono text-xs">{file ? file.name : '既存画像'}</span>
+                <span className="text-text-lo font-sans text-xs">{file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : ''}</span>
                 <button
                   type="button"
                   onClick={() => inputRef.current?.click()}
@@ -242,17 +246,17 @@ function DesignSidePanel({
               style={{
                 height: 320,
                 background: 'var(--color-raised)',
-                cursor: capturedPreviewUrl ? 'zoom-in' : 'default',
+                cursor: existingPreviewUrl ? 'zoom-in' : 'default',
               }}
-              onClick={() => { if (capturedPreviewUrl) setLightboxSrc(capturedPreviewUrl); }}
+              onClick={() => { if (existingPreviewUrl) setLightboxSrc(existingPreviewUrl); }}
             >
               {isCapturing ? (
                 <div className="flex flex-col items-center gap-2">
                   <div role="status" className="animate-spin rounded-full h-5 w-5 border-b-2 border-text-lo" />
                   <span className="text-text-lo font-sans text-xs">取得中...</span>
                 </div>
-              ) : capturedPreviewUrl ? (
-                <img src={capturedPreviewUrl} alt={`${side}案プレビュー`} className="w-full h-full object-cover" />
+              ) : existingPreviewUrl ? (
+                <img src={existingPreviewUrl} alt={`${side}案プレビュー`} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-text-lo font-sans text-xs">
                   {urlInput.trim() ? '「スクリーンショットを取得」を押してください' : 'URLを入力してください'}
@@ -268,7 +272,7 @@ function DesignSidePanel({
                 className="flex items-center justify-center gap-2 rounded-md bg-raised border border-hairline py-2 text-text-hi font-sans text-sm disabled:opacity-40 transition-opacity"
               >
                 <Camera size={14} className="text-text-mid" />
-                {capturedPreviewUrl ? 'スクリーンショットを再取得' : 'スクリーンショットを取得'}
+                {existingPreviewUrl ? 'スクリーンショットを再取得' : 'スクリーンショットを取得'}
               </button>
             )}
 
@@ -392,7 +396,7 @@ function PersonaSelectModal({
                 >
                   {checked && <Check size={10} color="#FFFFFF" />}
                 </div>
-                <PersonaNode seed={persona.personaId} size={20} />
+                <PersonaNode seed={persona.personaId} size={20} avatarUrl={persona.avatarImageKey ? getAvatarUrl(persona.avatarImageKey) : undefined} />
                 <div className="flex flex-col flex-1 min-w-0" style={{ gap: 2 }}>
                   <span className="text-text-hi font-sans text-sm font-medium">{persona.displayName}</span>
                   <span className="text-text-lo font-sans text-xs truncate">
@@ -428,6 +432,8 @@ function isSideReady(data: DesignSideData | null): boolean {
 
 export function TestInputPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get('projectId');
   const initial = testDraft.get();
   const [sideA, setSideA] = useState<DesignSideData | null>(initial.sideA);
   const [sideB, setSideB] = useState<DesignSideData | null>(initial.sideB);
@@ -496,6 +502,10 @@ export function TestInputPage() {
         designBInput: { ...designBInput, imageKey: imageKeyB },
         personaIds,
       });
+
+      if (projectId) {
+        await addTestToProject(projectId, testId);
+      }
 
       await executeTest(testId);
       testDraft.reset();
@@ -569,7 +579,7 @@ export function TestInputPage() {
                         boxShadow: '0 0 0 2px var(--color-base)',
                       }}
                     >
-                      <PersonaNode seed={p.personaId} size={26} />
+                      <PersonaNode seed={p.personaId} size={26} avatarUrl={p.avatarImageKey ? getAvatarUrl(p.avatarImageKey) : undefined} />
                     </div>
                   ))}
                 </div>
@@ -610,7 +620,7 @@ export function TestInputPage() {
       )}
 
       <div className="flex items-center justify-between pt-2">
-        <Link to="/results" className="text-text-lo font-sans text-sm hover:text-text-mid transition-colors">
+        <Link to={projectId ? `/projects/${projectId}` : '/results'} className="text-text-lo font-sans text-sm hover:text-text-mid transition-colors">
           キャンセル
         </Link>
         <button

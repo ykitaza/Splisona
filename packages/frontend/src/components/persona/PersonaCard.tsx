@@ -4,6 +4,7 @@ import { MoreHorizontal, Eye, Copy, Trash2 } from 'lucide-react';
 import { PERSONA_TYPE_LABELS } from '../../types';
 import type { Persona, PersonaType } from '../../types';
 import { PersonaNode, getNodeColor } from './PersonaNode';
+import { getAvatarUrl } from '../../api/personas';
 
 const STANCE_LABELS: Record<PersonaType, string> = {
   action_oriented: 'せっかち',
@@ -99,7 +100,7 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
             boxShadow: `0 0 12px ${glowColor}40`,
           }}
         >
-          <PersonaNode seed={persona.personaId} size={38} />
+          <PersonaNode seed={persona.personaId} size={38} avatarUrl={persona.avatarImageKey ? getAvatarUrl(persona.avatarImageKey) : undefined} />
         </div>
         <div className="flex flex-col gap-2 flex-1 min-w-0">
           <span className="text-text-hi font-sans font-semibold truncate" style={{ fontSize: 18 }}>

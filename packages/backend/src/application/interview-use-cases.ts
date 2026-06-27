@@ -1,6 +1,7 @@
 import type { PersonaRepository } from "../domain/ports/persona-repository.js";
 import type { SettingsRepository } from "../domain/ports/settings-repository.js";
 import type { AIService, ConversationMessage } from "../domain/ports/ai-service.js";
+import { personaTypeLabel } from "../domain/types.js";
 import type { Persona } from "../domain/types.js";
 import { NotFoundError } from "./errors.js";
 
@@ -31,7 +32,7 @@ export class InterviewUseCases {
 function buildSystemPrompt(persona: Persona, additionalInstruction?: string): string {
   return [
     `あなたは「${persona.displayName}」という人物を演じてください。`,
-    `タイプ: ${persona.type}`,
+    `タイプ: ${personaTypeLabel(persona.type)}`,
     persona.age ? `年齢: ${persona.age}歳` : null,
     persona.gender ? `性別: ${persona.gender}` : null,
     persona.occupation ? `職業: ${persona.occupation}` : null,

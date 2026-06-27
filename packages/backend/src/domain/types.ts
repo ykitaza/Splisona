@@ -16,6 +16,20 @@ export interface Persona {
   updatedAt: string;
 }
 
+export const PERSONA_TYPE_DESCRIPTIONS: Record<string, string> = {
+  action_oriented: "直感や第一印象で素早く判断する。視覚的なインパクトやCTAの目立ちやすさを重視する。",
+  cautious: "リスクを避け、情報を十分に確認してから判断する。信頼性や安心感を重視する。",
+  info_savvy: "最新トレンドや詳細情報を積極的に収集する。情報量の多さやデータの透明性を重視する。",
+  efficiency: "最短経路で目的を達成したい。導線のわかりやすさや操作ステップの少なさを重視する。",
+  cost_conscious: "費用対効果を最も重視する。価格表示の明確さや割引・特典の訴求を評価する。",
+  trend_sensitive: "流行やビジュアルの洗練度に敏感。デザインの新しさやブランドイメージを重視する。",
+};
+
+export function personaTypeLabel(type: string): string {
+  const desc = PERSONA_TYPE_DESCRIPTIONS[type];
+  return desc ? `${type}（${desc}）` : type;
+}
+
 export interface ABTest {
   testId: string;
   userId: string;
@@ -55,6 +69,16 @@ export interface Evaluation {
   status: "evaluating" | "completed" | "failed";
   personaDisplayName: string;
   evaluatedAt: string;
+}
+
+export interface Project {
+  projectId: string;
+  userId: string;
+  name: string;
+  description: string;
+  testIds: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SettingsRecord {

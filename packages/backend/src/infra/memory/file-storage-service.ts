@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync, existsSync, copyFileSync } from "node:fs";
 import { join, extname } from "node:path";
 import type { StorageService } from "../../domain/ports/storage-service.js";
 import type { UploadUrlResult } from "../../domain/types.js";
@@ -30,6 +30,13 @@ export class FileStorageService implements StorageService {
 
   getPreviewUrl(key: string): string {
     return `${this.baseUrl}/images/${key}`;
+  }
+
+  async copyObject(sourceKey: string, destKey: string): Promise<void> {
+    const src = this.keyToPath(sourceKey);
+    if (existsSync(src)) {
+      copyFileSync(src, this.keyToPath(destKey));
+    }
   }
 
   readFile(key: string): Buffer | null {

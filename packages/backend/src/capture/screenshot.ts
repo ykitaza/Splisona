@@ -18,7 +18,8 @@ export async function captureWebsite(url: string): Promise<Buffer> {
     const page = await browser.newPage();
     // Bedrock の画像サイズ上限 (8000px) を超えないよう高さを制限
     await page.setViewportSize({ width: 1280, height: 4000 });
-    await page.goto(url, { waitUntil: "networkidle", timeout: 15_000 });
+    await page.goto(url, { waitUntil: "load", timeout: 30_000 });
+    await page.waitForTimeout(2000);
     const buf = await page.screenshot({ type: "png", fullPage: false });
     return Buffer.from(buf);
   } catch (e) {

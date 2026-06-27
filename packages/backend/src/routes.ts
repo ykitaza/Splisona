@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppContainer } from "./container.js";
 import { NotFoundError, ForbiddenError, ValidationError, ConflictError } from "./application/errors.js";
+import { toABTestDTO } from "./domain/types.js";
 
 export interface RouteEnv {
   Variables: {
@@ -86,6 +87,51 @@ export function createRoutes() {
     }
   });
 
+  // --- Project ---
+  api.get("/projects", async (c) => {
+    try { return c.json(await c.var.container.projectUseCases.list(c.var.userId)); }
+    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.post("/projects", async (c) => {
+    try {
+      const input = await c.req.json();
+      if (!input.name?.trim()) return c.json({ error: "VALIDATION_ERROR", message: "name is required" }, 400);
+      return c.json(await c.var.container.projectUseCases.create(c.var.userId, input), 201);
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.get("/projects/:id", async (c) => {
+    try { return c.json(await c.var.container.projectUseCases.getDetail(c.var.userId, c.req.param("id"))); }
+    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.put("/projects/:id", async (c) => {
+    try {
+      return c.json(await c.var.container.projectUseCases.update(c.var.userId, c.req.param("id"), await c.req.json()));
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.delete("/projects/:id", async (c) => {
+    try {
+      await c.var.container.projectUseCases.delete(c.var.userId, c.req.param("id"));
+      return c.json({ deleted: true });
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.post("/projects/:id/tests", async (c) => {
+    try {
+      const { testId } = await c.req.json();
+      return c.json(await c.var.container.projectUseCases.addTest(c.var.userId, c.req.param("id"), testId));
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.delete("/projects/:id/tests/:testId", async (c) => {
+    try {
+      return c.json(await c.var.container.projectUseCases.removeTest(c.var.userId, c.req.param("id"), c.req.param("testId")));
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
   // --- ABTest ---
   api.post("/tests", async (c) => {
     try {
@@ -131,6 +177,13 @@ export function createRoutes() {
   api.get("/tests/:id/progress", async (c) => {
     try { return c.json(await c.var.container.abtestUseCases.getProgress(c.var.userId, c.req.param("id"))); }
     catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.post("/tests/:id/clone", async (c) => {
+    try {
+      const cloned = await c.var.container.abtestUseCases.clone(c.var.userId, c.req.param("id"));
+      return c.json(toABTestDTO(cloned));
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
   });
 
   // --- Capture ---

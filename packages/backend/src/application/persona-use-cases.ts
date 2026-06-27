@@ -3,6 +3,7 @@ import type { PersonaRepository } from "../domain/ports/persona-repository.js";
 import type { SettingsRepository } from "../domain/ports/settings-repository.js";
 import type { AIService } from "../domain/ports/ai-service.js";
 import type { StorageService } from "../domain/ports/storage-service.js";
+import { personaTypeLabel } from "../domain/types.js";
 import type { Persona, DraftResult, UploadUrlResult } from "../domain/types.js";
 import { buildDefaultPersonas } from "../domain/default-personas.js";
 import { NotFoundError, ForbiddenError } from "./errors.js";
@@ -96,7 +97,7 @@ export class PersonaUseCases {
     if (!persona) throw new NotFoundError("Persona");
 
     const attrs = [
-      persona.type && `タイプ: ${persona.type}`,
+      persona.type && `タイプ: ${personaTypeLabel(persona.type)}`,
       persona.age && `年齢: ${persona.age}歳`,
       persona.gender && `性別: ${persona.gender}`,
       persona.occupation && `職業: ${persona.occupation}`,

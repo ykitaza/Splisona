@@ -20176,10 +20176,10 @@
                       "cornerRadius": 6,
                       "stroke": "#FFFFFF14",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
                         8,
-                        14
+                        12
                       ],
                       "alignItems": "center",
                       "children": [
@@ -20209,14 +20209,14 @@
                       "type": "frame",
                       "id": "E2rbOp",
                       "name": "NB",
-                      "fill": "$accent",
+                      "fill": "#6E78D90F",
                       "cornerRadius": 6,
                       "stroke": "#FFFFFF14",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
                         8,
-                        14
+                        12
                       ],
                       "alignItems": "center",
                       "children": [
@@ -20310,6 +20310,8 @@
                       "id": "eAEwY",
                       "name": "H プロジェクト名",
                       "fill": "#5B616B",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
                       "content": "プロジェクト名",
                       "fontFamily": "Geist Mono",
                       "fontSize": 10,
@@ -20656,7 +20658,7 @@
       "name": "S12 プロジェクト詳細",
       "clip": true,
       "width": 1440,
-      "height": 1024,
+      "height": 1080,
       "fill": "$bg-base",
       "children": [
         {
@@ -20771,12 +20773,14 @@
                       "type": "frame",
                       "id": "u3kIqD",
                       "name": "NextTestBtn",
-                      "fill": "$accent",
+                      "fill": "#6E78D90F",
                       "cornerRadius": 6,
-                      "gap": 6,
+                      "stroke": "#FFFFFF14",
+                      "strokeWidth": 1,
+                      "gap": 8,
                       "padding": [
                         8,
-                        14
+                        12
                       ],
                       "alignItems": "center",
                       "children": [
@@ -20786,136 +20790,35 @@
                           "name": "Icon",
                           "width": 14,
                           "height": 14,
-                          "icon": "play",
+                          "icon": "plus",
                           "library": "lucide",
-                          "fill": "#FFFFFF"
+                          "fill": "#F2F4F7"
                         },
                         {
                           "type": "text",
                           "id": "Ntwuk",
                           "name": "Label",
-                          "fill": "#FFFFFF",
+                          "fill": "#F2F4F7",
                           "content": "次のテストを作成",
                           "fontFamily": "Geist",
                           "fontSize": 13,
-                          "fontWeight": "500"
+                          "fontWeight": "600"
                         }
                       ]
                     }
                   ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "aKsvP",
-              "name": "Stats",
-              "width": "fill_container",
-              "gap": 48,
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "ZSCJS",
-                  "name": "テスト数",
-                  "layout": "vertical",
-                  "gap": 4,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "YePE0",
-                      "name": "Label",
-                      "fill": "#5B616B",
-                      "content": "テスト数",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 10,
-                      "fontWeight": "normal",
-                      "letterSpacing": 0.5
-                    },
-                    {
-                      "type": "text",
-                      "id": "vbZQU",
-                      "name": "Value",
-                      "fill": "#F2F4F7",
-                      "content": "5 回",
-                      "fontFamily": "Geist",
-                      "fontSize": 18,
-                      "fontWeight": "600"
-                    }
-                  ]
                 },
                 {
-                  "type": "frame",
-                  "id": "vlQjK",
-                  "name": "開始日",
-                  "layout": "vertical",
-                  "gap": 4,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "hWTNr",
-                      "name": "Label",
-                      "fill": "#5B616B",
-                      "content": "開始日",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 10,
-                      "fontWeight": "normal",
-                      "letterSpacing": 0.5
-                    },
-                    {
-                      "type": "text",
-                      "id": "F4II8l",
-                      "name": "Value",
-                      "fill": "#F2F4F7",
-                      "content": "2026-06-01",
-                      "fontFamily": "Geist",
-                      "fontSize": 18,
-                      "fontWeight": "600"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "aCvvs",
-                  "name": "最終更新",
-                  "layout": "vertical",
-                  "gap": 4,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "hcgGW",
-                      "name": "Label",
-                      "fill": "#5B616B",
-                      "content": "最終更新",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 10,
-                      "fontWeight": "normal",
-                      "letterSpacing": 0.5
-                    },
-                    {
-                      "type": "text",
-                      "id": "wDCDO",
-                      "name": "Value",
-                      "fill": "#F2F4F7",
-                      "content": "3 時間前",
-                      "fontFamily": "Geist",
-                      "fontSize": 18,
-                      "fontWeight": "600"
-                    }
-                  ]
+                  "type": "text",
+                  "id": "CW4az",
+                  "name": "Subtitle",
+                  "fill": "#5B616B",
+                  "content": "5 イテレーション · 開始 2026-06-01 · 最終更新 3時間前",
+                  "fontFamily": "Geist",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
-            },
-            {
-              "type": "text",
-              "id": "T1CZK",
-              "name": "TimelineLabel",
-              "fill": "#5B616B",
-              "content": "イテレーション履歴",
-              "fontFamily": "Geist Mono",
-              "fontSize": 10,
-              "fontWeight": "normal",
-              "letterSpacing": 0.5
             },
             {
               "type": "frame",
@@ -20926,7 +20829,7 @@
               "strokeWidth": {
                 "bottom": 1
               },
-              "gap": 20,
+              "gap": 16,
               "padding": [
                 24,
                 8
@@ -20968,7 +20871,7 @@
                   "name": "Content",
                   "width": "fill_container",
                   "layout": "vertical",
-                  "gap": 10,
+                  "gap": 16,
                   "children": [
                     {
                       "type": "text",
@@ -20977,23 +20880,34 @@
                       "fill": "#F2F4F7",
                       "content": "ファーストビュー最適化",
                       "fontFamily": "Geist",
-                      "fontSize": 16,
+                      "fontSize": 20,
                       "fontWeight": "600"
                     },
                     {
                       "type": "frame",
                       "id": "AKR2z",
                       "name": "Thumbnails",
-                      "gap": 10,
+                      "gap": 12,
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "frame",
                           "id": "JfxGt",
                           "name": "DesignA",
-                          "width": 160,
-                          "height": 100,
-                          "fill": "#1C1F23",
+                          "metadata": {
+                            "type": "unsplash",
+                            "username": "slidebean",
+                            "link": "https://unsplash.com/@slidebean",
+                            "author": "Slidebean"
+                          },
+                          "width": 200,
+                          "height": 120,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1590097520752-3258327b7548?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODI1NTM4MDl8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          },
                           "cornerRadius": 6,
                           "layout": "vertical",
                           "justifyContent": "center",
@@ -21025,9 +20939,20 @@
                           "type": "frame",
                           "id": "vEvA3",
                           "name": "DesignB",
-                          "width": 160,
-                          "height": 100,
-                          "fill": "#1C1F23",
+                          "metadata": {
+                            "type": "unsplash",
+                            "username": "visuals",
+                            "link": "https://unsplash.com/@visuals",
+                            "author": "visuals"
+                          },
+                          "width": 200,
+                          "height": 120,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1594322436404-5a0526db4d13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODI1NTM4MTB8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          },
                           "cornerRadius": 6,
                           "stroke": "$accent",
                           "strokeWidth": 2,
@@ -21050,6 +20975,36 @@
                       ]
                     },
                     {
+                      "type": "frame",
+                      "id": "l14Kpt",
+                      "name": "ResultRow",
+                      "width": "fill_container",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iXryO",
+                          "name": "Winner",
+                          "fill": "#C9974F",
+                          "content": "デザイン B が支持されました",
+                          "fontFamily": "Geist",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "qnyRr",
+                          "name": "VoteCount",
+                          "fill": "#9BA1AC",
+                          "content": "6人中4人がBを支持",
+                          "fontFamily": "Geist",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
                       "type": "text",
                       "id": "Q3NLe",
                       "name": "Reason",
@@ -21058,6 +21013,300 @@
                       "fontFamily": "Geist",
                       "fontSize": 13,
                       "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "sTHqp",
+                      "name": "Actions",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "zs1hP",
+                          "name": "ReportLink",
+                          "fill": "$accent",
+                          "content": "詳細レポートを見る →",
+                          "fontFamily": "Geist",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "T1CZK",
+              "name": "TimelineLabel",
+              "fill": "#5B616B",
+              "content": "過去のイテレーション",
+              "fontFamily": "Geist Mono",
+              "fontSize": 10,
+              "fontWeight": "normal",
+              "letterSpacing": 0.5
+            },
+            {
+              "type": "frame",
+              "id": "r8aSyR",
+              "name": "Entry#4",
+              "width": "fill_container",
+              "stroke": "#FFFFFF14",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "gap": 24,
+              "padding": [
+                12,
+                8
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "i6eSbE",
+                  "name": "NumCol",
+                  "width": 32,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "A1bGT",
+                      "name": "Num",
+                      "fill": "#9BA1AC",
+                      "content": "#4",
+                      "fontFamily": "Geist Mono",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xkYT5",
+                      "name": "Date",
+                      "fill": "#5B616B",
+                      "content": "6/20",
+                      "fontFamily": "Geist Mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Ucsib",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p5lfr",
+                      "name": "Title",
+                      "fill": "#F2F4F7",
+                      "content": "ヘッドコピー改善",
+                      "fontFamily": "Geist",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "iUtqG",
+                      "name": "ResultGroup",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "XMGA3",
+                          "name": "Winner",
+                          "fill": "#6E78D9",
+                          "content": "A 勝利",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "VIKXL",
+              "name": "Entry#3",
+              "width": "fill_container",
+              "stroke": "#FFFFFF14",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "gap": 24,
+              "padding": [
+                12,
+                8
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "kjNtj",
+                  "name": "NumCol",
+                  "width": 32,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jDlUN",
+                      "name": "Num",
+                      "fill": "#9BA1AC",
+                      "content": "#3",
+                      "fontFamily": "Geist Mono",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "CqzmO",
+                      "name": "Date",
+                      "fill": "#5B616B",
+                      "content": "6/14",
+                      "fontFamily": "Geist Mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Lo6ew",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "B9xHzk",
+                      "name": "Title",
+                      "fill": "#F2F4F7",
+                      "content": "レイアウト 2カラム vs 1カラム",
+                      "fontFamily": "Geist",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "EyaVz",
+                      "name": "ResultGroup",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "aaECu",
+                          "name": "Winner",
+                          "fill": "#D9A46E",
+                          "content": "B 勝利",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "F3DwVa",
+              "name": "Entry#2",
+              "width": "fill_container",
+              "stroke": "#FFFFFF14",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "gap": 24,
+              "padding": [
+                12,
+                8
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "R5xbC",
+                  "name": "NumCol",
+                  "width": 32,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "V7FMn6",
+                      "name": "Num",
+                      "fill": "#9BA1AC",
+                      "content": "#2",
+                      "fontFamily": "Geist Mono",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "IahMp",
+                      "name": "Date",
+                      "fill": "#5B616B",
+                      "content": "6/8",
+                      "fontFamily": "Geist Mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "qZ7OB",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qLXbH",
+                      "name": "Title",
+                      "fill": "#F2F4F7",
+                      "content": "CTA ボタン色テスト",
+                      "fontFamily": "Geist",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "M5zLyQ",
+                      "name": "ResultGroup",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mIO8s",
+                          "name": "Winner",
+                          "fill": "#6E78D9",
+                          "content": "A 勝利",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -21072,7 +21321,7 @@
               "strokeWidth": {
                 "bottom": 1
               },
-              "gap": 20,
+              "gap": 24,
               "padding": [
                 12,
                 8
@@ -21134,243 +21383,6 @@
                       "name": "Winner",
                       "fill": "#D9A46E",
                       "content": "B 勝利",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 11,
-                      "fontWeight": "600"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "F3DwVa",
-              "name": "Entry#2",
-              "width": "fill_container",
-              "stroke": "#FFFFFF14",
-              "strokeWidth": {
-                "bottom": 1
-              },
-              "gap": 20,
-              "padding": [
-                12,
-                8
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "R5xbC",
-                  "name": "NumCol",
-                  "width": 32,
-                  "layout": "vertical",
-                  "gap": 2,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "V7FMn6",
-                      "name": "Num",
-                      "fill": "#9BA1AC",
-                      "content": "#2",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 12,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "text",
-                      "id": "IahMp",
-                      "name": "Date",
-                      "fill": "#5B616B",
-                      "content": "6/8",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 10,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "qZ7OB",
-                  "name": "Content",
-                  "width": "fill_container",
-                  "gap": 12,
-                  "justifyContent": "space_between",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "qLXbH",
-                      "name": "Title",
-                      "fill": "#F2F4F7",
-                      "content": "CTA ボタン色テスト",
-                      "fontFamily": "Geist",
-                      "fontSize": 13,
-                      "fontWeight": "500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "mIO8s",
-                      "name": "Winner",
-                      "fill": "#6E78D9",
-                      "content": "A 勝利",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 11,
-                      "fontWeight": "600"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "VIKXL",
-              "name": "Entry#3",
-              "width": "fill_container",
-              "stroke": "#FFFFFF14",
-              "strokeWidth": {
-                "bottom": 1
-              },
-              "gap": 20,
-              "padding": [
-                12,
-                8
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "kjNtj",
-                  "name": "NumCol",
-                  "width": 32,
-                  "layout": "vertical",
-                  "gap": 2,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "jDlUN",
-                      "name": "Num",
-                      "fill": "#9BA1AC",
-                      "content": "#3",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 12,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "text",
-                      "id": "CqzmO",
-                      "name": "Date",
-                      "fill": "#5B616B",
-                      "content": "6/14",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 10,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "Lo6ew",
-                  "name": "Content",
-                  "width": "fill_container",
-                  "gap": 12,
-                  "justifyContent": "space_between",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "B9xHzk",
-                      "name": "Title",
-                      "fill": "#F2F4F7",
-                      "content": "レイアウト 2カラム vs 1カラム",
-                      "fontFamily": "Geist",
-                      "fontSize": 13,
-                      "fontWeight": "500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "aaECu",
-                      "name": "Winner",
-                      "fill": "#D9A46E",
-                      "content": "B 勝利",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 11,
-                      "fontWeight": "600"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "r8aSyR",
-              "name": "Entry#4",
-              "width": "fill_container",
-              "stroke": "#FFFFFF14",
-              "strokeWidth": {
-                "bottom": 1
-              },
-              "gap": 20,
-              "padding": [
-                12,
-                8
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "i6eSbE",
-                  "name": "NumCol",
-                  "width": 32,
-                  "layout": "vertical",
-                  "gap": 2,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "A1bGT",
-                      "name": "Num",
-                      "fill": "#9BA1AC",
-                      "content": "#4",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 12,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "text",
-                      "id": "xkYT5",
-                      "name": "Date",
-                      "fill": "#5B616B",
-                      "content": "6/20",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 10,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "Ucsib",
-                  "name": "Content",
-                  "width": "fill_container",
-                  "gap": 12,
-                  "justifyContent": "space_between",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "p5lfr",
-                      "name": "Title",
-                      "fill": "#F2F4F7",
-                      "content": "ヘッドコピー改善",
-                      "fontFamily": "Geist",
-                      "fontSize": 13,
-                      "fontWeight": "500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "XMGA3",
-                      "name": "Winner",
-                      "fill": "#6E78D9",
-                      "content": "A 勝利",
                       "fontFamily": "Geist Mono",
                       "fontSize": 11,
                       "fontWeight": "600"

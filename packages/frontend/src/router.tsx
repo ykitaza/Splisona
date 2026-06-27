@@ -10,6 +10,8 @@ import { TestInputPage } from './pages/TestInputPage';
 import { TestRunningPage } from './pages/TestRunningPage';
 import { TestReportPage } from './pages/TestReportPage';
 import { TestListPage } from './pages/TestListPage';
+import { ProjectListPage } from './pages/ProjectListPage';
+import { ProjectDetailPage } from './pages/ProjectDetailPage';
 
 export const routeConfig = [
   { path: '/signin', element: <SignInPage /> },
@@ -26,6 +28,8 @@ export const routeConfig = [
       { path: '/tests/:id/running', element: <TestRunningPage /> },
       { path: '/tests/:id/report', element: <TestReportPage /> },
       { path: '/results', element: <TestListPage /> },
+      { path: '/projects', element: <ProjectListPage /> },
+      { path: '/projects/:id', element: <ProjectDetailPage /> },
     ],
   },
 ];

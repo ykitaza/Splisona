@@ -4,7 +4,8 @@ import type { PersonaRepository } from "../../domain/ports/persona-repository.js
 import type { ABTestRepository } from "../../domain/ports/abtest-repository.js";
 import type { EvaluationRepository } from "../../domain/ports/evaluation-repository.js";
 import type { SettingsRepository } from "../../domain/ports/settings-repository.js";
-import type { Persona, ABTest, Evaluation, SettingsRecord } from "../../domain/types.js";
+import type { ProjectRepository } from "../../domain/ports/project-repository.js";
+import type { Persona, ABTest, Evaluation, SettingsRecord, Project } from "../../domain/types.js";
 
 const DATA_DIR = process.env.CHORUS_DATA_DIR ?? "/tmp/chorus-data";
 mkdirSync(DATA_DIR, { recursive: true });
@@ -111,6 +112,36 @@ export class MemoryEvaluationRepository implements EvaluationRepository {
   async removeAllByTest(testId: string): Promise<void> {
     this.store.delete(testId);
     this.flush();
+  }
+}
+
+export class MemoryProjectRepository implements ProjectRepository {
+  private store: Map<string, Project>;
+
+  constructor() {
+    const entries = loadJson<[string, Project][]>("projects", []);
+    this.store = new Map(entries);
+  }
+
+  private flush() { saveJson("projects", [...this.store.entries()]); }
+
+  async findAllByUser(userId: string): Promise<Project[]> {
+    return [...this.store.values()].filter((p) => p.userId === userId);
+  }
+
+  async findById(userId: string, projectId: string): Promise<Project | undefined> {
+    const p = this.store.get(projectId);
+    return p?.userId === userId ? p : undefined;
+  }
+
+  async save(project: Project): Promise<void> {
+    this.store.set(project.projectId, project);
+    this.flush();
+  }
+
+  async remove(userId: string, projectId: string): Promise<void> {
+    const p = this.store.get(projectId);
+    if (p?.userId === userId) { this.store.delete(projectId); this.flush(); }
   }
 }
 

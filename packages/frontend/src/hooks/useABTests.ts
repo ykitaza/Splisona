@@ -24,5 +24,9 @@ export function useABTests() {
     setTests((prev) => prev.filter((t) => !ids.includes(t.testId)));
   }, []);
 
-  return { tests, isLoading, error, deleteTest, deleteTests };
+  const refresh = useCallback(() => {
+    listTests().then(setTests);
+  }, []);
+
+  return { tests, isLoading, error, deleteTest, deleteTests, refresh };
 }

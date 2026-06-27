@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { ImageLightbox } from '../ImageLightbox';
+
 export function hashSeed(seed: string): number {
   let h = 0;
   for (let i = 0; i < seed.length; i++) {
@@ -18,9 +21,26 @@ export function getNodeColor(seed: string): string {
 interface PersonaNodeProps {
   seed: string;
   size?: number;
+  avatarUrl?: string;
 }
 
-export function PersonaNode({ seed, size = 44 }: PersonaNodeProps) {
+export function PersonaNode({ seed, size = 44, avatarUrl }: PersonaNodeProps) {
+  const [lightbox, setLightbox] = useState(false);
+  if (avatarUrl) {
+    return (
+      <>
+        {lightbox && <ImageLightbox src={avatarUrl} onClose={() => setLightbox(false)} />}
+        <img
+          src={avatarUrl}
+          alt={`${seed} のアバター`}
+          width={size}
+          height={size}
+          style={{ objectFit: 'cover', borderRadius: size * 0.2, cursor: 'pointer' }}
+          onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
+        />
+      </>
+    );
+  }
   const color = PALETTE[hashSeed(seed) % PALETTE.length];
 
   const grid = 5;

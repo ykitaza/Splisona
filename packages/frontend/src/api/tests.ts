@@ -46,6 +46,10 @@ export function executeTest(id: string): Promise<{ started: true }> {
   return apiRequest(`/tests/${id}/execute`, { method: 'POST' });
 }
 
+export function cloneTest(id: string): Promise<ABTest> {
+  return apiRequest(`/tests/${id}/clone`, { method: 'POST' });
+}
+
 export function abortTest(id: string): Promise<{ aborted: boolean }> {
   return apiRequest(`/tests/${id}/abort`, { method: 'POST' });
 }

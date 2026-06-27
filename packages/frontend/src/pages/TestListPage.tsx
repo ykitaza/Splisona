@@ -1,18 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
-import { Search, ChevronDown, Plus, Trash2, Check } from 'lucide-react';
+import { Search, ChevronDown, Plus, Trash2, Check, MoreVertical, Pencil, FolderPlus, FolderMinus } from 'lucide-react';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
-import { ABTEST_STATUS_LABELS } from '../types';
-import type { ABTest, ABTestStatus } from '../types';
+import { listProjects, addTestToProject, removeTestFromProject } from '../api/projects';
+import { updateTest } from '../api/tests';
+import type { ABTest, Project } from '../types';
 import { testDraft, type DesignSideData } from '../lib/testDraft';
-
-const STATUS_COLORS: Record<ABTestStatus, string> = {
-  draft: '#5B616B',
-  running: '#6E78D9',
-  completed: '#54B587',
-  failed: '#E06A6A',
-};
 
 function relativeDate(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -38,17 +32,149 @@ function restoreSide(input: ABTest['designAInput']): DesignSideData | null {
   return null;
 }
 
+function TestRowMenu({
+  testId,
+  parentProject,
+  availableProjects,
+  onRename,
+  onAddToProject,
+  onRemoveFromProject,
+  onDelete,
+}: {
+  testId: string;
+  parentProject: Project | null;
+  availableProjects: Project[];
+  onRename: () => void;
+  onAddToProject: (projectId: string) => void;
+  onRemoveFromProject: () => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [subOpen, setSubOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setSubOpen(false); }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); setSubOpen(false); }}
+        className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-surface"
+      >
+        <MoreVertical size={15} style={{ color: '#9BA1AC' }} />
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1 bg-surface border border-hairline rounded-lg overflow-visible z-30"
+          style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 200 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onRename(); }}
+            className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+            style={{ gap: 10, color: '#E1E4EA' }}
+          >
+            <Pencil size={14} style={{ color: '#9BA1AC' }} />
+            名前を変更
+          </button>
+
+          {parentProject ? (
+            <button
+              type="button"
+              onClick={() => { setOpen(false); onRemoveFromProject(); }}
+              className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+              style={{ gap: 10, color: '#E1E4EA' }}
+            >
+              <FolderMinus size={14} style={{ color: '#9BA1AC' }} />
+              プロジェクトから削除
+            </button>
+          ) : availableProjects.length > 0 ? (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSubOpen((o) => !o)}
+                className="flex items-center justify-between w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+                style={{ color: '#E1E4EA' }}
+              >
+                <span className="flex items-center" style={{ gap: 10 }}>
+                  <FolderPlus size={14} style={{ color: '#9BA1AC' }} />
+                  プロジェクトに追加
+                </span>
+                <ChevronDown size={12} style={{ color: '#5B616B', transform: 'rotate(-90deg)' }} />
+              </button>
+              {subOpen && (
+                <div
+                  className="absolute right-full top-0 mr-1 bg-surface border border-hairline rounded-lg overflow-hidden"
+                  style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 180 }}
+                >
+                  {availableProjects.map((p) => (
+                    <button
+                      key={p.projectId}
+                      type="button"
+                      onClick={() => { setOpen(false); setSubOpen(false); onAddToProject(p.projectId); }}
+                      className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised truncate"
+                      style={{ color: '#E1E4EA' }}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          <div style={{ height: 1, background: '#FFFFFF14', margin: '0 12px' }} />
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onDelete(); }}
+            className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+            style={{ gap: 10, color: '#E5484D' }}
+          >
+            <Trash2 size={14} style={{ color: '#E5484D' }} />
+            削除
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type PendingDelete = { type: 'single'; id: string } | { type: 'bulk' };
 
 export function TestListPage() {
   const navigate = useNavigate();
-  const { tests, isLoading, deleteTest, deleteTests } = useABTests();
+  const { tests, isLoading, deleteTest, deleteTests, refresh } = useABTests();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+
+  useEffect(() => {
+    listProjects().then(setAllProjects);
+  }, []);
+
+  function findParentProject(testId: string): Project | null {
+    return allProjects.find((p) => p.testIds.includes(testId)) ?? null;
+  }
+
+  async function refreshProjects() {
+    const projects = await listProjects();
+    setAllProjects(projects);
+  }
 
   const filtered = useMemo(() => {
     const sorted = [...tests].sort(
@@ -213,26 +339,26 @@ export function TestListPage() {
           <div className="flex items-center" style={{ gap: 32, padding: '10px 8px', borderBottom: '1px solid #FFFFFF14' }}>
             {selectionMode && <div style={{ width: 16 }} />}
             <span className="font-mono text-text-lo flex-1" style={{ fontSize: 10, letterSpacing: 0.5 }}>テスト名</span>
-            <span className="font-mono text-text-lo" style={{ fontSize: 10, letterSpacing: 0.5, width: 72, textAlign: 'center' }}>人数</span>
-            <span className="font-mono text-text-lo" style={{ fontSize: 10, letterSpacing: 0.5, width: 80 }}>ステータス</span>
             <span className="font-mono text-text-lo" style={{ fontSize: 10, letterSpacing: 0.5, width: 96, textAlign: 'right' }}>日時</span>
           </div>
           {filtered.map((test) => {
             const isChecked = selected.has(test.testId);
-            const statusColor = STATUS_COLORS[test.status] ?? '#5B616B';
+            const parent = findParentProject(test.testId);
+            const isRenaming = renamingId === test.testId;
             return (
               <div
                 key={test.testId}
                 role="button"
                 tabIndex={0}
-                onClick={() => handleRowClick(test)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleRowClick(test); }}
-                className="flex items-center cursor-pointer transition-colors hover:bg-raised"
+                onClick={() => { if (!isRenaming) handleRowClick(test); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !isRenaming) handleRowClick(test); }}
+                className="group flex items-center cursor-pointer transition-[background-color] duration-150 hover:bg-[#1C1F26]"
                 style={{
-                  gap: 32,
-                  padding: '16px 8px',
-                  borderBottom: '1px solid #FFFFFF14',
-                  background: isChecked ? '#6E78D926' : 'transparent',
+                  gap: 16,
+                  padding: '12px 12px',
+                  marginInline: -4,
+                  borderRadius: 10,
+                  background: isChecked ? '#6E78D926' : undefined,
                 }}
               >
                 {selectionMode && (
@@ -249,10 +375,56 @@ export function TestListPage() {
                     {isChecked && <Check size={10} color="#FFFFFF" />}
                   </div>
                 )}
-                <span className="font-sans font-medium flex-1 min-w-0 truncate" style={{ fontSize: 14, color: '#F2F4F7' }}>{test.title}</span>
-                <span className="font-mono text-text-mid flex-shrink-0" style={{ fontSize: 13, width: 72, textAlign: 'center' }}>{test.personaIds?.length ?? 0}</span>
-                <span className="font-mono flex-shrink-0" style={{ fontSize: 12, width: 80, color: statusColor }}>{ABTEST_STATUS_LABELS[test.status]}</span>
+                <div className="flex flex-col flex-1 min-w-0" style={{ gap: 2 }}>
+                  {isRenaming ? (
+                    <input
+                      type="text"
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter' && renameValue.trim()) {
+                          await updateTest(test.testId, { title: renameValue.trim() });
+                          refresh();
+                          setRenamingId(null);
+                        }
+                        if (e.key === 'Escape') setRenamingId(null);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      autoFocus
+                      className="bg-raised border border-hairline rounded-md outline-none font-sans text-text-hi transition-colors focus:border-accent"
+                      style={{ padding: '4px 10px', fontSize: 14, width: 320 }}
+                    />
+                  ) : (
+                    <span className="font-sans font-medium min-w-0 truncate" style={{ fontSize: 14, color: '#F2F4F7' }}>{test.title}</span>
+                  )}
+                  {parent && !isRenaming && (
+                    <span className="font-sans text-text-lo truncate opacity-0 group-hover:opacity-100 transition-opacity" style={{ fontSize: 11 }}>
+                      {parent.name}
+                    </span>
+                  )}
+                </div>
                 <span className="font-mono text-text-lo flex-shrink-0" style={{ fontSize: 13, width: 96, textAlign: 'right' }}>{relativeDate(test.createdAt)}</span>
+                {!selectionMode && (
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <TestRowMenu
+                      testId={test.testId}
+                      parentProject={parent}
+                      availableProjects={allProjects.filter((p) => !p.testIds.includes(test.testId))}
+                      onRename={() => { setRenameValue(test.title); setRenamingId(test.testId); }}
+                      onAddToProject={async (projectId) => {
+                        await addTestToProject(projectId, test.testId);
+                        refreshProjects();
+                      }}
+                      onRemoveFromProject={async () => {
+                        if (parent) {
+                          await removeTestFromProject(parent.projectId, test.testId);
+                          refreshProjects();
+                        }
+                      }}
+                      onDelete={() => setPendingDelete({ type: 'single', id: test.testId })}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}

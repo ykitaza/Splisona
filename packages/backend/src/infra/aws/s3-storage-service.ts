@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, CopyObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { StorageService } from "../../domain/ports/storage-service.js";
 import type { UploadUrlResult } from "../../domain/types.js";
@@ -36,5 +36,15 @@ export class S3StorageService implements StorageService {
       return `${this.endpoint}/${this.bucket}/${key}`;
     }
     return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+  }
+
+  async copyObject(sourceKey: string, destKey: string): Promise<void> {
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: this.bucket,
+        CopySource: `${this.bucket}/${sourceKey}`,
+        Key: destKey,
+      })
+    );
   }
 }

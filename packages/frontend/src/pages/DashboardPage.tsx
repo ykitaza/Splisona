@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
 import { usePersonas } from '../hooks/usePersonas';
-import { useReportSummaries } from '../hooks/useReportSummaries';
 import { FlaskConical, Users, CalendarCheck, ArrowRight, Plus } from 'lucide-react';
 import { ABTestTable } from '../components/ABTestTable';
 
@@ -10,11 +9,6 @@ export function DashboardPage() {
   const { tests, isLoading: testsLoading } = useABTests();
   const { personas } = usePersonas();
   const recentTests = useMemo(() => tests.slice(0, 10), [tests]);
-  const completedIds = useMemo(
-    () => recentTests.filter((t) => t.status === 'completed').map((t) => t.testId),
-    [recentTests]
-  );
-  const summaries = useReportSummaries(completedIds);
 
   if (testsLoading) {
     return (
@@ -131,7 +125,6 @@ export function DashboardPage() {
           <ABTestTable
             tests={recentTests}
             mode="dashboard"
-            summaries={summaries}
           />
         )}
       </div>

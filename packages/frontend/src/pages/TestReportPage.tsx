@@ -1,18 +1,21 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Check } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Check, Plus, Pencil, FolderPlus, FolderMinus, Trash2 } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { RadarChart } from '../components/report/RadarChart';
 import { AttributeHeatmap } from '../components/report/AttributeHeatmap';
 import { MethodPopover } from '../components/report/Popovers';
 import { HelpDot } from '../components/report/HelpDot';
-import { getReport, executeTest, exportTest } from '../api/tests';
+import { getReport, cloneTest, exportTest, updateTest, deleteTest } from '../api/tests';
+import { listProjects, addTestToProject, removeTestFromProject } from '../api/projects';
 import { getConfig } from '../api/settings';
 import { usePersonas } from '../hooks/usePersonas';
 import { PersonaNode } from '../components/persona/PersonaNode';
+import { getAvatarUrl } from '../api/personas';
 import { API_BASE } from '../api/client';
+import { testDraft } from '../lib/testDraft';
 import { PERSONA_TYPE_LABELS } from '../types';
-import type { ReportResponse, EvaluationScores, DesignInput, Persona } from '../types';
+import type { ReportResponse, EvaluationScores, DesignInput, Persona, Project } from '../types';
 
 const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
   usability: '使いやすさ',
@@ -48,6 +51,123 @@ function SegmentBar({ countA, countB, countNone }: { countA: number; countB: num
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+function TestTitleMenu({
+  title,
+  parentProject,
+  allProjects,
+  onRename,
+  onAddToProject,
+  onRemoveFromProject,
+  onDelete,
+}: {
+  title: string;
+  parentProject: Project | null;
+  allProjects: Project[];
+  onRename: () => void;
+  onAddToProject: (projectId: string) => void;
+  onRemoveFromProject: () => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [projectSubOpen, setProjectSubOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setProjectSubOpen(false); }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-flex">
+      <button
+        type="button"
+        onClick={() => { setOpen((o) => !o); setProjectSubOpen(false); }}
+        className="flex items-center transition-colors hover:text-text-hi"
+        style={{ gap: 4, color: '#F2F4F7' }}
+      >
+        <span className="font-sans font-semibold" style={{ fontSize: 15 }}>{title}</span>
+        <ChevronDown size={14} style={{ color: '#5B616B' }} />
+      </button>
+      {open && (
+        <div
+          className="absolute left-0 top-full mt-1 bg-surface border border-hairline rounded-lg overflow-visible z-30"
+          style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 220 }}
+        >
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onRename(); }}
+            className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+            style={{ gap: 10, color: '#E1E4EA' }}
+          >
+            <Pencil size={14} style={{ color: '#9BA1AC' }} />
+            名前を変更
+          </button>
+
+          {parentProject ? (
+            <button
+              type="button"
+              onClick={() => { setOpen(false); onRemoveFromProject(); }}
+              className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+              style={{ gap: 10, color: '#E1E4EA' }}
+            >
+              <FolderMinus size={14} style={{ color: '#9BA1AC' }} />
+              プロジェクトから削除
+            </button>
+          ) : (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setProjectSubOpen((o) => !o)}
+                className="flex items-center justify-between w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+                style={{ color: '#E1E4EA' }}
+              >
+                <span className="flex items-center" style={{ gap: 10 }}>
+                  <FolderPlus size={14} style={{ color: '#9BA1AC' }} />
+                  プロジェクトに追加
+                </span>
+                <ChevronDown size={12} style={{ color: '#5B616B', transform: 'rotate(-90deg)' }} />
+              </button>
+              {projectSubOpen && allProjects.length > 0 && (
+                <div
+                  className="absolute left-full top-0 ml-1 bg-surface border border-hairline rounded-lg overflow-hidden"
+                  style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 180 }}
+                >
+                  {allProjects.map((p) => (
+                    <button
+                      key={p.projectId}
+                      type="button"
+                      onClick={() => { setOpen(false); setProjectSubOpen(false); onAddToProject(p.projectId); }}
+                      className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised truncate"
+                      style={{ color: '#E1E4EA' }}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ height: 1, background: '#FFFFFF14', margin: '0 12px' }} />
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onDelete(); }}
+            className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+            style={{ gap: 10, color: '#E5484D' }}
+          >
+            <Trash2 size={14} style={{ color: '#E5484D' }} />
+            削除
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -214,20 +334,41 @@ export function TestReportPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [attrPopoverId, setAttrPopoverId] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string>('');
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [parentProject, setParentProject] = useState<Project | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
   const { personas } = usePersonas();
 
   useEffect(() => {
     if (!id) return;
     getReport(id).then(setReport);
     getConfig().then((c) => setModelId(c.modelId));
+    listProjects().then((projects) => {
+      setAllProjects(projects);
+      setParentProject(projects.find((p) => p.testIds.includes(id)) ?? null);
+    });
   }, [id]);
+
+  function designInputToSideData(input: DesignInput) {
+    if (input.inputType === 'figma_url') return { inputType: 'figma_url' as const, url: input.figmaUrl ?? '', imageKey: input.imageKey ?? '' };
+    if (input.inputType === 'site_url') return { inputType: 'site_url' as const, url: input.siteUrl ?? '', imageKey: input.imageKey ?? '' };
+    return { inputType: 'image_upload' as const, file: new File([], ''), imageKey: input.imageKey ?? '' };
+  }
 
   async function handleRerun() {
     if (!id) return;
     setIsRerunning(true);
     try {
-      await executeTest(id);
-      navigate(`/tests/${id}/running`);
+      const cloned = await cloneTest(id);
+      testDraft.resume({
+        title: '',
+        sideA: designInputToSideData(cloned.designAInput),
+        sideB: designInputToSideData(cloned.designBInput),
+        personaIds: cloned.personaIds,
+        resumeId: cloned.testId,
+      });
+      navigate('/tests/new');
     } finally {
       setIsRerunning(false);
     }
@@ -262,8 +403,85 @@ export function TestReportPage() {
 
   return (
     <div className="flex flex-col p-8" style={{ gap: 32 }}>
+      {/* Breadcrumb */}
+      <div className="flex items-center" style={{ gap: 10 }}>
+        {parentProject ? (
+          <>
+            <Link
+              to={`/projects/${parentProject.projectId}`}
+              className="text-text-mid font-sans font-medium text-sm hover:text-text-hi transition-colors"
+            >
+              {parentProject.name}
+            </Link>
+            <span className="text-text-lo font-sans" style={{ fontSize: 14 }}>/</span>
+          </>
+        ) : null}
+        <TestTitleMenu
+          title={abTest.title || '無題のテスト'}
+          parentProject={parentProject}
+          allProjects={allProjects.filter((p) => !p.testIds.includes(id!))}
+          onRename={() => { setRenameValue(abTest.title); setIsRenaming(true); }}
+          onAddToProject={async (projectId) => {
+            await addTestToProject(projectId, id!);
+            const projects = await listProjects();
+            setAllProjects(projects);
+            setParentProject(projects.find((p) => p.testIds.includes(id!)) ?? null);
+          }}
+          onRemoveFromProject={async () => {
+            if (parentProject) {
+              await removeTestFromProject(parentProject.projectId, id!);
+              const projects = await listProjects();
+              setAllProjects(projects);
+              setParentProject(null);
+            }
+          }}
+          onDelete={async () => {
+            await deleteTest(id!);
+            navigate(parentProject ? `/projects/${parentProject.projectId}` : '/results', { replace: true });
+          }}
+        />
+      </div>
+
+      {/* Rename inline */}
+      {isRenaming && (
+        <div className="flex items-center" style={{ gap: 8, marginTop: -16 }}>
+          <input
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={async (e) => {
+              if (e.key === 'Enter' && renameValue.trim()) {
+                await updateTest(id!, { title: renameValue.trim() });
+                setReport((r) => r ? { ...r, abTest: { ...r.abTest, title: renameValue.trim() } } : r);
+                setIsRenaming(false);
+              }
+              if (e.key === 'Escape') setIsRenaming(false);
+            }}
+            autoFocus
+            className="bg-raised border border-hairline rounded-md outline-none font-sans text-text-hi transition-colors focus:border-accent"
+            style={{ padding: '6px 12px', fontSize: 14, width: 300 }}
+          />
+          <button
+            type="button"
+            onClick={async () => {
+              if (renameValue.trim()) {
+                await updateTest(id!, { title: renameValue.trim() });
+                setReport((r) => r ? { ...r, abTest: { ...r.abTest, title: renameValue.trim() } } : r);
+              }
+              setIsRenaming(false);
+            }}
+            className="font-sans text-sm text-accent font-medium"
+          >
+            保存
+          </button>
+          <button type="button" onClick={() => setIsRenaming(false)} className="font-sans text-sm text-text-lo">
+            キャンセル
+          </button>
+        </div>
+      )}
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" style={{ marginTop: -16 }}>
         <div className="flex flex-col" style={{ gap: 7 }}>
           <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.5 }}>
             PHASE 2 · RESULTS
@@ -272,7 +490,6 @@ export function TestReportPage() {
             結果レポート
           </h1>
           <div className="flex items-center" style={{ gap: 9 }}>
-            <span className="text-text-mid font-sans" style={{ fontSize: 13 }}>{abTest.title}</span>
             <span className="text-text-lo font-mono text-xs">·</span>
             <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.3 }}>{summary.totalPersonas} ペルソナ</span>
             <span className="text-text-lo font-mono text-xs">·</span>
@@ -299,7 +516,7 @@ export function TestReportPage() {
             style={{ gap: 8, borderRadius: 10, padding: '10px 15px', fontSize: 13 }}
           >
             <RefreshCw size={15} />
-            再実行
+            条件を変えて再テスト
           </button>
         </div>
       </div>
@@ -431,7 +648,7 @@ export function TestReportPage() {
                 aria-expanded={isExpanded}
               >
                 <div className="relative flex items-center" style={{ width: 250, gap: 11 }}>
-                  <PersonaNode seed={ev.personaId} size={20} />
+                  <PersonaNode seed={ev.personaId} size={20} avatarUrl={personas.find((p) => p.personaId === ev.personaId)?.avatarImageKey ? getAvatarUrl(personas.find((p) => p.personaId === ev.personaId)!.avatarImageKey!) : undefined} />
                   <div className="flex flex-col" style={{ gap: 2 }}>
                     <span
                       role="button"
@@ -518,6 +735,24 @@ export function TestReportPage() {
       <p className="text-text-lo font-sans text-xs">
         ペルソナ名クリックで属性、行クリックで使用モデル・プロンプト・各軸スコアを表示。見出しの ? で生成元を確認できます。
       </p>
+
+      {/* Footer navigation */}
+      <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--color-hairline)' }}>
+        <Link
+          to={parentProject ? `/projects/${parentProject.projectId}` : '/results'}
+          className="text-text-lo font-sans text-sm hover:text-text-mid transition-colors"
+        >
+          ← {parentProject ? parentProject.name : 'テスト一覧'}に戻る
+        </Link>
+        <Link
+          to="/tests/new"
+          className="flex items-center border border-hairline text-text-hi font-sans text-sm font-medium transition-colors hover:bg-raised"
+          style={{ gap: 8, borderRadius: 8, padding: '8px 16px' }}
+        >
+          <Plus size={14} />
+          新しいテストを作成
+        </Link>
+      </div>
     </div>
   );
 }

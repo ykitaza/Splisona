@@ -102,6 +102,46 @@ export class ABTestUseCases {
     return this.storageService.getUploadUrl(imageKey, contentType);
   }
 
+  async clone(userId: string, testId: string): Promise<ABTest> {
+    const existing = await this.testRepo.findById(userId, testId);
+    if (!existing) throw new NotFoundError("ABTest");
+
+    const newTestId = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    let newImageKeyA = existing.designAImageKey;
+    let newImageKeyB = existing.designBImageKey;
+
+    if (this.storageService.copyObject) {
+      if (existing.designAImageKey) {
+        const ext = existing.designAImageKey.split('.').pop() ?? 'png';
+        newImageKeyA = `${userId}/${newTestId}/A.${ext}`;
+        await this.storageService.copyObject(existing.designAImageKey, newImageKeyA);
+      }
+      if (existing.designBImageKey) {
+        const ext = existing.designBImageKey.split('.').pop() ?? 'png';
+        newImageKeyB = `${userId}/${newTestId}/B.${ext}`;
+        await this.storageService.copyObject(existing.designBImageKey, newImageKeyB);
+      }
+    }
+
+    const cloned: ABTest = {
+      ...existing,
+      testId: newTestId,
+      status: "draft",
+      designAImageKey: newImageKeyA,
+      designBImageKey: newImageKeyB,
+      reasonSummaryA: undefined,
+      reasonSummaryB: undefined,
+      winnersReasonSummary: undefined,
+      reasonSummaryStatus: undefined,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await this.testRepo.save(cloned);
+    return cloned;
+  }
+
   async getProgress(userId: string, testId: string): Promise<{
     total: number; completed: number; failed: number; status: string;
   }> {

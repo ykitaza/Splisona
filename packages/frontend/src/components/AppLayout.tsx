@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Users, FlaskConical, FolderKanban, Plus, Settings, LogOut, ChevronsUpDown, Info, X, PanelLeft, PanelLeftClose } from 'lucide-react';
 import { signOut } from 'aws-amplify/auth';
 import { SettingsModal } from './SettingsModal';
+import { useUserProfile } from '../hooks/useUserProfile';
 
 const NAV_ITEMS = [
   { to: '/results', icon: FlaskConical, label: 'A/Bテスト' },
@@ -55,6 +56,7 @@ function AboutModal({ onClose }: { onClose: () => void }) {
 export function AppLayout() {
   const navigate = useNavigate();
   const localUserId = import.meta.env?.VITE_LOCAL_USER_ID as string | undefined;
+  const userProfile = useUserProfile();
   const [collapsed, setCollapsed] = useState(() => window.innerWidth < COLLAPSE_BREAKPOINT);
   const [menuOpen, setMenuOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -183,9 +185,8 @@ export function AppLayout() {
               }}
             >
               <div className="px-4 py-3 border-b border-hairline">
-                <p className="text-text-lo font-mono text-xs mb-0.5">private-user-mail@example.co.jp</p>
-                <p className="text-text-hi font-sans text-sm font-semibold">山田 太郎</p>
-                <p className="text-text-lo font-sans text-xs">デザイナー</p>
+                {userProfile.email && <p className="text-text-lo font-mono text-xs mb-0.5">{userProfile.email}</p>}
+                <p className="text-text-hi font-sans text-sm font-semibold">{userProfile.name}</p>
               </div>
               <button
                 type="button"
@@ -226,13 +227,13 @@ export function AppLayout() {
             }}
           >
             <div className="flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 bg-raised border border-hairline">
-              <span className="text-text-mid font-sans text-xs font-semibold">YK</span>
+              <span className="text-text-mid font-sans text-xs font-semibold">{userProfile.initials}</span>
             </div>
             {!collapsed && (
               <>
                 <div className="flex flex-col flex-1 text-left overflow-hidden" style={{ gap: 1 }}>
-                  <span className="text-text-hi font-sans text-sm font-medium whitespace-nowrap">山田 太郎</span>
-                  <span className="text-text-lo font-sans text-xs whitespace-nowrap">デザイナー</span>
+                  <span className="text-text-hi font-sans text-sm font-medium whitespace-nowrap">{userProfile.name}</span>
+                  {userProfile.email && <span className="text-text-lo font-sans text-xs whitespace-nowrap truncate">{userProfile.email}</span>}
                 </div>
                 <ChevronsUpDown size={14} className="text-text-lo flex-shrink-0" />
               </>

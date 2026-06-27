@@ -30,4 +30,13 @@ export class R2StorageService implements StorageService {
   getPreviewUrl(key: string): string {
     return `${this.workerUrl}/images/${key}`;
   }
+
+  async copyObject(sourceKey: string, destKey: string): Promise<void> {
+    const obj = await this.bucket.get(sourceKey) as { body?: ReadableStream; httpMetadata?: { contentType?: string } } | null;
+    if (obj?.body) {
+      await this.bucket.put(destKey, obj.body, {
+        httpMetadata: { contentType: obj.httpMetadata?.contentType ?? 'image/png' },
+      });
+    }
+  }
 }

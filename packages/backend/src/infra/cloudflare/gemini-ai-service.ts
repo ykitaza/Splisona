@@ -1,4 +1,5 @@
 import type { AIService, ConversationMessage, EvaluateDesignsParams } from "../../domain/ports/ai-service.js";
+import { personaTypeLabel } from "../../domain/types.js";
 import type { DraftResult, EvaluationInput, ReasonSummary } from "../../domain/types.js";
 
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -50,7 +51,7 @@ export class GeminiAIService implements AIService {
     const { persona, imageA, imageB, additionalInstruction } = params;
     const prompt = [
       `あなたは「${persona.displayName}」というペルソナです。`,
-      `タイプ: ${persona.type}`,
+      `タイプ: ${personaTypeLabel(persona.type)}`,
       persona.occupation ? `職業: ${persona.occupation}` : null,
       persona.freeText ? `詳細: ${persona.freeText}` : null,
       "",

@@ -39,7 +39,7 @@ describe('AttributeHeatmap', () => {
     const user = userEvent.setup();
     render(<AttributeHeatmap evaluations={evaluations} personas={personas} groupBy="type" />);
 
-    const bButton = screen.getByRole('button', { name: 'B 勝率' });
+    const bButton = screen.getByRole('button', { name: 'B スコア' });
     await user.click(bButton);
     expect(bButton).toHaveAttribute('aria-pressed', 'true');
   });

@@ -44,7 +44,7 @@ export function PersonaListPage() {
       (filter === 'default' && (p.source === 'default' || p.source === 'preset')) ||
       (filter === 'custom' && p.source !== 'default' && p.source !== 'preset');
     return matchQuery && matchFilter;
-  });
+  }).sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
 
   return (
     <div className="flex flex-col" style={{ padding: '48px 128px', gap: 32 }}>

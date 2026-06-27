@@ -3,12 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Check, Sparkles, Camera, ArrowUp, RotateCcw, Trash2, ChevronDown, Copy, ArrowLeft } from 'lucide-react';
 import { getPersona, updatePersona, deletePersona, generateDraft, sendInterviewMessage, uploadPersonaAvatar, getAvatarUrl } from '../api/personas';
 import { getApiErrorMessage } from '../api/client';
-import { PERSONA_TYPE_LABELS, type PersonaType, type Persona, type ConversationMessage } from '../types';
+import { PERSONA_TYPE_LABELS, PERSONA_TYPE_DESCRIPTIONS, type PersonaType, type Persona, type ConversationMessage } from '../types';
 import { PersonaNode, getNodeColor } from '../components/persona/PersonaNode';
 import { ChatBubble } from '../components/ui/ChatBubble';
 import { FieldSlider } from '../components/ui/FieldSlider';
 import { SegmentControl } from '../components/ui/SegmentControl';
 import { FieldSelect } from '../components/ui/FieldSelect';
+import { HelpDot } from '../components/report/HelpDot';
 
 const PERSONA_TYPES = Object.entries(PERSONA_TYPE_LABELS) as [PersonaType, string][];
 
@@ -23,7 +24,8 @@ function buildPromptPreview(fields: { displayName: string; type: string; age: st
   const lines: string[] = [];
   lines.push(`あなたは「${fields.displayName || '（名前未入力）'}」というペルソナです。`);
   const typeName = (PERSONA_TYPE_LABELS as Record<string, string>)[fields.type] ?? fields.type;
-  lines.push(`タイプ: ${typeName}`);
+  const typeDesc = (PERSONA_TYPE_DESCRIPTIONS as Record<string, string>)[fields.type];
+  lines.push(`タイプ: ${typeName}${typeDesc ? `（${typeDesc}）` : ''}`);
   if (fields.age) lines.push(`年齢: ${fields.age}歳`);
   if (fields.gender) lines.push(`性別: ${fields.gender}`);
   if (fields.occupation) lines.push(`職業: ${fields.occupation}`);
@@ -76,7 +78,7 @@ export function PersonaUnifiedPage() {
 
   const [persona, setPersona] = useState<Persona | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>('edit');
+  const [tab, setTab] = useState<Tab>('detail');
 
   // Edit state
   const [displayName, setDisplayName] = useState('');
@@ -262,20 +264,25 @@ export function PersonaUnifiedPage() {
             {(['detail', 'edit', 'interview'] as const).map((t) => {
               const label = t === 'detail' ? '詳細' : t === 'edit' ? '編集' : 'インタビュー';
               const isActive = tab === t;
+              const disabled = t === 'edit' && isDefault;
               return (
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setTab(t)}
+                  onClick={() => { if (!disabled) setTab(t); }}
+                  disabled={disabled}
                   className="font-sans transition-colors"
                   style={{
                     fontSize: 14,
                     fontWeight: isActive ? 600 : 400,
-                    color: isActive ? 'var(--color-text-hi)' : 'var(--color-text-mid)',
+                    color: disabled ? 'var(--color-text-lo)' : isActive ? 'var(--color-text-hi)' : 'var(--color-text-mid)',
                     borderBottom: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
                     paddingBottom: isActive ? 4 : 4,
                     marginBottom: -1,
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    opacity: disabled ? 0.5 : 1,
                   }}
+                  title={disabled ? 'デフォルトペルソナは編集できません' : undefined}
                 >
                   {label}
                 </button>
@@ -313,7 +320,13 @@ export function PersonaUnifiedPage() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label htmlFor="type" className="text-text-mid font-sans text-sm">タイプ</label>
+                  <div className="flex items-center gap-1.5">
+                    <label htmlFor="type" className="text-text-mid font-sans text-sm">タイプ</label>
+                    <HelpDot
+                      title={(PERSONA_TYPE_LABELS as Record<string, string>)[type] ?? type}
+                      content={(PERSONA_TYPE_DESCRIPTIONS as Record<string, string>)[type] ?? ''}
+                    />
+                  </div>
                   <FieldSelect
                     id="type"
                     value={type}
@@ -551,11 +564,14 @@ export function PersonaUnifiedPage() {
       {/* Right column: Persona identity */}
       <div className="flex flex-col gap-4 flex-shrink-0 p-6 border-l border-hairline overflow-y-auto" style={{ width: 320 }}>
         <div className="rounded-[24px] overflow-hidden flex-shrink-0 self-center">
-          <PersonaNode seed={persona.personaId} size={96} />
+          <PersonaNode seed={persona.personaId} size={96} avatarUrl={avatarImageKey ? getAvatarUrl(avatarImageKey) : undefined} />
         </div>
         <div className="flex flex-col gap-1">
           <span className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>{displayName || persona.displayName}</span>
-          <span className="text-text-mid font-sans text-sm">{(PERSONA_TYPE_LABELS as Record<string, string>)[type] ?? type}</span>
+          <span className="flex items-center gap-1.5 text-text-mid font-sans text-sm">
+            {(PERSONA_TYPE_LABELS as Record<string, string>)[type] ?? type}
+            <HelpDot content={(PERSONA_TYPE_DESCRIPTIONS as Record<string, string>)[type] ?? ''} />
+          </span>
         </div>
         {freeText && (
           <p className="text-text-mid font-sans text-sm" style={{ lineHeight: 1.6 }}>{freeText}</p>

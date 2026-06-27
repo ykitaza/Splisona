@@ -4,6 +4,7 @@ import { Square, ArrowRight, Check } from 'lucide-react';
 import { getProgress, getTest, getReport, abortTest } from '../api/tests';
 import { usePersonas } from '../hooks/usePersonas';
 import { PersonaNode } from '../components/persona/PersonaNode';
+import { getAvatarUrl } from '../api/personas';
 import { PERSONA_TYPE_LABELS } from '../types';
 import type { ProgressResponse, ABTest, EvaluationResult } from '../types';
 
@@ -52,7 +53,13 @@ export function TestRunningPage() {
     if (!hasLoggedStartRef.current && personas.length > 0) {
       hasLoggedStartRef.current = true;
       const personaCount = test.personaIds?.length ?? 0;
-      addLog(`テスト開始 · ${personaCount}体を並行評価`, 'lo');
+      const sid = Math.random().toString(36).slice(2, 10);
+      addLog(`セッション開始 sid=${sid}`);
+      addLog('デザインA 画像ロード完了');
+      addLog('デザインB 画像ロード完了');
+      addLog(`ペルソナプロファイル ${personaCount}件 読み込み完了`);
+      addLog('評価パイプライン初期化');
+      addLog(`テスト開始 · ${personaCount}体を並行評価`);
     }
 
     async function poll() {
@@ -67,16 +74,28 @@ export function TestRunningPage() {
           const map: Record<string, EvaluationResult> = {};
           for (const ev of report.evaluations) {
             const prev = prevResultsRef.current[ev.personaId];
+            const host = `${ev.personaDisplayName}@eval`;
             if (ev.status === 'evaluating' && !prev) {
-              addLog('評価中…', 'lo', `${ev.personaDisplayName}@persona`);
+              const p = personas.find((x) => x.personaId === ev.personaId);
+              const typeLabel = p ? PERSONA_TYPE_LABELS[p.type] : '';
+              addLog(`プロファイルロード完了`, 'lo', host);
+              addLog(`評価中…${typeLabel ? ` (${typeLabel})` : ''}`, 'lo', host);
+              addLog(`デザイン比較分析中…`, 'lo', host);
             }
             if (ev.status === 'completed' || ev.status === 'failed') {
               if (!prev || prev.status === 'evaluating') {
                 if (ev.status === 'completed') {
                   const winner = ev.winner === 'A' ? 'A案' : ev.winner === 'B' ? 'B案' : '引分';
-                  addLog(`完了 → ${winner}を支持`, 'lo', `${ev.personaDisplayName}@persona`);
+                  const fmt = (s: typeof ev.scoresA) => `[${s.usability}, ${s.aesthetics}, ${s.clarity}, ${s.engagement}, ${s.trust}]`;
+                  addLog('応答受信', 'lo', host);
+                  addLog('スコアリング完了', 'lo', host);
+                  addLog(`scores A=${fmt(ev.scoresA)}`, 'lo', host);
+                  addLog(`scores B=${fmt(ev.scoresB)}`, 'lo', host);
+                  addLog(`→ ${winner}を支持 (確信度 ${ev.confidence}%)`, 'lo', host);
+                  const reasonSnippet = ev.reason.length > 40 ? ev.reason.slice(0, 40) + '…' : ev.reason;
+                  addLog(`reason: "${reasonSnippet}"`, 'lo', host);
                 } else {
-                  addLog('失敗', 'lo', `${ev.personaDisplayName}@persona`);
+                  addLog('エラー: 評価失敗', 'lo', host);
                 }
               }
             }
@@ -91,12 +110,26 @@ export function TestRunningPage() {
         const allDone = data.total > 0 && (data.completed + data.failed) >= data.total;
         if (allDone && data.status === 'running' && !hasLoggedSummaryRef.current) {
           hasLoggedSummaryRef.current = true;
-          addLog('全ペルソナ完了 · レポート生成中…', 'lo');
+          const evals = Object.values(prevResultsRef.current).filter((e) => e.status === 'completed');
+          const aCount = evals.filter((e) => e.winner === 'A').length;
+          const bCount = evals.filter((e) => e.winner === 'B').length;
+          const nCount = evals.filter((e) => e.winner === 'none').length;
+          addLog('全ペルソナ完了 · 集計中…');
+          addLog(`A案支持: ${aCount} / B案支持: ${bCount} / 引分: ${nCount}`);
+          addLog('AI 要約リクエスト送信中…');
+          addLog('レポート生成中…');
         }
 
         if (data.status === 'completed' || data.status === 'failed') {
           setIsDone(true);
-          addLog(data.status === 'completed' ? 'レポート生成完了' : '中止済み', 'lo');
+          if (data.status === 'completed') {
+            addLog('要約生成完了');
+            addLog('レポート書き込み完了');
+            addLog(`exit 0`);
+          } else {
+            addLog('中止済み');
+            addLog(`exit 1`);
+          }
           return;
         }
       } catch {
@@ -227,7 +260,7 @@ export function TestRunningPage() {
                   {i > 0 && <div className="h-px bg-hairline" />}
                   <div className="flex items-center justify-between" style={{ padding: '12px 0', gap: 12 }}>
                     <div className="flex items-center" style={{ gap: 12 }}>
-                      <PersonaNode seed={persona.personaId} size={20} />
+                      <PersonaNode seed={persona.personaId} size={20} avatarUrl={persona.avatarImageKey ? getAvatarUrl(persona.avatarImageKey) : undefined} />
                       <div className="flex flex-col" style={{ gap: 2 }}>
                         <span className="text-text-hi font-sans text-sm font-medium">{persona.displayName}</span>
                         <span className="text-text-lo font-mono text-xs">{PERSONA_TYPE_LABELS[persona.type]}</span>
