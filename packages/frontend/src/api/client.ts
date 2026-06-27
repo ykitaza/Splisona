@@ -1,6 +1,22 @@
-import { fetchAuthSession } from 'aws-amplify/auth';
-
 export const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ?? 'http://localhost:3001';
+
+let cachedJwt: string | null = null;
+let jwtExpiry = 0;
+
+async function getCfAccessJwt(): Promise<string | null> {
+  if (cachedJwt && Date.now() < jwtExpiry) return cachedJwt;
+  try {
+    const res = await fetch('/cdn-cgi/access/get-identity', { credentials: 'include' });
+    if (!res.ok) return null;
+    const data = await res.json() as { token?: string };
+    if (!data.token) return null;
+    cachedJwt = data.token;
+    jwtExpiry = Date.now() + 300_000;
+    return cachedJwt;
+  } catch {
+    return null;
+  }
+}
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -27,9 +43,17 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   if (localUserId) {
     return { 'x-local-user-id': localUserId };
   }
-  const session = await fetchAuthSession();
-  const token = session.tokens?.accessToken?.toString();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  if (import.meta.env?.VITE_COGNITO_USER_POOL_ID) {
+    const { fetchAuthSession } = await import('aws-amplify/auth');
+    const session = await fetchAuthSession();
+    const token = session.tokens?.accessToken?.toString();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+  const cfJwt = await getCfAccessJwt();
+  if (cfJwt) {
+    return { 'Cf-Access-Jwt-Assertion': cfJwt };
+  }
+  return {};
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -37,6 +61,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...authHeaders,
@@ -45,8 +70,8 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   });
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: string };
-    throw new ApiError(res.status, body.error ?? res.statusText);
+    const body = await res.json().catch(() => ({})) as { error?: string; message?: string };
+    throw new ApiError(res.status, body.message ?? body.error ?? res.statusText);
   }
 
   return res.json() as Promise<T>;
@@ -57,6 +82,7 @@ export async function apiStream(path: string, options: RequestInit = {}): Promis
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...authHeaders,

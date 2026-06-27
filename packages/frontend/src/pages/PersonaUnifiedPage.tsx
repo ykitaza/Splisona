@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, type FormEvent, type KeyboardEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Check, Sparkles, Camera, Send, RotateCcw, Trash2, ChevronDown, Copy, ArrowLeft } from 'lucide-react';
+import { Check, Sparkles, Camera, ArrowUp, RotateCcw, Trash2, ChevronDown, Copy, ArrowLeft } from 'lucide-react';
 import { getPersona, updatePersona, deletePersona, generateDraft, sendInterviewMessage, uploadPersonaAvatar, getAvatarUrl } from '../api/personas';
 import { getApiErrorMessage } from '../api/client';
 import { PERSONA_TYPE_LABELS, type PersonaType, type Persona, type ConversationMessage } from '../types';
-import { PersonaNode } from '../components/persona/PersonaNode';
+import { PersonaNode, getNodeColor } from '../components/persona/PersonaNode';
 import { ChatBubble } from '../components/ui/ChatBubble';
 import { FieldSlider } from '../components/ui/FieldSlider';
 import { SegmentControl } from '../components/ui/SegmentControl';
@@ -47,7 +47,7 @@ function PromptPreview({ fields }: { fields: { displayName: string; type: string
           style={{ letterSpacing: '0.5px' }}
         >
           <ChevronDown size={14} className={`transition-transform ${open ? '' : '-rotate-90'}`} />
-          合成プロンプト
+          合成プロンプト プレビュー
         </button>
         {open && (
           <button
@@ -256,7 +256,7 @@ export function PersonaUnifiedPage() {
               <ArrowLeft size={14} />
               <span className="font-sans" style={{ fontSize: 13 }}>ペルソナ一覧</span>
             </button>
-            <h1 className="text-text-hi font-sans text-xl font-semibold">{displayName || persona.displayName}</h1>
+            <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>{displayName || persona.displayName}</h1>
           </div>
           <div className="flex" style={{ gap: 24 }}>
             {(['detail', 'edit', 'interview'] as const).map((t) => {
@@ -457,7 +457,8 @@ export function PersonaUnifiedPage() {
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="flex items-center gap-1.5 rounded-md border border-danger text-danger px-4 py-2 font-sans text-sm font-medium transition-colors hover:bg-danger/10"
+                  className="flex items-center gap-1.5 rounded-md border border-danger text-danger px-4 font-sans text-sm font-medium transition-colors hover:bg-danger/10"
+                  style={{ paddingTop: 12, paddingBottom: 12 }}
                 >
                   <Trash2 size={14} />
                   削除
@@ -466,14 +467,16 @@ export function PersonaUnifiedPage() {
                   <button
                     type="button"
                     onClick={() => navigate('/personas')}
-                    className="rounded-md border border-hairline px-4 py-2 text-text-mid font-sans text-sm transition-colors hover:bg-raised"
+                    className="rounded-md border border-hairline px-4 text-text-mid font-sans text-sm transition-colors hover:bg-raised"
+                    style={{ paddingTop: 12, paddingBottom: 12 }}
                   >
                     キャンセル
                   </button>
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex items-center gap-2 rounded-md border border-hairline px-4 py-2 text-text-hi font-sans text-sm font-semibold transition-colors hover:bg-raised disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-md bg-accent font-sans text-sm font-semibold transition-colors disabled:opacity-50"
+                    style={{ color: '#0A0B0D', padding: '12px 16px' }}
                   >
                     <Check size={14} />
                     {isSaving ? '保存中...' : '保存する'}
@@ -485,18 +488,21 @@ export function PersonaUnifiedPage() {
         ) : (
           /* Interview tab */
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto flex flex-col gap-3" style={{ padding: '48px 128px' }}>
+            <div className="flex-1 overflow-y-auto flex flex-col" style={{ padding: '48px 128px', gap: 24 }}>
               {messages.length === 0 && !isSending && !chatError && (
                 <div className="flex flex-col items-center justify-center flex-1 py-16">
                   <p className="text-text-lo font-sans text-sm">{persona.displayName}に話しかけてみましょう</p>
                 </div>
               )}
               {messages.map((msg, i) => (
-                <ChatBubble key={i} role={msg.role} content={msg.content} />
+                <ChatBubble key={i} role={msg.role} content={msg.content} displayName={persona.displayName} avatarColor={getNodeColor(persona.personaId)} />
               ))}
               {isSending && (
-                <div className="flex justify-start">
-                  <div className="rounded-lg bg-raised px-4 py-2.5">
+                <div className="flex justify-start" style={{ gap: 10 }}>
+                  <div className="flex items-center justify-center rounded-full flex-shrink-0 font-sans font-semibold text-white" style={{ width: 28, height: 28, fontSize: 12, backgroundColor: getNodeColor(persona.personaId) }}>
+                    {persona.displayName.charAt(0)}
+                  </div>
+                  <div className="bg-raised" style={{ borderRadius: 10, padding: 12 }}>
                     <div role="status" className="animate-spin rounded-full h-4 w-4 border-b-2 border-text-lo" />
                   </div>
                 </div>
@@ -517,24 +523,24 @@ export function PersonaUnifiedPage() {
               <div ref={bottomRef} />
             </div>
             <div className="flex-shrink-0" style={{ padding: '16px 128px' }}>
-              <div className="flex items-center gap-3 rounded-md bg-base border border-hairline py-2 pl-4 pr-2">
+              <div className="flex items-center gap-3 bg-base border border-hairline py-2 pl-4 pr-2" style={{ borderRadius: 10 }}>
                 <input
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={isSending}
-                  placeholder="メッセージを入力（Enter で送信）"
+                  placeholder={`${displayName || persona.displayName} に質問する…`}
                   className="flex-1 bg-transparent text-text-hi font-sans text-sm outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => sendMessage(inputText)}
                   disabled={isSending || !inputText.trim()}
-                  className="flex items-center justify-center rounded-md bg-accent flex-shrink-0 disabled:opacity-40"
-                  style={{ width: 32, height: 32 }}
+                  className="flex items-center justify-center bg-accent flex-shrink-0 disabled:opacity-40"
+                  style={{ width: 36, height: 36, borderRadius: 10 }}
                 >
-                  <Send size={14} color="#FFFFFF" />
+                  <ArrowUp size={18} color="#FFFFFF" />
                 </button>
               </div>
             </div>
@@ -548,7 +554,7 @@ export function PersonaUnifiedPage() {
           <PersonaNode seed={persona.personaId} size={96} />
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-text-hi font-sans text-base font-semibold">{displayName || persona.displayName}</span>
+          <span className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>{displayName || persona.displayName}</span>
           <span className="text-text-mid font-sans text-sm">{(PERSONA_TYPE_LABELS as Record<string, string>)[type] ?? type}</span>
         </div>
         {freeText && (

@@ -131,7 +131,7 @@ export interface EvaluationResult {
   reason: string;
   scoresA: EvaluationScores;
   scoresB: EvaluationScores;
-  status: "completed" | "failed";
+  status: "evaluating" | "completed" | "failed";
 }
 
 export interface ReportSummary {

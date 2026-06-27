@@ -71,7 +71,7 @@ describe('PersonaUnifiedPage', () => {
     });
 
     await user.click(screen.getByText('インタビュー'));
-    expect(screen.getByPlaceholderText(/メッセージを入力/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/に質問する/)).toBeInTheDocument();
   });
 
   it('右カラムにタイプと人物像が表示される', async () => {
@@ -111,7 +111,7 @@ describe('PersonaUnifiedPage', () => {
       expect(screen.getAllByText('ハルト').length).toBeGreaterThanOrEqual(1);
     });
 
-    expect(screen.getByText('合成プロンプト')).toBeInTheDocument();
+    expect(screen.getByText('合成プロンプト プレビュー')).toBeInTheDocument();
   });
 
   it('インタビュータブでメッセージ送信するとChatBubbleが表示される', async () => {
@@ -123,7 +123,7 @@ describe('PersonaUnifiedPage', () => {
     });
 
     await user.click(screen.getByText('インタビュー'));
-    const textarea = screen.getByPlaceholderText(/メッセージを入力/);
+    const textarea = screen.getByPlaceholderText(/に質問する/);
     await user.type(textarea, 'テストメッセージ');
     await user.click(screen.getByRole('button', { name: '' })); // send button
 

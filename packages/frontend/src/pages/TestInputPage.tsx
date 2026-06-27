@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Image, Info, Link2, Camera, Maximize2, Play, SlidersHorizontal, Check, X } from 'lucide-react';
+import { Image, ImagePlus, Info, Link2, Camera, Maximize2, Play, SlidersHorizontal, Check, X } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { Modal } from '../components/ui/Modal';
 import { testDraft, sideToDesignInput, type DesignSideData } from '../lib/testDraft';
@@ -8,7 +8,7 @@ import { captureUrl, createTest, updateTest, executeTest, getUploadUrl, uploadTo
 import { usePersonas } from '../hooks/usePersonas';
 import { API_BASE, ApiError } from '../api/client';
 import { PERSONA_TYPE_LABELS } from '../types';
-import { getNodeColor } from '../components/persona/PersonaNode';
+import { PersonaNode } from '../components/persona/PersonaNode';
 
 type TabType = 'image' | 'figma_url' | 'site_url';
 
@@ -22,6 +22,8 @@ function DesignSidePanel({
   onSideChange: (data: DesignSideData | null) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropRef = useRef<HTMLButtonElement>(null);
+  const [dropHover, setDropHover] = useState(false);
   const accentColor = side === 'A' ? 'var(--color-win-a, #6E78D9)' : 'var(--color-win-b, #C9974F)';
 
   const currentTab: TabType =
@@ -93,8 +95,8 @@ function DesignSidePanel({
 
   const tabs: { id: TabType; label: string }[] = [
     { id: 'image', label: '画像' },
-    { id: 'figma_url', label: 'Figma URL' },
-    { id: 'site_url', label: 'サイトURL' },
+    { id: 'figma_url', label: 'Figma' },
+    { id: 'site_url', label: 'URL' },
   ];
 
   return (
@@ -102,26 +104,30 @@ function DesignSidePanel({
       {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
       <div className="flex flex-col gap-3.5 flex-1">
         <div className="flex items-center gap-2">
-          <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: accentColor }} />
-          <span className="text-text-hi font-sans text-sm font-semibold">{side}案</span>
+          <span className="inline-block rounded-full" style={{ width: 9, height: 9, background: accentColor }} />
+          <span className="text-text-hi font-sans font-semibold" style={{ fontSize: 18 }}>{side}案</span>
           <div className="flex-1" />
           {isReady && (
             <span className="text-accent font-sans text-xs font-medium">入力済</span>
           )}
         </div>
 
-        <div className="flex border-b border-hairline">
+        <div
+          className="flex items-center border border-hairline"
+          style={{ background: 'var(--color-surface)', borderRadius: 10, padding: 3, gap: 2 }}
+        >
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => handleTabChange(tab.id)}
-              className="px-3 py-1.5 font-sans text-xs transition-colors"
+              className="font-mono text-xs transition-colors"
               style={{
-                fontWeight: activeTab === tab.id ? 600 : 400,
+                borderRadius: 6,
+                padding: '8px 12px',
+                background: activeTab === tab.id ? 'var(--color-raised)' : 'transparent',
                 color: activeTab === tab.id ? 'var(--color-text-hi)' : 'var(--color-text-lo)',
-                borderBottom: activeTab === tab.id ? '2px solid var(--color-accent)' : '2px solid transparent',
-                marginBottom: -1,
+                letterSpacing: '0.3px',
               }}
             >
               {tab.label}
@@ -132,12 +138,25 @@ function DesignSidePanel({
         {activeTab === 'image' && (
           <>
             <button
+              ref={dropRef}
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="w-full overflow-hidden rounded-md transition-colors"
+              onPaste={(e) => {
+                const f = Array.from(e.clipboardData.files).find((f) => f.type.startsWith('image/'));
+                if (f) { e.preventDefault(); onSideChange({ inputType: 'image_upload', file: f, imageKey: '' }); }
+              }}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDrop={(e) => {
+                e.preventDefault(); e.stopPropagation();
+                const f = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith('image/'));
+                if (f) onSideChange({ inputType: 'image_upload', file: f, imageKey: '' });
+              }}
+              onMouseEnter={() => { setDropHover(true); dropRef.current?.focus(); }}
+              onMouseLeave={() => { setDropHover(false); dropRef.current?.blur(); }}
+              className="w-full overflow-hidden rounded-md transition-all outline-none"
               style={{
-                height: 320,
-                border: `1.5px dashed ${file ? 'var(--color-accent)' : 'var(--color-hairline)'}`,
+                height: 354,
+                border: file ? '1px solid var(--color-accent)' : dropHover ? '1px solid #9BA1AC' : '1px solid #5B616B',
                 background: 'var(--color-raised)',
                 cursor: 'pointer',
               }}
@@ -145,19 +164,32 @@ function DesignSidePanel({
               {imagePreview ? (
                 <div className="relative w-full h-full group">
                   <img src={imagePreview} alt={`デザイン${side}プレビュー`} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setLightboxSrc(imagePreview); }}
-                    className="absolute top-2 right-2 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ width: 28, height: 28, background: 'rgba(0,0,0,0.55)' }}
-                  >
-                    <Maximize2 size={13} color="#FFFFFF" />
-                  </button>
+                  <div className="absolute top-2 right-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ gap: 4 }}>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setLightboxSrc(imagePreview); }}
+                      className="flex items-center justify-center rounded-md"
+                      style={{ width: 28, height: 28, background: 'rgba(0,0,0,0.55)' }}
+                    >
+                      <Maximize2 size={13} color="#FFFFFF" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onSideChange(null); }}
+                      className="flex items-center justify-center rounded-md"
+                      style={{ width: 28, height: 28, background: 'rgba(0,0,0,0.55)' }}
+                    >
+                      <X size={13} color="#FFFFFF" />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-2">
-                  <Image size={24} className="text-text-lo" />
-                  <span className="text-text-lo font-sans text-xs">クリックして画像を選択</span>
+                  <ImagePlus size={32} className="text-text-lo" />
+                  <span className="text-text-mid font-sans" style={{ fontSize: 14 }}>クリックまたはドラッグで画像を追加</span>
+                  {dropHover && (
+                    <span className="font-mono text-text-lo" style={{ fontSize: 11, letterSpacing: 0.5 }}>⌘V でペースト</span>
+                  )}
                 </div>
               )}
             </button>
@@ -193,14 +225,15 @@ function DesignSidePanel({
 
         {(activeTab === 'figma_url' || activeTab === 'site_url') && (
           <div className="flex flex-col gap-2.5">
-            <div className="flex items-center gap-2 rounded-md bg-raised border border-hairline px-3">
+            <div className="flex items-center gap-2 bg-base border border-hairline px-3" style={{ borderRadius: 10 }}>
               <Link2 size={15} className="text-text-lo flex-shrink-0" />
               <input
                 type="url"
                 value={urlInput}
                 onChange={(e) => handleUrlChange(e.target.value)}
                 placeholder={activeTab === 'figma_url' ? 'https://www.figma.com/design/...' : 'https://example.com'}
-                className="flex-1 py-2.5 bg-transparent text-text-hi font-sans text-sm outline-none"
+                className="flex-1 py-2.5 bg-transparent text-text-hi font-mono outline-none"
+                style={{ fontSize: 13 }}
               />
             </div>
 
@@ -336,7 +369,6 @@ function PersonaSelectModal({
         <div className="flex-1 overflow-y-auto" style={{ padding: '0 12px 12px 12px' }}>
           {filteredPersonas.map((persona) => {
             const checked = selectedIds.has(persona.personaId);
-            const dotColor = getNodeColor(persona.personaId);
             return (
               <button
                 key={persona.personaId}
@@ -360,10 +392,7 @@ function PersonaSelectModal({
                 >
                   {checked && <Check size={10} color="#FFFFFF" />}
                 </div>
-                <span
-                  className="inline-block flex-shrink-0 rounded-full"
-                  style={{ width: 11, height: 11, background: dotColor, boxShadow: `0 0 8px ${dotColor}55` }}
-                />
+                <PersonaNode seed={persona.personaId} size={20} />
                 <div className="flex flex-col flex-1 min-w-0" style={{ gap: 2 }}>
                   <span className="text-text-hi font-sans text-sm font-medium">{persona.displayName}</span>
                   <span className="text-text-lo font-sans text-xs truncate">
@@ -400,7 +429,6 @@ function isSideReady(data: DesignSideData | null): boolean {
 export function TestInputPage() {
   const navigate = useNavigate();
   const initial = testDraft.get();
-  const [title, setTitle] = useState(initial.title);
   const [sideA, setSideA] = useState<DesignSideData | null>(initial.sideA);
   const [sideB, setSideB] = useState<DesignSideData | null>(initial.sideB);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initial.personaIds));
@@ -409,13 +437,8 @@ export function TestInputPage() {
   const [error, setError] = useState<string | null>(null);
 
   const { personas: allPersonas } = usePersonas();
-  const canExecute = title.trim().length > 0 && isSideReady(sideA) && isSideReady(sideB) && selectedIds.size > 0;
+  const canExecute = isSideReady(sideA) && isSideReady(sideB) && selectedIds.size > 0;
   const selectedPersonas = allPersonas.filter((p) => selectedIds.has(p.personaId));
-
-  function handleTitleChange(value: string) {
-    setTitle(value);
-    testDraft.setTitle(value);
-  }
 
   function handleSideChange(side: 'A' | 'B', data: DesignSideData | null) {
     testDraft.setSide(side, data);
@@ -457,9 +480,9 @@ export function TestInputPage() {
       const draft = testDraft.get();
       if (draft.resumeId) {
         testId = draft.resumeId;
-        await updateTest(testId, { title, designAInput, designBInput, personaIds });
+        await updateTest(testId, { designAInput, designBInput, personaIds });
       } else {
-        const created = await createTest({ title, designAInput, designBInput, personaIds });
+        const created = await createTest({ title: '', designAInput, designBInput, personaIds });
         testId = created.testId;
       }
 
@@ -493,10 +516,18 @@ export function TestInputPage() {
         onSelectedChange={handleSelectedChange}
       />
 
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '1.5px' }}>新規テスト</span>
-          <h1 className="text-text-hi font-sans text-xl font-semibold">新しい A/B テスト</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center flex-shrink-0 rounded-lg bg-raised" style={{ width: 32, height: 32, boxShadow: '0 0 12px rgba(255,255,255,0.09)' }}>
+            <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+              <circle cx="10" cy="12" r="2" fill="var(--color-text-hi)" />
+              <circle cx="22" cy="12" r="2" fill="var(--color-text-hi)" />
+              <circle cx="11" cy="20" r="1.5" fill="var(--color-text-hi)" />
+              <circle cx="16" cy="21.5" r="1.5" fill="var(--color-text-hi)" />
+              <circle cx="21" cy="20" r="1.5" fill="var(--color-text-hi)" />
+            </svg>
+          </div>
+          <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>新しい A/B テスト</h1>
         </div>
         <button
           type="button"
@@ -509,22 +540,9 @@ export function TestInputPage() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '0.8px' }}>テストタイトル</span>
-        <input
-          id="test-title"
-          type="text"
-          value={title}
-          onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder="例: ランディングページ A/B テスト"
-          className="rounded-md bg-base border border-hairline px-3 py-2.5 text-text-hi font-sans text-sm outline-none focus:border-accent"
-          style={{ borderRadius: 10 }}
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col" style={{ gap: 16 }}>
         <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: '1.2px' }}>比較対象</span>
-        <div className="flex gap-7">
+        <div className="flex" style={{ gap: 48 }}>
           <DesignSidePanel side="A" sideData={sideA} onSideChange={(d) => handleSideChange('A', d)} />
           <DesignSidePanel side="B" sideData={sideB} onSideChange={(d) => handleSideChange('B', d)} />
         </div>
@@ -539,23 +557,21 @@ export function TestInputPage() {
           <div className="flex items-center" style={{ gap: 16 }}>
             {selectedIds.size > 0 ? (
               <>
-                <div className="relative" style={{ width: Math.min(selectedIds.size, 3) * 17 + 7, height: 26 }}>
-                  {selectedPersonas.slice(0, 3).map((p, i) => {
-                    const color = getNodeColor(p.personaId);
-                    return (
-                      <span
-                        key={p.personaId}
-                        className="absolute rounded-full"
-                        style={{
-                          width: 24, height: 24, top: 1,
-                          left: i * 17,
-                          background: color,
-                          border: '2px solid var(--color-base)',
-                          boxShadow: `0 0 8px ${color}55`,
-                        }}
-                      />
-                    );
-                  })}
+                <div className="relative" style={{ width: Math.min(selectedIds.size, 3) * 17 + 7, height: 28 }}>
+                  {selectedPersonas.slice(0, 3).map((p, i) => (
+                    <div
+                      key={p.personaId}
+                      className="absolute rounded-full overflow-hidden"
+                      style={{
+                        width: 26, height: 26, top: 1,
+                        left: i * 17,
+                        zIndex: i,
+                        boxShadow: '0 0 0 2px var(--color-base)',
+                      }}
+                    >
+                      <PersonaNode seed={p.personaId} size={26} />
+                    </div>
+                  ))}
                 </div>
                 <div className="flex flex-col" style={{ gap: 2 }}>
                   <span className="text-text-hi font-sans text-sm font-medium">{selectedIds.size}体を選択中</span>
@@ -604,7 +620,7 @@ export function TestInputPage() {
           className="flex items-center gap-2 rounded-md border border-hairline px-4 py-2.5 text-text-hi font-sans text-sm font-semibold transition-colors hover:bg-raised disabled:opacity-40"
         >
           <Play size={16} />
-          {isExecuting ? '実行中...' : '作成して実行'}
+          {isExecuting ? '実行中...' : 'テスト実行'}
         </button>
       </div>
     </div>

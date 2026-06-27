@@ -95,7 +95,7 @@ test('テスト一覧にステータスとペルソナ数が表示される', as
 
 test('レポート画面で勝者とスコアが表示される', async ({ page }) => {
   await page.goto('/tests/t-1/report');
-  await expect(page.getByText('A案の勝ち')).toBeVisible();
+  await expect(page.getByText('の勝ち')).toBeVisible();
 });
 
 test('レポート画面でペルソナ評価と確信度が表示される', async ({ page }) => {

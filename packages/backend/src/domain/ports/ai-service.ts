@@ -26,4 +26,5 @@ export interface AIService {
   chat(systemPrompt: string, messages: ConversationMessage[]): Promise<string>;
   evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput>;
   summarizeReasons(reasonsText: string): Promise<ReasonSummary>;
+  generateTitle(imageA: ImageSource, imageB: ImageSource): Promise<string>;
 }

@@ -21,7 +21,7 @@ export class EvaluationUseCases {
     testId: string,
     opts?: { buildImageSource?: (key: string) => ImageSource | Promise<ImageSource>; onAbort?: AbortSignal },
   ): Promise<void> {
-    const test = await this.testRepo.findById(userId, testId);
+    let test = await this.testRepo.findById(userId, testId);
     if (!test) throw new NotFoundError("ABTest");
     if (test.status === "running") throw new ConflictError("Test is already running");
     if (!test.designAImageKey || !test.designBImageKey) {
@@ -33,6 +33,22 @@ export class EvaluationUseCases {
 
     await this.evalRepo.removeAllByTest(testId);
 
+    const buildSrc = opts?.buildImageSource ?? ((key: string): ImageSource => ({
+      kind: "s3",
+      bucket: this.imageBucket,
+      key,
+    }));
+
+    if (!test.title?.trim()) {
+      try {
+        const srcA = await buildSrc(test.designAImageKey!);
+        const srcB = await buildSrc(test.designBImageKey!);
+        test = { ...test, title: await this.aiService.generateTitle(srcA, srcB) };
+      } catch {
+        test = { ...test, title: `A/B テスト ${new Date().toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}` };
+      }
+    }
+
     const runningTest: ABTest = {
       ...test,
       status: "running",
@@ -43,12 +59,6 @@ export class EvaluationUseCases {
       updatedAt: new Date().toISOString(),
     };
     await this.testRepo.save(runningTest);
-
-    const buildSrc = opts?.buildImageSource ?? ((key: string): ImageSource => ({
-      kind: "s3",
-      bucket: this.imageBucket,
-      key,
-    }));
 
     const batches = chunkArray(test.personaIds, 25);
     for (const batch of batches) {
@@ -115,6 +125,13 @@ export class EvaluationUseCases {
 
     const additional = await this.getAdditionalInstruction(userId, "evaluation");
 
+    const zeroScores: EvaluationScores = { usability: 0, aesthetics: 0, clarity: 0, engagement: 0, trust: 0 };
+    await this.evalRepo.save({
+      testId, personaId, winner: "none", confidence: 0, reason: "",
+      scoresA: zeroScores, scoresB: zeroScores,
+      status: "evaluating", personaDisplayName, evaluatedAt: new Date().toISOString(),
+    });
+
     try {
       const input = await this.aiService.evaluateDesigns({
         persona: {
@@ -142,7 +159,6 @@ export class EvaluationUseCases {
       };
       await this.evalRepo.save(evalRecord);
     } catch {
-      const zeroScores: EvaluationScores = { usability: 0, aesthetics: 0, clarity: 0, engagement: 0, trust: 0 };
       const failRecord: Evaluation = {
         testId,
         personaId,

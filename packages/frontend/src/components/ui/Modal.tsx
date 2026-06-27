@@ -22,7 +22,7 @@ export function Modal({ open, onClose, children }: ModalProps) {
     <div
       data-testid="modal-overlay"
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.75)' }}
+      style={{ background: 'rgba(0,0,0,0.5)' }}
       onClick={onClose}
     >
       <div

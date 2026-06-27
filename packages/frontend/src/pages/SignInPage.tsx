@@ -5,12 +5,13 @@ import { signIn } from 'aws-amplify/auth';
 export function SignInPage() {
   const navigate = useNavigate();
   const localUserId = import.meta.env?.VITE_LOCAL_USER_ID as string | undefined;
+  const isCloudflare = !localUserId && !import.meta.env?.VITE_COGNITO_USER_POOL_ID;
 
   useEffect(() => {
-    if (localUserId) {
+    if (localUserId || isCloudflare) {
       navigate('/personas', { replace: true });
     }
-  }, [localUserId, navigate]);
+  }, [localUserId, isCloudflare, navigate]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,7 +40,7 @@ export function SignInPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow">
         <div>
-          <h1 className="text-center text-2xl font-bold text-gray-900">Chorus</h1>
+          <h1 className="text-center text-2xl font-bold text-gray-900">Splisona</h1>
           <p className="mt-2 text-center text-sm text-gray-600">AIペルソナ A/Bテストツール</p>
         </div>
 

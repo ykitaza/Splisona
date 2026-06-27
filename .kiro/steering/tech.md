@@ -9,7 +9,7 @@ pnpm ワークスペースによるモノレポ構成。`packages/frontend`（SP
 - **言語**: TypeScript（フロントエンド・バックエンド共通）
 - **フロントエンド**: React 19 + React Router v6 + Vite + Tailwind CSS v4
 - **バックエンド**: Hono（Lambda アダプター兼ローカルdevサーバー）+ Node.js ESM
-- **AI**: Amazon Bedrock（デフォルトモデル: `amazon.nova-lite-v1:0`）
+- **AI**: Amazon Bedrock（デフォルトモデル: `us.anthropic.claude-haiku-4-5-20251001-v1:0`）
 - **データストア**: Amazon DynamoDB（シングルテーブル設計）
 - **認証**: AWS Amplify Auth（Cognito）/ ローカルはヘッダーベース疑似認証
 
@@ -58,7 +58,7 @@ LOCAL_BEDROCK=true pnpm dev:backend
 | `DYNAMODB_ENDPOINT` | DynamoDB Local エンドポイント | なし（本番AWS） |
 | `TABLE_NAME` | DynamoDB テーブル名 | `chorus-main` |
 | `LOCAL_BEDROCK` | 実Bedrock呼び出しを有効化 | `false`（スタブ） |
-| `BEDROCK_MODEL_ID` | 使用モデルID | `amazon.nova-lite-v1:0` |
+| `BEDROCK_MODEL_ID` | 使用モデルID | `us.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `AWS_REGION` | Bedrockリージョン | `us-east-1` |
 | `VITE_API_URL` | フロントエンドのAPIベースURL | `http://localhost:3001` |
 | `VITE_LOCAL_USER_ID` | ローカル開発用ユーザーID | なし（Cognito使用） |
@@ -66,6 +66,7 @@ LOCAL_BEDROCK=true pnpm dev:backend
 ## Key Technical Decisions
 
 - **ローカルスタブ vs 実AI**: `LOCAL_BEDROCK=false`（デフォルト）ではランダムなスタブ評価を返し、AWS認証なしで開発できる。`LOCAL_BEDROCK=true` で実Bedrockを呼ぶ
+- **認証不要エンドポイント**: `GET /config` はサーバー設定（MODEL_ID等）を返す公開エンドポイント。認証ミドルウェアの前に配置する
 - **DynamoDBシングルテーブル**: PK/SK パターンで `USER#`, `PERSONA#`, `ABTEST#`, `EVAL#` を1テーブルに格納
 - **画像の扱い**: 本番はS3 Presigned URL、ローカルは `/tmp/chorus-uploads` + スタブエンドポイント
 - **ESM**: バックエンドは `"type": "module"` でESMのみ。インポートパスには `.js` 拡張子が必要

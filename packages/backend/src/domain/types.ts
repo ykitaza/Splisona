@@ -52,7 +52,7 @@ export interface Evaluation {
   reason: string;
   scoresA: EvaluationScores;
   scoresB: EvaluationScores;
-  status: "completed" | "failed";
+  status: "evaluating" | "completed" | "failed";
   personaDisplayName: string;
   evaluatedAt: string;
 }

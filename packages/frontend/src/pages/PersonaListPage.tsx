@@ -49,7 +49,7 @@ export function PersonaListPage() {
   return (
     <div className="flex flex-col" style={{ padding: '48px 128px', gap: 32 }}>
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.5 }}>
             PHASE 2 · PERSONAS
@@ -57,8 +57,8 @@ export function PersonaListPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-text-hi font-sans text-xl font-semibold" style={{ fontSize: 24 }}>ペルソナ管理</h1>
             <span
-              className="text-text-mid font-mono text-xs"
-              style={{ background: 'var(--color-raised)', borderRadius: 6, padding: '4px 8px' }}
+              className="text-text-mid font-mono"
+              style={{ fontSize: 12, background: 'var(--color-raised)', borderRadius: 6, padding: '4px 8px' }}
             >
               {filtered.length}
             </span>
@@ -80,10 +80,10 @@ export function PersonaListPage() {
           </div>
           <Link
             to="/personas/new"
-            className="flex items-center gap-2 text-text-hi font-sans text-sm font-semibold border border-hairline transition-colors hover:bg-raised"
-            style={{ borderRadius: 6, padding: '8px 14px' }}
+            className="flex items-center gap-2 text-text-hi font-sans font-semibold border border-hairline transition-colors hover:bg-raised"
+            style={{ borderRadius: 6, padding: '12px 16px', fontSize: 14 }}
           >
-            <Plus size={14} className="text-text-hi" />
+            <Plus size={16} className="text-text-hi" />
             新規ペルソナ
           </Link>
         </div>

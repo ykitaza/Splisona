@@ -81,7 +81,7 @@ describe('AppLayout', () => {
       const accountButton = screen.getByRole('button', { name: /アカウントメニュー/i });
       await user.click(accountButton);
 
-      await user.click(screen.getByText('Chorus について'));
+      await user.click(screen.getByText('Splisona について'));
 
       const modalContent = screen.getByTestId('about-modal-content');
       expect(modalContent.className).toContain('bg-surface');

@@ -1,25 +1,25 @@
 import { useState, useEffect } from 'react';
-import { fetchAuthSession } from 'aws-amplify/auth';
 
 export function useAuth() {
   const localUserId = import.meta.env?.VITE_LOCAL_USER_ID as string | undefined;
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localUserId);
-  const [isLoading, setIsLoading] = useState(!localUserId);
+  const isCloudflare = !localUserId && !import.meta.env?.VITE_COGNITO_USER_POOL_ID;
+
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localUserId || isCloudflare);
+  const [isLoading, setIsLoading] = useState(!localUserId && !isCloudflare);
 
   useEffect(() => {
-    if (localUserId) return;
+    if (localUserId || isCloudflare) return;
 
-    fetchAuthSession()
-      .then((session) => {
-        setIsAuthenticated(!!session.tokens);
-      })
-      .catch(() => {
-        setIsAuthenticated(false);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [localUserId]);
+    import('aws-amplify/auth').then(({ fetchAuthSession }) =>
+      fetchAuthSession()
+        .then((session) => setIsAuthenticated(!!session.tokens))
+        .catch(() => setIsAuthenticated(false))
+        .finally(() => setIsLoading(false))
+    ).catch(() => {
+      setIsAuthenticated(false);
+      setIsLoading(false);
+    });
+  }, [localUserId, isCloudflare]);
 
   return { isAuthenticated, isLoading };
 }

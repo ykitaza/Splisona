@@ -27,7 +27,7 @@ export async function createTest(
   try {
     const userId = getUserId(event);
     const input = JSON.parse(event.body ?? "{}");
-    if (!input.title?.trim()) return badRequest("title is required", ["title"]) as LambdaResponse;
+    if (!input.title) input.title = "";
     const test = await container().abtestUseCases.create(userId, input);
     return json(201, toABTestDTO(test));
   } catch (e) {

@@ -45,12 +45,15 @@ export function FieldSelect({ value, onChange, options, placeholder = '選択し
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between w-full font-sans text-sm outline-none transition-colors disabled:opacity-50"
         style={{
-          borderRadius: 6,
-          padding: '8px 12px',
-          background: 'var(--color-base)',
-          border: '1px solid var(--color-hairline)',
+          borderRadius: 0,
+          padding: '8px 0',
+          background: 'transparent',
+          border: 'none',
+          borderBottom: '1px solid var(--color-hairline)',
           color: selected ? 'var(--color-text-hi)' : 'var(--color-text-lo)',
         }}
+        onFocus={(e) => { e.currentTarget.style.borderBottomColor = 'var(--color-accent)'; }}
+        onBlur={(e) => { e.currentTarget.style.borderBottomColor = 'var(--color-hairline)'; }}
       >
         <span className="truncate">{selected ? selected.label : placeholder}</span>
         <ChevronDown

@@ -46,7 +46,7 @@ test('テスト一覧から新規テストに遷移', async ({ page }) => {
 test('Aboutモーダルが開く', async ({ page }) => {
   await page.goto('/personas');
   await page.getByLabel('アカウントメニュー').click();
-  await page.getByText('Chorus について').click();
+  await page.getByText('Splisona について').click();
   await expect(page.getByTestId('about-modal-content')).toBeVisible();
   await expect(page.getByTestId('about-modal-content').getByText('AI PERSONA REVIEW')).toBeVisible();
 });

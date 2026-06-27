@@ -42,7 +42,7 @@ interface RadarChartProps {
   size?: number;
 }
 
-export function RadarChart({ scoresA, scoresB, size = 240 }: RadarChartProps) {
+export function RadarChart({ scoresA, scoresB, size = 300 }: RadarChartProps) {
   const cx = size / 2;
   const cy = size / 2;
   const r = (Math.min(size, size) / 2) * 0.72;

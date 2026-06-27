@@ -54,7 +54,7 @@ VITE_LOCAL_USER_ID=<任意のユーザーID> pnpm dev:frontend
 | `DYNAMODB_ENDPOINT` | `.env.local` または inline | `http://localhost:8000` |
 | `TABLE_NAME` | `.env.local` | `chorus-main` |
 | `LOCAL_BEDROCK` | inline | `true` |
-| `BEDROCK_MODEL_ID` | 省略可 | `amazon.nova-lite-v1:0`（デフォルト） |
+| `BEDROCK_MODEL_ID` | 省略可 | `us.anthropic.claude-haiku-4-5-20251001-v1:0`（デフォルト） |
 | `AWS_REGION` | 省略可 | `us-east-1`（デフォルト） |
 | `VITE_LOCAL_USER_ID` | inline | 任意の文字列 |
 | `VITE_API_URL` | 省略可 | `http://localhost:3001`（デフォルト） |

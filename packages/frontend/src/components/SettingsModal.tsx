@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Settings, PenTool, Cpu, FileText, Search, ChevronRight, Lock, Plus, ArrowLeft, RotateCcw } from 'lucide-react';
+import { X, Settings, Link as LinkIcon, Cpu, FileText, Search, ChevronRight, Lock, Plus, ArrowLeft, RotateCcw } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { getSettings, putSettings, getConfig, type SettingsSection } from '../api/settings';
 
 const SECTIONS = [
   { key: 'general' as const, label: '一般', icon: Settings },
-  { key: 'figma' as const, label: 'Figma 連携', icon: PenTool },
+  { key: 'figma' as const, label: 'Figma 連携', icon: LinkIcon },
   { key: 'model' as const, label: 'AI モデル', icon: Cpu },
   { key: 'prompt' as const, label: 'プロンプト', icon: FileText },
 ];
@@ -34,7 +34,7 @@ const PROMPT_TEMPLATES = [
     instruction: 'ペルソナとして自然な口調で回答してください。\nインタビュアーの質問に対し、自分の価値観・\n経験・立場を踏まえて具体的に答えてください。',
   },
   {
-    id: 'draft', label: 'AI 生成', tag: 'draft',
+    id: 'draft', label: 'AI 下書き', tag: 'draft',
     desc: 'ペルソナの属性から自由記述を自動生成', date: '06/15',
     context: 'ペルソナ名: {表示名}\n属性: {年齢}歳・{性別}・{職業}（{タイプ}）\n偏差値 {偏差値}・年収 {年収}・{学歴}',
     instruction: '与えられた属性から、このペルソナの人物像・\n行動特性・価値観を具体的に描写する\n自由記述文を生成してください。',
@@ -149,7 +149,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
           ) : (
             <>
               <div className="flex items-center justify-between">
-                <span className="text-text-hi font-sans text-xl font-semibold">
+                <span className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>
                   {section === 'prompt' ? 'プロンプトテンプレート' : SECTIONS.find((s) => s.key === section)?.label}
                 </span>
                 <button

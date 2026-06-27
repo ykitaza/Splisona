@@ -133,6 +133,38 @@ export class BedrockAIService implements AIService {
     };
   }
 
+  async generateTitle(imageA: EvaluateDesignsParams["imageA"], imageB: EvaluateDesignsParams["imageA"]): Promise<string> {
+    const toImageContent = (src: EvaluateDesignsParams["imageA"]) => {
+      if (src.kind === "s3") {
+        return { image: { format: "png" as const, source: { s3Location: { uri: `s3://${src.bucket}/${src.key}` } } } };
+      }
+      return { image: { format: src.format, source: { bytes: src.data } } };
+    };
+
+    const res = await this.client.send(
+      new ConverseCommand({
+        modelId: this.modelId,
+        inferenceConfig: { temperature: 0.3 },
+        messages: [{
+          role: "user",
+          content: [
+            { text: "2つのデザイン画像を見て、この比較テストに適した短いタイトルを1つだけ日本語で生成してください。15文字以内で、内容が分かる簡潔な名称にしてください。タイトルのみを出力し、他の説明は不要です。" },
+            toImageContent(imageA),
+            toImageContent(imageB),
+          ],
+        }],
+      })
+    );
+
+    const text = (res as { output: { message: { content: { text?: string }[] } } })
+      .output.message.content
+      .filter((c) => c.text !== undefined)
+      .map((c) => c.text ?? "")
+      .join("");
+
+    return text.trim().replace(/^["「]|["」]$/g, "");
+  }
+
   async summarizeReasons(reasonsText: string): Promise<ReasonSummary> {
     const command = new ConverseCommand({
       modelId: this.modelId,

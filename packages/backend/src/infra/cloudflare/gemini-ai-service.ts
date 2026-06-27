@@ -83,6 +83,21 @@ export class GeminiAIService implements AIService {
     };
   }
 
+  async generateTitle(imageA: EvaluateDesignsParams["imageA"], imageB: EvaluateDesignsParams["imageA"]): Promise<string> {
+    const parts: GeminiPart[] = [
+      { text: "2つのデザイン画像を見て、この比較テストに適した短いタイトルを1つだけ日本語で生成してください。15文字以内で、内容が分かる簡潔な名称にしてください。タイトルのみを出力し、他の説明は不要です。" },
+      toImagePart(imageA),
+      toImagePart(imageB),
+    ];
+
+    const result = await this.generate({
+      contents: [{ role: "user", parts }],
+      generationConfig: { temperature: 0.3 },
+    });
+
+    return result.trim().replace(/^["「]|["」]$/g, "");
+  }
+
   async summarizeReasons(reasonsText: string): Promise<ReasonSummary> {
     const result = await this.generate({
       contents: [{

@@ -4,12 +4,12 @@ import { ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Che
 import { ImageLightbox } from '../components/ImageLightbox';
 import { RadarChart } from '../components/report/RadarChart';
 import { AttributeHeatmap } from '../components/report/AttributeHeatmap';
-import { MethodPopover, SourcePopover } from '../components/report/Popovers';
+import { MethodPopover } from '../components/report/Popovers';
 import { HelpDot } from '../components/report/HelpDot';
 import { getReport, executeTest, exportTest } from '../api/tests';
 import { getConfig } from '../api/settings';
 import { usePersonas } from '../hooks/usePersonas';
-import { getNodeColor } from '../components/persona/PersonaNode';
+import { PersonaNode } from '../components/persona/PersonaNode';
 import { API_BASE } from '../api/client';
 import { PERSONA_TYPE_LABELS } from '../types';
 import type { ReportResponse, EvaluationScores, DesignInput, Persona } from '../types';
@@ -29,13 +29,17 @@ function SegmentBar({ countA, countB, countNone }: { countA: number; countB: num
     <div data-testid="segment-bar" className="flex flex-col" style={{ gap: 12 }}>
       <div className="flex overflow-hidden" style={{ height: 16, borderRadius: 999, gap: 2 }}>
         {countA > 0 && <div style={{ flex: countA, background: '#6E78D9A0' }} />}
-        {countNone > 0 && <div style={{ flex: countNone, background: '#3A3D4280' }} />}
         {countB > 0 && <div style={{ flex: countB, background: '#C9974FA0' }} />}
+        {countNone > 0 && <div style={{ flex: countNone, background: '#3A3D4280' }} />}
       </div>
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#6E78D9A0' }} />
           <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>A 勝利 · {countA}</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>{countB} · B 勝利</span>
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#C9974FA0' }} />
         </span>
         {countNone > 0 && (
           <span className="flex items-center gap-1.5">
@@ -43,10 +47,6 @@ function SegmentBar({ countA, countB, countNone }: { countA: number; countB: num
             <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>引分 · {countNone}</span>
           </span>
         )}
-        <span className="flex items-center gap-1.5">
-          <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>{countB} · B 勝利</span>
-          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#C9974FA0' }} />
-        </span>
       </div>
     </div>
   );
@@ -136,7 +136,7 @@ function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
     <>
       {lightbox && imageUrl && <ImageLightbox src={imageUrl} alt={`${side}案`} onClose={() => setLightbox(false)} />}
       <div
-        className="flex flex-col flex-1"
+        className="flex flex-col flex-1 min-w-0"
         style={{ gap: 16, paddingLeft: 16, borderLeft: `2px solid ${borderColor}` }}
       >
         <div className="flex items-center justify-between">
@@ -254,7 +254,8 @@ export function TestReportPage() {
   }
 
   const { abTest, summary, evaluations } = report;
-  const winnerLabel = summary.winner === 'tie' ? '引き分け' : `${summary.winner}案の勝ち`;
+  const winnerSide = summary.winner;
+  const winnerDesignLabel = winnerSide === 'A' || winnerSide === 'B' ? `デザイン ${winnerSide}` : null;
   const supportCountA = Math.round(summary.supportRateA * summary.totalPersonas);
   const supportCountB = Math.round(summary.supportRateB * summary.totalPersonas);
   const countNone = summary.totalPersonas - supportCountA - supportCountB;
@@ -310,15 +311,20 @@ export function TestReportPage() {
       >
         <div className="flex items-center justify-between">
           <div className="flex flex-col" style={{ gap: 10 }}>
+            <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.2 }}>総合結果</span>
             <div className="flex items-baseline gap-3">
-              <span className="text-text-hi font-sans text-xl font-bold">{winnerLabel}</span>
-              <div className="flex items-center gap-1.5">
-                <MethodPopover />
-                <SourcePopover />
-              </div>
+              {winnerDesignLabel ? (
+                <span className="font-sans" style={{ fontSize: 24 }}>
+                  <span style={{ fontWeight: 700, color: winnerSide === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)' }}>{winnerDesignLabel}</span>
+                  <span className="text-text-hi" style={{ fontWeight: 600 }}> の勝ち</span>
+                </span>
+              ) : (
+                <span className="text-text-hi font-sans" style={{ fontSize: 24, fontWeight: 600 }}>引き分け</span>
+              )}
+              <MethodPopover />
             </div>
             <p className="text-text-mid font-sans text-sm">
-              {summary.completedPersonas}/{summary.totalPersonas}人が評価完了
+              {summary.totalPersonas}人中{winnerSide === 'A' ? supportCountA : winnerSide === 'B' ? supportCountB : supportCountA}人が {winnerDesignLabel ?? 'A/B同数'} を支持
             </p>
           </div>
         </div>
@@ -348,7 +354,7 @@ export function TestReportPage() {
         {/* 評価のまとめ */}
         <div
           className="flex flex-col flex-1"
-          style={{ gap: 12, paddingRight: 24, borderRight: '1px solid var(--color-hairline)' }}
+          style={{ gap: 12, paddingRight: 24 }}
         >
           <div className="flex items-center" style={{ gap: 8 }}>
             <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>評価のまとめ</span>
@@ -386,27 +392,22 @@ export function TestReportPage() {
           <div className="flex flex-col items-center" style={{ gap: 16 }}>
             <RadarChart scoresA={summary.avgScores.A} scoresB={summary.avgScores.B} />
           </div>
-          <div className="flex flex-col" style={{ gap: 10, paddingTop: 8 }}>
-            {(Object.keys(SCORE_LABELS) as (keyof EvaluationScores)[]).map((key) => (
-              <ScoreBars key={key} label={SCORE_LABELS[key]} scoreA={summary.avgScores.A[key]} scoreB={summary.avgScores.B[key]} />
-            ))}
-          </div>
         </div>
       </div>
 
       {/* Attribute Heatmap */}
       {personas.length > 0 && evaluations.length > 0 && (
-        <AttributeHeatmap evaluations={evaluations} personas={personas} groupBy="type" />
+        <AttributeHeatmap evaluations={evaluations} personas={personas} />
       )}
 
       {/* ペルソナ別の評価 */}
       <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>ペルソナ別の評価</span>
       <div className="bg-base border border-hairline overflow-hidden" style={{ borderRadius: 14 }}>
         <div className="flex items-center px-4 border-b border-hairline bg-base" style={{ gap: 16, padding: '12px 16px' }}>
-          <div style={{ width: 220 }}>
+          <div style={{ width: 250 }}>
             <span className="text-text-lo font-mono" style={{ fontSize: 10, letterSpacing: 0.8 }}>PERSONA</span>
           </div>
-          <div style={{ width: 72 }}>
+          <div style={{ width: 96 }}>
             <span className="text-text-lo font-mono" style={{ fontSize: 10, letterSpacing: 0.8 }}>勝者</span>
           </div>
           <div style={{ width: 64 }}>
@@ -418,7 +419,6 @@ export function TestReportPage() {
         </div>
         {evaluations.map((ev, i) => {
           const isExpanded = expandedId === ev.personaId;
-          const dotColor = getNodeColor(ev.personaId);
           const matchedPersona = personas.find((p) => p.personaId === ev.personaId);
           return (
             <div key={ev.personaId}>
@@ -430,8 +430,8 @@ export function TestReportPage() {
                 style={{ gap: 16, padding: '16px 16px' }}
                 aria-expanded={isExpanded}
               >
-                <div className="relative flex items-center" style={{ width: 220, gap: 11 }}>
-                  <span className="inline-block flex-shrink-0 rounded-full" style={{ width: 11, height: 11, background: dotColor }} />
+                <div className="relative flex items-center" style={{ width: 250, gap: 11 }}>
+                  <PersonaNode seed={ev.personaId} size={20} />
                   <div className="flex flex-col" style={{ gap: 2 }}>
                     <span
                       role="button"
@@ -449,7 +449,7 @@ export function TestReportPage() {
                     <AttributePopoverInline persona={matchedPersona} onClose={() => setAttrPopoverId(null)} />
                   )}
                 </div>
-                <div style={{ width: 72 }}>
+                <div style={{ width: 96 }}>
                   {ev.status !== 'failed' && (
                     <span
                       className="inline-flex items-center justify-center text-xs font-bold"
@@ -485,7 +485,7 @@ export function TestReportPage() {
                 </div>
               </button>
               {isExpanded && (
-                <div className="flex flex-col gap-4 bg-raised" style={{ padding: '4px 16px 20px 277px' }}>
+                <div className="flex flex-col gap-4 bg-raised" style={{ padding: '4px 16px 20px 307px' }}>
                   <div className="flex flex-col gap-1.5">
                     <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>使用モデル</span>
                     <p className="text-text-mid font-mono text-xs">{modelId || '—'}</p>

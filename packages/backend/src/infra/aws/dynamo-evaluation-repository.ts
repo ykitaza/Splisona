@@ -10,7 +10,7 @@ interface EvaluationDynamoRecord {
   reason: string;
   scoresA: EvaluationScores;
   scoresB: EvaluationScores;
-  status: "completed" | "failed";
+  status: string;
   personaDisplayName: string;
   evaluatedAt: string;
 }
@@ -28,7 +28,7 @@ function toDomain(r: EvaluationDynamoRecord): Evaluation {
     reason: r.reason,
     scoresA: r.scoresA,
     scoresB: r.scoresB,
-    status: r.status,
+    status: r.status as Evaluation["status"],
     personaDisplayName: r.personaDisplayName,
     evaluatedAt: r.evaluatedAt,
   };

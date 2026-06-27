@@ -9,7 +9,7 @@
 ### バックエンド: ドメインディレクトリ
 **Location**: `packages/backend/src/<domain>/`  
 **Purpose**: `handler.ts` がLambdaハンドラーとして機能し、ルーティング・ビジネスロジックを担う  
-**ドメイン一覧**: `persona/`, `abtest/`, `evaluation/`, `interview/`, `report/`, `capture/`, `api/`
+**ドメイン一覧**: `persona/`, `abtest/`, `evaluation/`, `interview/`, `report/`, `capture/`, `settings/`, `api/`
 
 ```
 packages/backend/src/

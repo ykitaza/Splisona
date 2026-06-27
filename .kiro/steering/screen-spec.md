@@ -34,9 +34,9 @@
 │  Sidebar    │                                  │
 │  (surface)  │        <Outlet /> (base)         │
 │             │                                  │
-│  ペルソナ    │                                  │
-│  A|Bテスト   │                                  │
-│  結果        │                                  │
+│  + 新規A/Bテスト │                                  │
+│  A/Bテスト      │                                  │
+│  ペルソナ       │                                  │
 │             │                                  │
 │  ...        │                                  │
 │  AccountMenu│                                  │
@@ -44,7 +44,8 @@
 ```
 
 - **サイドバー**: 幅 240px（折りたたみ時 56px）。bg-surface。border-r hairline
-- **ナビ項目**: 3 個。アクティブ = accent + accent-dim 背景 + semibold。非アクティブ = text-mid
+- **ナビ項目**: 3 個（新規A/Bテスト=灰色丸＋白＋アイコン / A/Bテスト / ペルソナ）。アクティブ = accent + accent-dim 背景 + semibold。非アクティブ = text-mid
+- **メインエリア padding**: `[48px, 128px]`（全画面統一）
 - **AccountMenu**: サイドバー最下部。クリックでポップアップ（設定 / About / サインアウト）
 - **メインエリア**: flex-1, overflow-y-auto, bg-base
 
@@ -80,8 +81,8 @@
 |---|---|
 | ページタイトル | "ペルソナ管理" text-xl font-sans font-bold text-hi |
 | 検索バー | bg-raised, text-sm, placeholder text-lo, 角丸 sm |
-| 新規ペルソナボタン | bg-accent, text-white, text-sm, 角丸 sm |
-| ペルソナカード | bg-surface, 角丸 md, padding 16px |
+| 新規ペルソナボタン | bg-transparent, border-hairline, text-hi, text-sm, 角丸 sm, plus アイコン |
+| ペルソナカード | bg-surface, 角丸 lg (14px), padding 24px, stroke #FFFFFF0F。ホバー時: bg-raised + stroke #FFFFFF29 + `...` アイコン text-mid に強調 |
 | PersonaNode (identicon) | seed ベース決定論的生成。48×48。accent グロー(blur≤12, 低 alpha) |
 | 表示名 | text-sm font-sans font-semibold text-hi |
 | タイプ | text-xs font-sans text-mid |
@@ -89,7 +90,9 @@
 
 ### インタラクション
 
-- カードクリック → `/personas/:id`（S6 編集タブ）
+- カードクリック → `/personas/:id`（S6 詳細タブ）
+- カードホバー → bg-raised + ボーダー強調 + `...` アイコン表示
+- `...` クリック（stopPropagation）→ コンテキストメニュー（複製 / 削除）
 - [+ 新規ペルソナ] → `/personas/new`
 - 検索 → displayName で部分一致フィルタ
 - default ペルソナ → 編集不可バッジ表示
@@ -148,7 +151,7 @@
 | 判定テキスト | "デザイン A が支持されました" text-lg font-sans font-semibold text-hi |
 | 支持率テキスト | "N人中M人がAを支持" text-sm font-sans text-mid |
 | レーダーチャート | SVG 5角形。A=accent(fill 0.15), B=win-b(fill 0.15)。軸ラベル text-xs text-mid |
-| ヒートマップ | 角丸なしセル。勝率高=濃色、低=薄色。トグルで A/B 視点切替 |
+| ヒートマップ | 角丸なしセル。勝率高=濃色、低=薄色。トグルで A/B 視点切替。A タブ=accent (#6E78D9)、B タブ=win-b (#C9974F) |
 | HelpDot | ? マーク 16px circle bg-raised text-text-lo。ホバーで Popover |
 | CSV エクスポート | テキストリンク。text-sm text-accent |
 
@@ -197,7 +200,8 @@
 ### インタラクション
 
 - 2 秒ポーリングで `GET /tests/:id/progress` を監視
-- 全ペルソナ完了 → 自動で `/tests/:id/report` へ遷移
+- 全ペルソナ完了 → S3 完了状態を表示（COMPLETED ラベル=success 色、プログレス 100%=success 色、「結果を見る」ゴーストボタン）。自動遷移しない
+- 「結果を見る」クリック → `/tests/:id/report` へ遷移
 - 中止 → 確認後テストを中断
 
 ---
@@ -243,7 +247,7 @@
 | ドロップゾーン | border dashed hairline, text-lo 中央テキスト |
 | URL 入力 | bg-raised, text-sm, prefix アイコン |
 | ペルソナ表示 | 選択済み identicon を横並び + "n体選択中" text-sm text-mid |
-| 作成して実行ボタン | bg-accent text-white font-semibold 角丸 sm |
+| 作成して実行ボタン | bg-transparent, border-hairline, text-hi, font-semibold, 角丸 sm, play アイコン |
 
 ### インタラクション
 
@@ -290,7 +294,7 @@
 | チェックボックス | 未選択=border hairline, 選択=bg-accent + チェックアイコン white |
 | 選択行ハイライト | bg accent-dim |
 | 全選択リンク | text-sm text-accent |
-| 確定ボタン | bg-accent text-white 角丸 sm |
+| 確定ボタン | bg-transparent, border-hairline, text-hi, 角丸 sm |
 
 ### インタラクション
 
@@ -383,8 +387,8 @@
     年齢 (FieldSlider)                     └──────────────┘
     性別 (SegmentControl: 男性/女性/その他/指定なし)
     偏差値 (FieldSlider)
-    年収 (ドロップダウン)
-    学歴 (ドロップダウン)
+    年収 (カスタムドロップダウン — ダークテーマ。ネイティブ select 不可)
+    学歴 (カスタムドロップダウン — ダークテーマ。ネイティブ select 不可)
     職業 (テキスト入力)
     人物像 (テキストエリア)
   ─────────────────────
@@ -399,13 +403,13 @@
 |---|---|
 | タブ | アクティブ = accent 下線 2px + text-hi。非アクティブ = text-mid |
 | FieldSlider | bg-raised トラック, accent フィル, thumb=white circle |
-| SegmentControl | bg-raised 全体, 選択=bg-accent text-white, 非選択=text-mid |
+| SegmentControl | bg-raised 全体, 選択=bg-raised text-hi, 非選択=text-mid |
 | テキスト入力 | bg-raised, text-hi, border なし, 角丸 sm |
 | テキストエリア | bg-raised, text-hi, resize 可, min-height 120px |
 | 右カラム identicon | 64×64, accent グロー |
 | プロンプトプレビュー | 折りたたみ時: "合成プロンプト ▶" text-sm text-mid。展開時: bg-raised 内にプロンプト全文 font-mono text-xs |
 | 削除ボタン | text-danger, bg-danger-dim |
-| 保存ボタン | bg-accent text-white |
+| 保存ボタン | bg-transparent, border-hairline, text-hi |
 
 ### インタラクション
 
@@ -451,7 +455,7 @@
 | assistant バブル | 左寄せ, bg-raised, 角丸 md, text-sm text-hi |
 | ロールラベル | text-xs text-lo, バブル上部 |
 | 入力フィールド | bg-raised, text-sm, 角丸 sm, flex-1 |
-| 送信ボタン | bg-accent, icon のみ (Send), 角丸 sm |
+| 送信ボタン | bg-transparent, border-hairline, icon のみ (Send), 角丸 sm |
 
 ### インタラクション
 
@@ -474,31 +478,32 @@
 ### レイアウト
 
 ```
-ページヘッダー: "A/Bテスト" (text-xl)  [+ 新規テスト] ボタン
-  ソート切替 (text-sm text-mid)
+ページヘッダー: "A/Bテスト" (text-xl)  [絞り込み すべて ∨] [テストを選択] [+ 新規テスト]
+検索バー: bg-raised, 角丸 md, 検索アイコン + "テストを検索..." プレースホルダー
 ─────────────────────────────────────────────────
-LedgerRow リスト (hairline 区切り):
-  各行: □ | サムネ | テスト名 | ペルソナ数 | ステータス | 日時
+シンプルリスト (hairline 区切り):
+  各行: テスト名 (左)                              相対日付 (右)
 ```
 
 ### 構成要素
 
 | 要素 | 仕様 |
 |---|---|
-| LedgerRow | bg-base 直置き。hover=bg-raised。hairline 区切り |
-| チェックボックス | 通常モードでは非表示。一括削除モード時に表示 |
-| サムネイル | 48×40, 角丸 sm。勝者デザイン 1 枚（DRAW/未完了→A案） |
-| テスト名 | text-sm font-sans text-hi |
-| ペルソナ数 | text-xs font-mono text-mid |
-| ステータス | completed=success pill / running=accent pill / draft=draw pill / failed=danger pill |
-| 日時 | text-xs font-mono text-lo |
-| 新規テストボタン | bg-accent text-white 角丸 sm |
+| リスト行 | bg-base 直置き。hover=bg-raised。hairline bottom 区切り。padding [18, 8] |
+| テスト名 | text-base font-sans text-hi |
+| 相対日付 | text-sm font-sans text-lo |
+| 検索バー | bg-raised, 角丸 md, padding [12, 16]。アイコン + プレースホルダー text-lo |
+| 絞り込みボタン | border-hairline, text-mid "絞り込み" + text-hi "すべて" + chevron-down text-lo |
+| テストを選択ボタン | bg-transparent, border-hairline, text-mid |
+| 新規テストボタン | bg-transparent, border-hairline, text-hi, plus アイコン |
 
 ### インタラクション
 
 - 行クリック → ステータスに応じて遷移: completed→`/tests/:id/report`, running→`/tests/:id/running`
 - [+ 新規テスト] → `/tests/new`
-- ソート切替 → 日時/ステータスでソート
+- [テストを選択] → 一括削除モード (S8-一括削除) に切替
+- 検索 → タイトルで部分一致フィルタ
+- 絞り込み → ステータスでフィルタ
 
 ---
 
@@ -515,11 +520,12 @@ LedgerRow リスト (hairline 区切り):
 ### レイアウト
 
 ```
-ページヘッダー: "A/Bテスト" + [キャンセル] [n件削除(danger)] ボタン群
-  "n件選択中" カウンター (text-sm text-mid)
+ページヘッダー: "A/Bテスト" (text-xl)  [絞り込み すべて ∨] [テストを選択] [+ 新規テスト]
+ツールバー: "n件を選択中" (mono, text-mid)  [キャンセル] [n件を削除 🗑]
+検索バー: (通常モードと同じ)
 ─────────────────────────────────────────────────
-LedgerRow リスト:
-  各行: ☑ チェックボックス表示 | サムネ | テスト名 | ペルソナ数 | ステータス | 日時
+シンプルリスト (hairline 区切り):
+  各行: ☑ チェックボックス + テスト名 (左)         相対日付 (右)
   選択行: accent-dim 背景ハイライト
 ```
 
@@ -527,9 +533,10 @@ LedgerRow リスト:
 
 | 要素 | 仕様 |
 |---|---|
-| 削除ボタン | bg-danger text-white 角丸 sm |
-| キャンセルボタン | text-sm text-mid, bg なし |
-| 選択カウンター | text-sm text-mid |
+| チェックボックス | 16×16, 角丸 3px。未選択=stroke text-lo。選択=fill accent + check アイコン white |
+| 削除ボタン | bg-transparent, border-danger, text-danger, trash-2 アイコン |
+| キャンセルボタン | bg-transparent, border-hairline, text-mid |
+| 選択カウンター | font-mono text-sm text-mid |
 | 選択行 | bg accent-dim |
 
 ### インタラクション
@@ -621,7 +628,7 @@ LedgerRow リスト:
 | 戻るボタン | ← アイコン + "プロンプトテンプレート" text-sm text-accent |
 | 固定セクション | bg-raised, border なし, 角丸 sm。内容は font-mono text-xs text-mid |
 | 編集セクション | bg-raised, border accent (focus 時), 角丸 sm。font-mono text-xs text-hi |
-| 保存ボタン | bg-accent text-white 角丸 sm |
+| 保存ボタン | bg-transparent, border-hairline, text-hi, 角丸 sm |
 
 ### インタラクション
 
@@ -675,17 +682,19 @@ LedgerRow リスト:
 ```
 /signin ──認証成功──→ /personas (S1)
                         │
-                        ├── カード選択 → /personas/:id (S6-詳細, デフォルト)
-                        │                    ├── [編集する] or 編集タブ → S6-編集
+                        ├── カードクリック → /personas/:id (S6-詳細, デフォルト)
+                        │                    ├── 編集タブ → S6-編集
                         │                    └── インタビュータブ → S6-インタビュー
-                        ├── [+新規] → /personas/new
+                        ├── カード `...` → コンテキストメニュー（複製 / 削除）
+                        ├── [+新規ペルソナ] → /personas/new
                         │
-                        ├── ナビ「A|Bテスト」→ /tests/new (S4)
+                        ├── ナビ「新規A/Bテスト」→ /tests/new (S4)
                         │     └── ペルソナ変更 → S5 モーダル
                         │     └── [作成して実行] → /tests/:id/running (S3)
-                        │                            └── 完了 → /tests/:id/report (S2)
+                        │                            └── 完了 → S3 完了状態（「結果を見る」ボタン）
+                        │                                  └── [結果を見る] → /tests/:id/report (S2)
                         │
-                        └── ナビ「結果」→ /results (S8)
+                        └── ナビ「A/Bテスト」→ /results (S8)
                               └── 行クリック → S2 or S3
 
 AccountMenu (全画面共通):

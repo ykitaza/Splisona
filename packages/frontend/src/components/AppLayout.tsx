@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Users, FlaskConical, Plus, Settings, LogOut, ChevronsUpDown, Info, X, PanelLeft, PanelLeftClose } from 'lucide-react';
+import { Users, FlaskConical, FolderKanban, Plus, Settings, LogOut, ChevronsUpDown, Info, X, PanelLeft, PanelLeftClose } from 'lucide-react';
 import { signOut } from 'aws-amplify/auth';
 import { SettingsModal } from './SettingsModal';
 
 const NAV_ITEMS = [
   { to: '/results', icon: FlaskConical, label: 'A/Bテスト' },
+  { to: '/projects', icon: FolderKanban, label: 'プロジェクト' },
   { to: '/personas', icon: Users, label: 'ペルソナ' },
 ];
 

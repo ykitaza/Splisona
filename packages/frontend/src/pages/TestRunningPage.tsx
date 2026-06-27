@@ -1,16 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Square, ArrowRight } from 'lucide-react';
+import { Square, ArrowRight, Check } from 'lucide-react';
 import { getProgress, getTest, getReport, abortTest } from '../api/tests';
 import { usePersonas } from '../hooks/usePersonas';
-import { getNodeColor } from '../components/persona/PersonaNode';
+import { PersonaNode } from '../components/persona/PersonaNode';
 import { PERSONA_TYPE_LABELS } from '../types';
 import type { ProgressResponse, ABTest, EvaluationResult } from '../types';
 
 interface LogEntry {
   ts: string;
   msg: string;
-  level: 'lo' | 'mid' | 'hi' | 'accent';
+  color: 'lo' | 'mid' | 'hi';
 }
 
 export function TestRunningPage() {
@@ -21,7 +21,7 @@ export function TestRunningPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [startTime] = useState(() => Date.now());
   const { personas } = usePersonas();
-  const logsEndRef = useRef<HTMLDivElement>(null);
+  const consoleRef = useRef<HTMLDivElement>(null);
 
   function elapsed() {
     const s = Math.floor((Date.now() - startTime) / 1000);
@@ -30,8 +30,8 @@ export function TestRunningPage() {
     return `${m}:${ss}`;
   }
 
-  function addLog(msg: string, level: LogEntry['level'] = 'mid') {
-    setLogs((prev) => [...prev, { ts: elapsed(), msg, level }]);
+  function addLog(msg: string, color: LogEntry['color'] = 'lo', host = 'system@splisona') {
+    setLogs((prev) => [...prev, { ts: elapsed(), msg: `${host}:~$ ${msg}`, color }]);
   }
 
   useEffect(() => {
@@ -42,12 +42,18 @@ export function TestRunningPage() {
   const [isDone, setIsDone] = useState(false);
   const [isAborting, setIsAborting] = useState(false);
   const prevResultsRef = useRef<Record<string, EvaluationResult>>({});
+  const hasLoggedStartRef = useRef(false);
+  const hasLoggedSummaryRef = useRef(false);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !test) return;
     let active = true;
 
-    addLog('テスト開始', 'lo');
+    if (!hasLoggedStartRef.current && personas.length > 0) {
+      hasLoggedStartRef.current = true;
+      const personaCount = test.personaIds?.length ?? 0;
+      addLog(`テスト開始 · ${personaCount}体を並行評価`, 'lo');
+    }
 
     async function poll() {
       try {
@@ -60,17 +66,21 @@ export function TestRunningPage() {
           if (!active) return;
           const map: Record<string, EvaluationResult> = {};
           for (const ev of report.evaluations) {
+            const prev = prevResultsRef.current[ev.personaId];
+            if (ev.status === 'evaluating' && !prev) {
+              addLog('評価中…', 'lo', `${ev.personaDisplayName}@persona`);
+            }
             if (ev.status === 'completed' || ev.status === 'failed') {
-              map[ev.personaId] = ev;
-              if (!prevResultsRef.current[ev.personaId]) {
+              if (!prev || prev.status === 'evaluating') {
                 if (ev.status === 'completed') {
                   const winner = ev.winner === 'A' ? 'A案' : ev.winner === 'B' ? 'B案' : '引分';
-                  addLog(`${ev.personaDisplayName} 完了 → ${winner}を支持`, 'hi');
+                  addLog(`完了 → ${winner}を支持`, 'lo', `${ev.personaDisplayName}@persona`);
                 } else {
-                  addLog(`${ev.personaDisplayName} 失敗`, 'lo');
+                  addLog('失敗', 'lo', `${ev.personaDisplayName}@persona`);
                 }
               }
             }
+            map[ev.personaId] = ev;
           }
           prevResultsRef.current = map;
           setResults(map);
@@ -78,9 +88,15 @@ export function TestRunningPage() {
           // ignore
         }
 
+        const allDone = data.total > 0 && (data.completed + data.failed) >= data.total;
+        if (allDone && data.status === 'running' && !hasLoggedSummaryRef.current) {
+          hasLoggedSummaryRef.current = true;
+          addLog('全ペルソナ完了 · レポート生成中…', 'lo');
+        }
+
         if (data.status === 'completed' || data.status === 'failed') {
           setIsDone(true);
-          addLog('評価完了', 'hi');
+          addLog(data.status === 'completed' ? 'レポート生成完了' : '中止済み', 'lo');
           return;
         }
       } catch {
@@ -91,10 +107,11 @@ export function TestRunningPage() {
 
     poll();
     return () => { active = false; };
-  }, [id]);
+  }, [id, test, personas]);
 
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = consoleRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [logs]);
 
   const total = progress?.total ?? 0;
@@ -143,11 +160,11 @@ export function TestRunningPage() {
         {isDone ? (
           <Link
             to={`/tests/${id}/report`}
-            className="flex items-center border border-hairline text-text-hi font-sans font-medium transition-colors hover:bg-raised"
-            style={{ gap: 8, borderRadius: 6, padding: '8px 14px', fontSize: 13 }}
+            className="flex items-center border border-hairline text-text-hi font-sans transition-colors hover:bg-raised"
+            style={{ gap: 8, borderRadius: 6, padding: '12px 16px', fontSize: 14, fontWeight: 600 }}
           >
-            結果を見る
             <ArrowRight size={14} className="text-text-hi" />
+            結果を見る
           </Link>
         ) : (
           <button
@@ -158,11 +175,11 @@ export function TestRunningPage() {
               setIsAborting(true);
               try {
                 await abortTest(id);
-                addLog('テストを中止しました', 'lo');
+                addLog('テストを中止しました');
                 setIsDone(true);
                 setProgress((prev) => prev ? { ...prev, status: 'failed' } : prev);
               } catch {
-                addLog('中止に失敗しました', 'lo');
+                addLog('中止に失敗しました');
               } finally {
                 setIsAborting(false);
               }
@@ -201,47 +218,46 @@ export function TestRunningPage() {
           <div className="flex flex-col">
             {relevantPersonas.map((persona, i) => {
               const result = results[persona.personaId];
-              const dotColor = getNodeColor(persona.personaId);
               const isCompleted = result?.status === 'completed';
               const isFailed = result?.status === 'failed';
-              const isRunning = !result && i === completed;
+              const isRunning = result?.status === 'evaluating' || (!result && !isDone);
 
               return (
                 <div key={persona.personaId}>
                   {i > 0 && <div className="h-px bg-hairline" />}
                   <div className="flex items-center justify-between" style={{ padding: '12px 0', gap: 12 }}>
                     <div className="flex items-center" style={{ gap: 12 }}>
-                      <span
-                        className="inline-block flex-shrink-0 rounded-full"
-                        style={{ width: 11, height: 11, background: dotColor, boxShadow: `0 0 6px ${dotColor}55` }}
-                      />
+                      <PersonaNode seed={persona.personaId} size={20} />
                       <div className="flex flex-col" style={{ gap: 2 }}>
                         <span className="text-text-hi font-sans text-sm font-medium">{persona.displayName}</span>
                         <span className="text-text-lo font-mono text-xs">{PERSONA_TYPE_LABELS[persona.type]}</span>
                       </div>
                     </div>
                     <div className="flex items-center" style={{ gap: 6 }}>
-                      {isCompleted && result.winner && result.winner !== 'none' && (
-                        <span
-                          className="font-mono text-xs font-semibold"
-                          style={{
-                            borderRadius: 999,
-                            padding: '4px 11px',
-                            background: result.winner === 'A' ? '#6E78D922' : '#C9974F22',
-                            color: result.winner === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)',
-                          }}
-                        >
-                          {result.winner}案
+                      {isCompleted && (
+                        <span className="flex items-center" style={{ gap: 6 }}>
+                          <Check size={14} className="text-accent" />
+                          <span className="font-mono" style={{ fontSize: 11, fontWeight: 700, color: result.winner === 'A' ? 'var(--color-win-a)' : result.winner === 'B' ? 'var(--color-win-b)' : 'var(--color-text-lo)' }}>
+                            {result.winner === 'none' ? '引分' : `${result.winner}案`}
+                          </span>
                         </span>
-                      )}
-                      {isCompleted && result.winner === 'none' && (
-                        <span className="text-text-lo font-mono text-xs">引分</span>
                       )}
                       {isFailed && (
                         <span className="text-danger font-mono text-xs">失敗</span>
                       )}
                       {isRunning && (
-                        <span className="text-accent font-mono text-xs" style={{ animation: 'pulse 1.5s infinite' }}>評価中…</span>
+                        <span className="flex items-center" style={{ gap: 6 }}>
+                          <span
+                            className="inline-block rounded-full"
+                            style={{
+                              width: 7, height: 7,
+                              background: 'var(--color-accent)',
+                              boxShadow: '0 0 6px var(--color-accent)',
+                              animation: 'pulse 1.5s infinite',
+                            }}
+                          />
+                          <span className="text-accent font-mono text-xs">評価中…</span>
+                        </span>
                       )}
                       {!result && !isRunning && (
                         <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>待機</span>
@@ -257,26 +273,28 @@ export function TestRunningPage() {
         {/* ライブログ */}
         <div className="flex flex-col flex-1 min-w-0" style={{ gap: 16 }}>
           <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>ライブログ</span>
-          <div className="flex flex-col overflow-y-auto" style={{ gap: 9 }}>
+          <div
+            ref={consoleRef}
+            className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-surface border border-hairline"
+            style={{ gap: 7, padding: '16px 20px', borderRadius: 8 }}
+          >
             {logs.map((entry, i) => (
               <div key={i} className="flex" style={{ gap: 12 }}>
-                <span className="text-text-lo font-mono flex-shrink-0" style={{ fontSize: 13 }}>{entry.ts}</span>
+                <span className="text-text-lo font-mono flex-shrink-0" style={{ fontSize: 13 }}>[{entry.ts}]</span>
                 <span
                   className="font-mono"
                   style={{
                     fontSize: 13,
                     lineHeight: 1.5,
-                    color: entry.level === 'hi' ? 'var(--color-text-hi)'
-                      : entry.level === 'accent' ? 'var(--color-accent)'
-                      : entry.level === 'mid' ? 'var(--color-text-mid)'
-                      : 'var(--color-text-lo)',
+                    color: entry.color === 'hi' ? 'var(--color-text-hi)'
+                      : entry.color === 'lo' ? 'var(--color-text-lo)'
+                      : 'var(--color-text-mid)',
                   }}
                 >
                   {entry.msg}
                 </span>
               </div>
             ))}
-            <div ref={logsEndRef} />
           </div>
         </div>
       </div>

@@ -62,8 +62,8 @@ describe('TestInputPage (統合後)', () => {
     });
   });
 
-  it('「作成して実行」ボタンが表示される', () => {
+  it('「テスト実行」ボタンが表示される', () => {
     renderPage();
-    expect(screen.getByText(/作成して実行/)).toBeInTheDocument();
+    expect(screen.getByText(/テスト実行/)).toBeInTheDocument();
   });
 });

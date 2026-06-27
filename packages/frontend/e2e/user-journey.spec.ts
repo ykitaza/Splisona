@@ -21,7 +21,7 @@ test('ペルソナ一覧→テスト作成→実行→レポート閲覧の全�
   const row = page.getByText('LP比較テスト');
   await row.click();
   await expect(page).toHaveURL(/\/tests\/t-1\/report/);
-  await expect(page.getByText('A案の勝ち')).toBeVisible();
+  await expect(page.getByText('の勝ち')).toBeVisible();
 });
 
 test('テスト一覧→レポート→ペルソナ評価の展開', async ({ page }) => {

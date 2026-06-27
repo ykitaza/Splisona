@@ -7,7 +7,7 @@
 - **ペルソナ管理**: プリセットまたはAI生成のペルソナを作成・編集し、ユーザー属性（年齢・職業・価値観など）を定義する
 - **デザインA/Bテスト実行**: Figma URL・サイトURL・画像アップロードの3入力方式でデザインをキャプチャし、Amazon Bedrock上のLLMがペルソナ視点で比較評価する
 - **ペルソナインタビュー**: 任意のペルソナにチャット形式で質問し、ペルソナとして回答を得る
-- **評価レポート**: 勝者・スコア（ usability / aesthetics / clarity / engagement）・理由をまとめたレポートをCSVエクスポートできる
+- **評価レポート**: 勝者・スコア（usability / aesthetics / clarity / engagement / trust）・理由をまとめたレポートをCSVエクスポートできる
 
 ## Target Use Cases
 

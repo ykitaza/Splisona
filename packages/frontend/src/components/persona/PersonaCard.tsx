@@ -107,8 +107,8 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
           </span>
           <div className="flex items-center gap-2">
             <span
-              className="font-sans text-xs font-medium"
-              style={{ background: 'var(--color-accent-dim)', color: 'var(--color-accent)', borderRadius: 5, padding: '3px 9px' }}
+              className="font-mono"
+              style={{ fontSize: 10, fontWeight: 400, background: 'var(--color-accent-dim)', color: 'var(--color-accent)', borderRadius: 5, padding: '3px 9px' }}
             >
               {STANCE_LABELS[persona.type] ?? persona.type}
             </span>

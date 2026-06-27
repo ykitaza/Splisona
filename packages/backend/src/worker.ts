@@ -9,18 +9,10 @@ type Bindings = CloudflareEnv;
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-app.use("*", cors({
-  origin: ["https://*.pages.dev", "http://localhost:5173"],
-  allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowHeaders: ["Content-Type", "Authorization", "Cf-Access-Jwt-Assertion"],
-}));
-
 function getUserId(c: { req: { header: (name: string) => string | undefined } }): string {
   const cfEmail = c.req.header("Cf-Access-Authenticated-User-Email");
   if (cfEmail) return cfEmail;
-  const localId = c.req.header("x-local-user-id");
-  if (localId) return localId;
-  throw new Error("Unauthorized");
+  throw new Error("Unauthorized: Cloudflare Access required");
 }
 
 function handleError(e: unknown) {
@@ -138,7 +130,7 @@ app.post("/tests", async (c) => {
     const container = createCloudflareContainer(c.env);
     const userId = getUserId(c);
     const input = await c.req.json();
-    if (!input.title?.trim()) return c.json({ error: "VALIDATION_ERROR", message: "title is required" }, 400);
+    if (!input.title) input.title = "";
     return c.json(await container.abtestUseCases.create(userId, input), 201);
   } catch (e) {
     const err = handleError(e);
