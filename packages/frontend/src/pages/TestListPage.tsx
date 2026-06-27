@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
-import { Search, ChevronDown, Plus, Trash2, Check, MoreVertical, Pencil, FolderPlus, FolderMinus } from 'lucide-react';
+import { Search, ChevronDown, Plus, Trash2, Check, MoreVertical, Pencil, FolderPlus, FolderMinus, X } from 'lucide-react';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { listProjects, addTestToProject, removeTestFromProject } from '../api/projects';
 import { updateTest } from '../api/tests';
 import type { ABTest, Project } from '../types';
+import { API_BASE } from '../api/client';
 import { testDraft, type DesignSideData } from '../lib/testDraft';
 
 function relativeDate(dateStr: string): string {
@@ -67,9 +68,9 @@ function TestRowMenu({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); setSubOpen(false); }}
-        className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-surface"
+        className="flex items-center justify-center w-5 h-5 rounded transition-colors hover:bg-surface"
       >
-        <MoreVertical size={15} style={{ color: '#9BA1AC' }} />
+        <MoreVertical size={14} style={{ color: '#9BA1AC' }} />
       </button>
       {open && (
         <div
@@ -162,10 +163,22 @@ export function TestListPage() {
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [moveMenuOpen, setMoveMenuOpen] = useState(false);
+  const moveMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     listProjects().then(setAllProjects);
   }, []);
+
+  useEffect(() => {
+    if (!moveMenuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (moveMenuRef.current && !moveMenuRef.current.contains(e.target as Node)) setMoveMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [moveMenuOpen]);
 
   function findParentProject(testId: string): Project | null {
     return allProjects.find((p) => p.testIds.includes(testId)) ?? null;
@@ -224,14 +237,14 @@ export function TestListPage() {
 
   function handleRowClick(test: ABTest) {
     if (selectionMode) { toggleOne(test.testId); return; }
-    if (test.status === 'running') navigate(`/tests/${test.testId}/running`);
-    else if (test.status === 'completed' || test.status === 'failed') navigate(`/tests/${test.testId}/report`);
-    else if (test.status === 'draft') {
-      const sideA = restoreSide(test.designAInput);
-      const sideB = restoreSide(test.designBInput);
-      testDraft.resume({ title: test.title, sideA, sideB, personaIds: test.personaIds, resumeId: test.testId });
-      navigate('/tests/new');
-    }
+    setExpandedId(expandedId === test.testId ? null : test.testId);
+  }
+
+  function navigateToDraft(test: ABTest) {
+    const sideA = restoreSide(test.designAInput);
+    const sideB = restoreSide(test.designBInput);
+    testDraft.resume({ title: test.title, sideA, sideB, personaIds: test.personaIds, resumeId: test.testId });
+    navigate('/tests/new');
   }
 
   if (isLoading) {
@@ -248,63 +261,109 @@ export function TestListPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-baseline" style={{ gap: 12 }}>
           <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>A/Bテスト</h1>
-          <span className="text-text-mid font-mono text-sm">全 {tests.length} 件</span>
+          {selectionMode ? (
+            <span className="font-mono text-sm" style={{ color: '#9BA1AC' }}>{selected.size}件を選択中</span>
+          ) : (
+            <span className="text-text-mid font-mono text-sm">全 {tests.length} 件</span>
+          )}
         </div>
         <div className="flex items-center" style={{ gap: 8 }}>
-          <button
-            type="button"
-            className="flex items-center border transition-colors hover:bg-raised"
-            style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
-          >
-            <span className="font-sans" style={{ fontSize: 13, color: '#9BA1AC' }}>絞り込み</span>
-            <span className="font-sans font-semibold" style={{ fontSize: 13, color: '#F2F4F7' }}>すべて</span>
-            <ChevronDown size={14} style={{ color: '#5B616B' }} />
-          </button>
-          <button
-            type="button"
-            onClick={() => { if (selectionMode) exitSelectionMode(); else setSelectionMode(true); }}
-            className="flex items-center border transition-colors hover:bg-raised"
-            style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
-          >
-            <span className="font-sans font-medium" style={{ fontSize: 13, color: '#F2F4F7' }}>テストを選択</span>
-          </button>
-          <Link
-            to="/tests/new"
-            className="flex items-center border transition-colors hover:bg-raised"
-            style={{ gap: 8, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
-          >
-            <Plus size={14} style={{ color: '#F2F4F7' }} />
-            <span className="font-sans font-semibold" style={{ fontSize: 13, color: '#F2F4F7' }}>新規テスト</span>
-          </Link>
+          {selectionMode ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selected.size === filtered.length) setSelected(new Set());
+                  else setSelected(new Set(filtered.map((t) => t.testId)));
+                }}
+                className="flex items-center border transition-colors hover:bg-raised"
+                style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
+              >
+                <span className="font-sans font-semibold" style={{ fontSize: 13, color: '#F2F4F7' }}>すべて選択</span>
+              </button>
+              <div ref={moveMenuRef} className="relative">
+                <button
+                  type="button"
+                  disabled={selected.size === 0}
+                  onClick={() => setMoveMenuOpen((o) => !o)}
+                  className="flex items-center border transition-colors hover:bg-raised disabled:opacity-40"
+                  style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
+                >
+                  <span className="font-sans font-medium" style={{ fontSize: 13, color: '#F2F4F7' }}>プロジェクトに移動</span>
+                </button>
+                {moveMenuOpen && allProjects.length > 0 && (
+                  <div
+                    className="absolute right-0 top-full mt-2 bg-surface border border-hairline rounded-lg overflow-hidden z-30"
+                    style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 200 }}
+                  >
+                    {allProjects.map((p) => (
+                      <button
+                        key={p.projectId}
+                        type="button"
+                        onClick={async () => {
+                          await Promise.all([...selected].map((tid) => addTestToProject(p.projectId, tid)));
+                          setMoveMenuOpen(false);
+                          exitSelectionMode();
+                          refreshProjects();
+                        }}
+                        className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised truncate"
+                        style={{ color: '#E1E4EA' }}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                disabled={selected.size === 0 || isDeleting}
+                onClick={requestBulkDelete}
+                className="flex items-center border transition-colors hover:bg-raised disabled:opacity-40"
+                style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#E06A6A', color: '#E06A6A' }}
+              >
+                <span className="font-sans font-medium" style={{ fontSize: 13 }}>削除</span>
+              </button>
+              <button
+                type="button"
+                onClick={exitSelectionMode}
+                className="font-sans font-medium transition-colors hover:text-text-hi"
+                style={{ fontSize: 13, color: '#9BA1AC', padding: '8px 14px' }}
+              >
+                キャンセル
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="flex items-center border transition-colors hover:bg-raised"
+                style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
+              >
+                <span className="font-sans" style={{ fontSize: 13, color: '#9BA1AC' }}>絞り込み</span>
+                <span className="font-sans font-semibold" style={{ fontSize: 13, color: '#F2F4F7' }}>すべて</span>
+                <ChevronDown size={14} style={{ color: '#5B616B' }} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectionMode(true)}
+                className="flex items-center border transition-colors hover:bg-raised"
+                style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
+              >
+                <span className="font-sans font-medium" style={{ fontSize: 13, color: '#F2F4F7' }}>テストを選択</span>
+              </button>
+              <Link
+                to="/tests/new"
+                className="flex items-center border transition-colors hover:bg-raised"
+                style={{ gap: 8, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
+              >
+                <Plus size={14} style={{ color: '#F2F4F7' }} />
+                <span className="font-sans font-semibold" style={{ fontSize: 13, color: '#F2F4F7' }}>新規テスト</span>
+              </Link>
+            </>
+          )}
         </div>
       </div>
-
-      {/* Selection toolbar */}
-      {selectionMode && (
-        <div className="flex items-center justify-between">
-          <span className="font-mono" style={{ fontSize: 13, color: '#9BA1AC' }}>{selected.size}件を選択中</span>
-          <div className="flex items-center" style={{ gap: 12 }}>
-            <button
-              type="button"
-              onClick={exitSelectionMode}
-              className="flex items-center border transition-colors hover:bg-raised"
-              style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14', color: '#9BA1AC' }}
-            >
-              <span className="font-sans" style={{ fontSize: 13 }}>キャンセル</span>
-            </button>
-            <button
-              type="button"
-              disabled={selected.size === 0 || isDeleting}
-              onClick={requestBulkDelete}
-              className="flex items-center border transition-colors disabled:opacity-40"
-              style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#E06A6A', color: '#E06A6A' }}
-            >
-              <Trash2 size={14} />
-              <span className="font-sans" style={{ fontSize: 13 }}>{selected.size}件を削除</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Search bar */}
       <div
@@ -345,84 +404,142 @@ export function TestListPage() {
             const isChecked = selected.has(test.testId);
             const parent = findParentProject(test.testId);
             const isRenaming = renamingId === test.testId;
+            const isExpanded = expandedId === test.testId;
+            const thumbA = test.designAInput?.imageKey ? `${API_BASE}/images/${test.designAInput.imageKey}` : null;
+            const thumbB = test.designBInput?.imageKey ? `${API_BASE}/images/${test.designBInput.imageKey}` : null;
             return (
-              <div
-                key={test.testId}
-                role="button"
-                tabIndex={0}
-                onClick={() => { if (!isRenaming) handleRowClick(test); }}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !isRenaming) handleRowClick(test); }}
-                className="group flex items-center cursor-pointer transition-[background-color] duration-150 hover:bg-[#1C1F26]"
-                style={{
-                  gap: 16,
-                  padding: '12px 12px',
-                  marginInline: -4,
-                  borderRadius: 10,
-                  background: isChecked ? '#6E78D926' : undefined,
-                }}
-              >
-                {selectionMode && (
-                  <div
-                    className="flex items-center justify-center flex-shrink-0"
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: 3,
-                      background: isChecked ? '#6E78D9' : 'transparent',
-                      border: isChecked ? 'none' : '1px solid #5B616B',
-                    }}
-                  >
-                    {isChecked && <Check size={10} color="#FFFFFF" />}
-                  </div>
-                )}
-                <div className="flex flex-col flex-1 min-w-0" style={{ gap: 2 }}>
-                  {isRenaming ? (
-                    <input
-                      type="text"
-                      value={renameValue}
-                      onChange={(e) => setRenameValue(e.target.value)}
-                      onKeyDown={async (e) => {
-                        if (e.key === 'Enter' && renameValue.trim()) {
-                          await updateTest(test.testId, { title: renameValue.trim() });
-                          refresh();
-                          setRenamingId(null);
-                        }
-                        if (e.key === 'Escape') setRenamingId(null);
+              <div key={test.testId} className="flex flex-col">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => { if (!isRenaming) handleRowClick(test); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !isRenaming) handleRowClick(test); }}
+                  className="group flex items-center cursor-pointer transition-[background-color] duration-150 hover:bg-[#1C1F26]"
+                  style={{
+                    gap: 16,
+                    padding: '0 12px',
+                    height: 48,
+                    marginInline: -4,
+                    borderRadius: 10,
+                    background: isChecked ? '#6E78D926' : undefined,
+                  }}
+                >
+                  {selectionMode && (
+                    <div
+                      className="flex items-center justify-center flex-shrink-0"
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: 3,
+                        background: isChecked ? '#6E78D9' : 'transparent',
+                        border: isChecked ? 'none' : '1px solid #5B616B',
                       }}
-                      onClick={(e) => e.stopPropagation()}
-                      autoFocus
-                      className="bg-raised border border-hairline rounded-md outline-none font-sans text-text-hi transition-colors focus:border-accent"
-                      style={{ padding: '4px 10px', fontSize: 14, width: 320 }}
-                    />
-                  ) : (
-                    <span className="font-sans font-medium min-w-0 truncate" style={{ fontSize: 14, color: '#F2F4F7' }}>{test.title}</span>
+                    >
+                      {isChecked && <Check size={10} color="#FFFFFF" />}
+                    </div>
                   )}
-                  {parent && !isRenaming && (
-                    <span className="font-sans text-text-lo truncate opacity-0 group-hover:opacity-100 transition-opacity" style={{ fontSize: 11 }}>
-                      {parent.name}
-                    </span>
+                  <div className="flex items-center flex-1 min-w-0" style={{ gap: 8 }}>
+                    {isRenaming ? (
+                      <input
+                        type="text"
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter' && renameValue.trim()) {
+                            await updateTest(test.testId, { title: renameValue.trim() });
+                            refresh();
+                            setRenamingId(null);
+                          }
+                          if (e.key === 'Escape') setRenamingId(null);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                        className="bg-raised border border-hairline rounded-md outline-none font-sans text-text-hi transition-colors focus:border-accent"
+                        style={{ padding: '4px 10px', fontSize: 14, width: 320 }}
+                      />
+                    ) : (
+                      <>
+                        <span className="font-sans font-medium min-w-0 truncate" style={{ fontSize: 14, color: '#F2F4F7' }}>{test.title}</span>
+                        {parent && (
+                          <span className="font-sans text-text-lo flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ fontSize: 11 }}>
+                            {parent.name}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <span className={`font-mono text-text-lo flex-shrink-0${!selectionMode ? ' group-hover:hidden' : ''}`} style={{ fontSize: 13, width: 96, textAlign: 'right' }}>{relativeDate(test.createdAt)}</span>
+                  {!selectionMode && (
+                    <div className="hidden group-hover:block">
+                      <TestRowMenu
+                        testId={test.testId}
+                        parentProject={parent}
+                        availableProjects={allProjects.filter((p) => !p.testIds.includes(test.testId))}
+                        onRename={() => { setRenameValue(test.title); setRenamingId(test.testId); }}
+                        onAddToProject={async (projectId) => {
+                          await addTestToProject(projectId, test.testId);
+                          refreshProjects();
+                        }}
+                        onRemoveFromProject={async () => {
+                          if (parent) {
+                            await removeTestFromProject(parent.projectId, test.testId);
+                            refreshProjects();
+                          }
+                        }}
+                        onDelete={() => setPendingDelete({ type: 'single', id: test.testId })}
+                      />
+                    </div>
                   )}
                 </div>
-                <span className="font-mono text-text-lo flex-shrink-0" style={{ fontSize: 13, width: 96, textAlign: 'right' }}>{relativeDate(test.createdAt)}</span>
-                {!selectionMode && (
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <TestRowMenu
-                      testId={test.testId}
-                      parentProject={parent}
-                      availableProjects={allProjects.filter((p) => !p.testIds.includes(test.testId))}
-                      onRename={() => { setRenameValue(test.title); setRenamingId(test.testId); }}
-                      onAddToProject={async (projectId) => {
-                        await addTestToProject(projectId, test.testId);
-                        refreshProjects();
-                      }}
-                      onRemoveFromProject={async () => {
-                        if (parent) {
-                          await removeTestFromProject(parent.projectId, test.testId);
-                          refreshProjects();
-                        }
-                      }}
-                      onDelete={() => setPendingDelete({ type: 'single', id: test.testId })}
-                    />
+                {isExpanded && (
+                  <div className="flex flex-col" style={{ padding: '8px 12px 16px 12px', gap: 12 }}>
+                    <div className="flex items-center" style={{ gap: 12 }}>
+                      <div className="overflow-hidden flex-shrink-0" style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}>
+                        {thumbA && <img src={thumbA} alt="A" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                      </div>
+                      <span className="text-text-lo" style={{ fontSize: 14 }}>→</span>
+                      <div className="overflow-hidden flex-shrink-0" style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}>
+                        {thumbB && <img src={thumbB} alt="B" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                      </div>
+                    </div>
+                    <div className="flex items-center" style={{ gap: 12 }}>
+                      {(test.status === 'completed' || test.status === 'failed') && (
+                        <Link
+                          to={`/tests/${test.testId}/report`}
+                          className="font-sans font-medium text-accent"
+                          style={{ fontSize: 13 }}
+                        >
+                          詳細レポートを見る →
+                        </Link>
+                      )}
+                      {test.status === 'running' && (
+                        <Link
+                          to={`/tests/${test.testId}/running`}
+                          className="font-sans font-medium text-accent"
+                          style={{ fontSize: 13 }}
+                        >
+                          実行状況を見る →
+                        </Link>
+                      )}
+                      {test.status === 'draft' && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); navigateToDraft(test); }}
+                          className="font-sans font-medium text-accent"
+                          style={{ fontSize: 13 }}
+                        >
+                          編集を続ける →
+                        </button>
+                      )}
+                      <div className="flex-1" />
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setExpandedId(null); }}
+                        className="flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-raised"
+                      >
+                        <X size={14} className="text-text-lo" />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
