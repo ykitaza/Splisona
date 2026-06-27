@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { ProjectRepository } from "../domain/ports/project-repository.js";
 import type { ABTestRepository } from "../domain/ports/abtest-repository.js";
+import { toABTestDTO } from "../domain/types.js";
 import type { Project } from "../domain/types.js";
 import { NotFoundError } from "./errors.js";
 
@@ -80,7 +81,8 @@ export class ProjectUseCases {
     const allTests = await this.testRepo.findAllByUser(userId);
     const tests = project.testIds
       .map((id) => allTests.find((t) => t.testId === id))
-      .filter(Boolean);
+      .filter((t): t is NonNullable<typeof t> => !!t)
+      .map(toABTestDTO);
     return { project, tests };
   }
 }
