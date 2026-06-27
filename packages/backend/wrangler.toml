@@ -3,12 +3,11 @@ main = "src/worker.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
-[assets]
-directory = "../frontend/dist"
-
 [vars]
 GEMINI_MODEL_ID = "gemini-2.5-flash"
-WORKER_URL = "https://splisona-api.demo-user01.workers.dev"
+WORKER_URL = "https://splisona.pages.dev/api"
+CF_ACCESS_TEAM_DOMAIN = "https://plain-sky-61dc.cloudflareaccess.com"
+CF_ACCESS_AUD = "980dfeb527bf01dccd8d363daa9768e920577325494dbe8172590e22fa364988"
 
 [[d1_databases]]
 binding = "DB"
