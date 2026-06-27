@@ -1,25 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useABTests } from '../hooks/useABTests';
-import { Search, ChevronDown, Plus, Trash2, Check, MoreVertical, Pencil, FolderPlus, FolderMinus, X } from 'lucide-react';
+import { Search, ChevronDown, Plus, Trash2, Check, Pencil, FolderPlus, FolderMinus } from 'lucide-react';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
+import { TestRow, MoreButton, TestRowMenu, TestRowMenuButton, TestRowMenuDivider } from '../components/TestRow';
 import { listProjects, addTestToProject, removeTestFromProject } from '../api/projects';
 import { updateTest } from '../api/tests';
 import type { ABTest, Project } from '../types';
-import { API_BASE } from '../api/client';
 import { testDraft, type DesignSideData } from '../lib/testDraft';
-
-function relativeDate(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (minutes < 1) return 'たった今';
-  if (minutes < 60) return `${minutes} 分前`;
-  if (hours < 24) return `${hours} 時間前`;
-  if (days < 30) return `${days} 日前`;
-  return new Date(dateStr).toLocaleDateString('ja-JP');
-}
 
 function restoreSide(input: ABTest['designAInput']): DesignSideData | null {
   if (!input) return null;
@@ -33,7 +21,7 @@ function restoreSide(input: ABTest['designAInput']): DesignSideData | null {
   return null;
 }
 
-function TestRowMenu({
+function RowMenu({
   testId,
   parentProject,
   availableProjects,
@@ -65,39 +53,20 @@ function TestRowMenu({
 
   return (
     <div ref={ref} className="relative flex-shrink-0">
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); setSubOpen(false); }}
-        className="flex items-center justify-center w-5 h-5 rounded transition-colors hover:bg-surface"
-      >
-        <MoreVertical size={14} style={{ color: '#9BA1AC' }} />
-      </button>
+      <MoreButton onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); setSubOpen(false); }} />
       {open && (
-        <div
-          className="absolute right-0 top-full mt-1 bg-surface border border-hairline rounded-lg overflow-visible z-30"
-          style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 200 }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
+        <TestRowMenu>
+          <TestRowMenuButton
             onClick={() => { setOpen(false); onRename(); }}
-            className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-            style={{ gap: 10, color: '#E1E4EA' }}
-          >
-            <Pencil size={14} style={{ color: '#9BA1AC' }} />
-            名前を変更
-          </button>
-
+            icon={<Pencil size={14} style={{ color: '#9BA1AC' }} />}
+            label="名前を変更"
+          />
           {parentProject ? (
-            <button
-              type="button"
+            <TestRowMenuButton
               onClick={() => { setOpen(false); onRemoveFromProject(); }}
-              className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-              style={{ gap: 10, color: '#E1E4EA' }}
-            >
-              <FolderMinus size={14} style={{ color: '#9BA1AC' }} />
-              プロジェクトから削除
-            </button>
+              icon={<FolderMinus size={14} style={{ color: '#9BA1AC' }} />}
+              label="プロジェクトから削除"
+            />
           ) : availableProjects.length > 0 ? (
             <div className="relative">
               <button
@@ -132,18 +101,14 @@ function TestRowMenu({
               )}
             </div>
           ) : null}
-
-          <div style={{ height: 1, background: '#FFFFFF14', margin: '0 12px' }} />
-          <button
-            type="button"
+          <TestRowMenuDivider />
+          <TestRowMenuButton
             onClick={() => { setOpen(false); onDelete(); }}
-            className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-            style={{ gap: 10, color: '#E5484D' }}
-          >
-            <Trash2 size={14} style={{ color: '#E5484D' }} />
-            削除
-          </button>
-        </div>
+            icon={<Trash2 size={14} style={{ color: '#E5484D' }} />}
+            label="削除"
+            danger
+          />
+        </TestRowMenu>
       )}
     </div>
   );
@@ -403,146 +368,55 @@ export function TestListPage() {
           {filtered.map((test) => {
             const isChecked = selected.has(test.testId);
             const parent = findParentProject(test.testId);
-            const isRenaming = renamingId === test.testId;
-            const isExpanded = expandedId === test.testId;
-            const thumbA = test.designAInput?.imageKey ? `${API_BASE}/images/${test.designAInput.imageKey}` : null;
-            const thumbB = test.designBInput?.imageKey ? `${API_BASE}/images/${test.designBInput.imageKey}` : null;
             return (
-              <div key={test.testId} className="flex flex-col">
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => { if (!isRenaming) handleRowClick(test); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !isRenaming) handleRowClick(test); }}
-                  className="group flex items-center cursor-pointer transition-[background-color] duration-150 hover:bg-[#1C1F26]"
-                  style={{
-                    gap: 16,
-                    padding: '0 12px',
-                    height: 48,
-                    marginInline: -4,
-                    borderRadius: 10,
-                    background: isChecked ? '#6E78D926' : undefined,
-                  }}
-                >
-                  {selectionMode && (
-                    <div
-                      className="flex items-center justify-center flex-shrink-0"
-                      style={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: 3,
-                        background: isChecked ? '#6E78D9' : 'transparent',
-                        border: isChecked ? 'none' : '1px solid #5B616B',
-                      }}
-                    >
-                      {isChecked && <Check size={10} color="#FFFFFF" />}
-                    </div>
-                  )}
-                  <div className="flex items-center flex-1 min-w-0" style={{ gap: 8 }}>
-                    {isRenaming ? (
-                      <input
-                        type="text"
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        onKeyDown={async (e) => {
-                          if (e.key === 'Enter' && renameValue.trim()) {
-                            await updateTest(test.testId, { title: renameValue.trim() });
-                            refresh();
-                            setRenamingId(null);
-                          }
-                          if (e.key === 'Escape') setRenamingId(null);
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        autoFocus
-                        className="bg-raised border border-hairline rounded-md outline-none font-sans text-text-hi transition-colors focus:border-accent"
-                        style={{ padding: '4px 10px', fontSize: 14, width: 320 }}
-                      />
-                    ) : (
-                      <>
-                        <span className="font-sans font-medium min-w-0 truncate" style={{ fontSize: 14, color: '#F2F4F7' }}>{test.title}</span>
-                        {parent && (
-                          <span className="font-sans text-text-lo flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ fontSize: 11 }}>
-                            {parent.name}
-                          </span>
-                        )}
-                      </>
-                    )}
+              <TestRow
+                key={test.testId}
+                test={test}
+                expanded={expandedId === test.testId}
+                onToggleExpand={() => handleRowClick(test)}
+                highlighted={isChecked}
+                hideMenuOnHover={!selectionMode}
+                isRenaming={renamingId === test.testId}
+                renameValue={renameValue}
+                onRenameChange={setRenameValue}
+                onRenameSubmit={async () => {
+                  if (renameValue.trim()) {
+                    await updateTest(test.testId, { title: renameValue.trim() });
+                    refresh();
+                    setRenamingId(null);
+                  }
+                }}
+                onRenameCancel={() => setRenamingId(null)}
+                onNavigateToDraft={() => navigateToDraft(test)}
+                prefix={selectionMode ? (
+                  <div
+                    className="flex items-center justify-center flex-shrink-0"
+                    style={{
+                      width: 16, height: 16, borderRadius: 3,
+                      background: isChecked ? '#6E78D9' : 'transparent',
+                      border: isChecked ? 'none' : '1px solid #5B616B',
+                    }}
+                  >
+                    {isChecked && <Check size={10} color="#FFFFFF" />}
                   </div>
-                  <span className={`font-mono text-text-lo flex-shrink-0${!selectionMode ? ' group-hover:hidden' : ''}`} style={{ fontSize: 13, width: 96, textAlign: 'right' }}>{relativeDate(test.createdAt)}</span>
-                  {!selectionMode && (
-                    <div className="hidden group-hover:block">
-                      <TestRowMenu
-                        testId={test.testId}
-                        parentProject={parent}
-                        availableProjects={allProjects.filter((p) => !p.testIds.includes(test.testId))}
-                        onRename={() => { setRenameValue(test.title); setRenamingId(test.testId); }}
-                        onAddToProject={async (projectId) => {
-                          await addTestToProject(projectId, test.testId);
-                          refreshProjects();
-                        }}
-                        onRemoveFromProject={async () => {
-                          if (parent) {
-                            await removeTestFromProject(parent.projectId, test.testId);
-                            refreshProjects();
-                          }
-                        }}
-                        onDelete={() => setPendingDelete({ type: 'single', id: test.testId })}
-                      />
-                    </div>
-                  )}
-                </div>
-                {isExpanded && (
-                  <div className="flex flex-col" style={{ padding: '8px 12px 16px 12px', gap: 12 }}>
-                    <div className="flex items-center" style={{ gap: 12 }}>
-                      <div className="overflow-hidden flex-shrink-0" style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}>
-                        {thumbA && <img src={thumbA} alt="A" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                      </div>
-                      <span className="text-text-lo" style={{ fontSize: 14 }}>→</span>
-                      <div className="overflow-hidden flex-shrink-0" style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}>
-                        {thumbB && <img src={thumbB} alt="B" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                      </div>
-                    </div>
-                    <div className="flex items-center" style={{ gap: 12 }}>
-                      {(test.status === 'completed' || test.status === 'failed') && (
-                        <Link
-                          to={`/tests/${test.testId}/report`}
-                          className="font-sans font-medium text-accent"
-                          style={{ fontSize: 13 }}
-                        >
-                          詳細レポートを見る →
-                        </Link>
-                      )}
-                      {test.status === 'running' && (
-                        <Link
-                          to={`/tests/${test.testId}/running`}
-                          className="font-sans font-medium text-accent"
-                          style={{ fontSize: 13 }}
-                        >
-                          実行状況を見る →
-                        </Link>
-                      )}
-                      {test.status === 'draft' && (
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); navigateToDraft(test); }}
-                          className="font-sans font-medium text-accent"
-                          style={{ fontSize: 13 }}
-                        >
-                          編集を続ける →
-                        </button>
-                      )}
-                      <div className="flex-1" />
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setExpandedId(null); }}
-                        className="flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-raised"
-                      >
-                        <X size={14} className="text-text-lo" />
-                      </button>
-                    </div>
-                  </div>
+                ) : undefined}
+                titleSuffix={parent && (
+                  <span className="font-sans text-text-lo flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ fontSize: 11 }}>
+                    {parent.name}
+                  </span>
                 )}
-              </div>
+                menu={
+                  <RowMenu
+                    testId={test.testId}
+                    parentProject={parent}
+                    availableProjects={allProjects.filter((p) => !p.testIds.includes(test.testId))}
+                    onRename={() => { setRenameValue(test.title); setRenamingId(test.testId); }}
+                    onAddToProject={async (projectId) => { await addTestToProject(projectId, test.testId); refreshProjects(); }}
+                    onRemoveFromProject={async () => { if (parent) { await removeTestFromProject(parent.projectId, test.testId); refreshProjects(); } }}
+                    onDelete={() => setPendingDelete({ type: 'single', id: test.testId })}
+                  />
+                }
+              />
             );
           })}
         </div>

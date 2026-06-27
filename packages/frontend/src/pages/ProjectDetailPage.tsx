@@ -5,20 +5,8 @@ import { getProjectDetail, updateProject, deleteProject, removeTestFromProject }
 import { updateTest, deleteTest as apiDeleteTest } from '../api/tests';
 import { API_BASE } from '../api/client';
 import { testDraft } from '../lib/testDraft';
+import { TestRow, MoreButton, TestRowMenu, TestRowMenuButton, TestRowMenuDivider, relativeDate } from '../components/TestRow';
 import type { ProjectDetail, ABTest, DesignInput } from '../types';
-
-function relativeDate(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (minutes < 1) return 'たった今';
-  if (minutes < 60) return `${minutes} 分前`;
-  if (hours < 24) return `${hours} 時間前`;
-  if (days < 7) return `${days} 日前`;
-  if (days < 30) return `${Math.floor(days / 7)} 週間前`;
-  return new Date(dateStr).toLocaleDateString('ja-JP');
-}
 
 function ProjectMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
@@ -367,143 +355,93 @@ function LatestEntry({ test, index }: { test: ABTest; index: number }) {
   );
 }
 
+function PastEntryMenu({ testId, projectId, onRename, onRemoved, onDeleted }: {
+  testId: string; projectId: string;
+  onRename: () => void; onRemoved: () => void; onDeleted: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <MoreButton onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }} />
+      {open && (
+        <TestRowMenu>
+          <TestRowMenuButton
+            onClick={() => { setOpen(false); onRename(); }}
+            icon={<Pencil size={14} style={{ color: '#9BA1AC' }} />}
+            label="名前を変更"
+          />
+          <TestRowMenuButton
+            onClick={async () => { setOpen(false); await removeTestFromProject(projectId, testId); onRemoved(); }}
+            icon={<FolderMinus size={14} style={{ color: '#9BA1AC' }} />}
+            label="プロジェクトから削除"
+          />
+          <TestRowMenuDivider />
+          <TestRowMenuButton
+            onClick={async () => { setOpen(false); await apiDeleteTest(testId); onDeleted(); }}
+            icon={<Trash2 size={14} style={{ color: '#E5484D' }} />}
+            label="削除"
+            danger
+          />
+        </TestRowMenu>
+      )}
+    </div>
+  );
+}
+
 function PastEntry({ test, index, projectId, onRemoved, onDeleted, onRenamed }: {
   test: ABTest; index: number; projectId: string;
   onRemoved: () => void; onDeleted: () => void; onRenamed: (title: string) => void;
 }) {
-  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [menuOpen]);
 
   return (
-    <div className="flex flex-col" style={{ borderBottom: '1px solid #FFFFFF14' }}>
-      <div
-        className="group flex items-center cursor-pointer transition-[background-color] duration-150 hover:bg-[#1C1F26]"
-        style={{ gap: 16, padding: '0 8px', height: 48, borderRadius: 8 }}
-        onClick={() => { if (!isRenaming) setExpanded((e) => !e); }}
-      >
+    <TestRow
+      test={test}
+      expanded={expanded}
+      onToggleExpand={() => { if (!isRenaming) setExpanded((e) => !e); }}
+      borderBottom
+      expandPadding="8px 8px 16px 56px"
+      isRenaming={isRenaming}
+      renameValue={renameValue}
+      onRenameChange={setRenameValue}
+      onRenameSubmit={async () => {
+        if (renameValue.trim()) {
+          await updateTest(test.testId, { title: renameValue.trim() });
+          onRenamed(renameValue.trim());
+          setIsRenaming(false);
+        }
+      }}
+      onRenameCancel={() => setIsRenaming(false)}
+      prefix={
         <div className="flex flex-col items-center flex-shrink-0" style={{ width: 32, gap: 2 }}>
           <span className="font-mono text-text-mid" style={{ fontSize: 12 }}>#{index}</span>
           <span className="font-mono text-text-lo" style={{ fontSize: 10 }}>
             {new Date(test.createdAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
           </span>
         </div>
-        <div className="flex flex-col flex-1 min-w-0" style={{ gap: 2 }}>
-          {isRenaming ? (
-            <input
-              type="text"
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              onKeyDown={async (e) => {
-                if (e.key === 'Enter' && renameValue.trim()) {
-                  await updateTest(test.testId, { title: renameValue.trim() });
-                  onRenamed(renameValue.trim());
-                  setIsRenaming(false);
-                }
-                if (e.key === 'Escape') setIsRenaming(false);
-              }}
-              onClick={(e) => e.stopPropagation()}
-              autoFocus
-              className="bg-raised border border-hairline rounded-md outline-none font-sans text-text-hi transition-colors focus:border-accent"
-              style={{ padding: '4px 10px', fontSize: 14, width: 280 }}
-            />
-          ) : (
-            <span className="font-sans text-text-hi font-medium truncate" style={{ fontSize: 14 }}>
-              {test.title}
-            </span>
-          )}
-        </div>
-        <span className="font-mono text-text-lo flex-shrink-0 group-hover:hidden" style={{ fontSize: 12 }}>
-          {relativeDate(test.createdAt)}
-        </span>
-        <div ref={menuRef} className="relative flex-shrink-0 hidden group-hover:block">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
-            className="flex items-center justify-center w-5 h-5 rounded transition-colors hover:bg-surface"
-          >
-            <MoreVertical size={14} style={{ color: '#9BA1AC' }} />
-          </button>
-          {menuOpen && (
-            <div
-              className="absolute right-0 top-full mt-1 bg-surface border border-hairline rounded-lg overflow-hidden z-30"
-              style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 200 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => { setMenuOpen(false); setRenameValue(test.title); setIsRenaming(true); }}
-                className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-                style={{ gap: 10, color: '#E1E4EA' }}
-              >
-                <Pencil size={14} style={{ color: '#9BA1AC' }} />
-                名前を変更
-              </button>
-              <button
-                type="button"
-                onClick={async () => { setMenuOpen(false); await removeTestFromProject(projectId, test.testId); onRemoved(); }}
-                className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-                style={{ gap: 10, color: '#E1E4EA' }}
-              >
-                <FolderMinus size={14} style={{ color: '#9BA1AC' }} />
-                プロジェクトから削除
-              </button>
-              <div style={{ height: 1, background: '#FFFFFF14', margin: '0 12px' }} />
-              <button
-                type="button"
-                onClick={async () => { setMenuOpen(false); await apiDeleteTest(test.testId); onDeleted(); }}
-                className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-                style={{ gap: 10, color: '#E5484D' }}
-              >
-                <Trash2 size={14} style={{ color: '#E5484D' }} />
-                削除
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="flex flex-col" style={{ padding: '8px 8px 16px 56px', gap: 12 }}>
-          <div className="flex items-center" style={{ gap: 12 }}>
-            <DesignThumb imageKey={test.designAInput?.imageKey} label="A" />
-            <span className="text-text-lo" style={{ fontSize: 14 }}>→</span>
-            <DesignThumb imageKey={test.designBInput?.imageKey} label="B" />
-          </div>
-          <div className="flex items-center" style={{ gap: 12 }}>
-            {test.status === 'completed' && (
-              <button
-                type="button"
-                onClick={() => navigate(`/tests/${test.testId}/report`)}
-                className="font-sans font-medium text-accent"
-                style={{ fontSize: 13 }}
-              >
-                詳細レポートを見る →
-              </button>
-            )}
-            <div className="flex-1" />
-            <button
-              type="button"
-              onClick={() => setExpanded(false)}
-              className="flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-raised"
-            >
-              <X size={14} className="text-text-lo" />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      }
+      menu={
+        <PastEntryMenu
+          testId={test.testId}
+          projectId={projectId}
+          onRename={() => { setRenameValue(test.title); setIsRenaming(true); }}
+          onRemoved={onRemoved}
+          onDeleted={onDeleted}
+        />
+      }
+    />
   );
 }
