@@ -1,14 +1,29 @@
 import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createTestTable, deleteTestTable } from "../helpers/dynamo.js";
 
-vi.mock("../../src/shared/s3.js", () => ({
-  s3Client: {},
-  IMAGE_BUCKET: "test-bucket",
-}));
+const mockAIService = {
+  generateDraft: vi.fn(),
+  chat: vi.fn(),
+  evaluateDesigns: vi.fn(),
+  summarizeReasons: vi.fn(),
+};
+
+vi.mock("../../src/container.js", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("../../src/container.js")>();
+  return {
+    ...orig,
+    createContainer: (config?: unknown) => orig.createContainer({
+      ...(config as object),
+      aiService: mockAIService,
+    }),
+  };
+});
 
 import { getReport, exportReport, listTestsForReport } from "../../src/report/handler.js";
-import { putItem, abtestKey } from "../../src/shared/dynamo.js";
-import type { ABTestRecord, EvaluationRecord } from "../../src/shared/types.js";
+import { createContainer } from "../../src/container.js";
+
+const container = createContainer();
+const { testRepo, evalRepo } = container;
 
 function makeEvent(userId: string, testId?: string) {
   return {
@@ -19,41 +34,40 @@ function makeEvent(userId: string, testId?: string) {
   };
 }
 
-async function seedTest(userId: string, testId: string, overrides: Partial<ABTestRecord> = {}) {
-  const record: ABTestRecord = {
-    PK: `USER#${userId}`,
-    SK: `ABTEST#${testId}`,
-    title: "レポートテスト",
-    status: "completed",
+async function seedTest(userId: string, testId: string, overrides: Partial<{
+  title: string; status: string; personaIds: string[];
+}> = {}) {
+  await testRepo.save({
+    testId,
+    userId,
+    title: overrides.title ?? "レポートテスト",
+    status: (overrides.status ?? "completed") as "completed",
     designAImageKey: "images/a.png",
     designBImageKey: "images/b.png",
     designAInputType: "image_upload",
     designBInputType: "image_upload",
-    personaIds: [],
+    personaIds: overrides.personaIds ?? [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    ...overrides,
-  };
-  await putItem(record as unknown as Record<string, unknown>);
-  return record;
+  });
 }
 
-async function seedEvaluation(testId: string, personaId: string, winner: "A" | "B", overrides: Partial<EvaluationRecord> = {}) {
-  const record: EvaluationRecord = {
-    PK: `ABTEST#${testId}`,
-    SK: `EVAL#${personaId}`,
+async function seedEvaluation(testId: string, personaId: string, winner: "A" | "B", overrides: Partial<{
+  scoresA: { usability: number; aesthetics: number; clarity: number; engagement: number; trust: number };
+  scoresB: { usability: number; aesthetics: number; clarity: number; engagement: number; trust: number };
+}> = {}) {
+  await evalRepo.save({
+    testId,
+    personaId,
     winner,
     confidence: 80,
     reason: "理由",
-    scoresA: { usability: 8, aesthetics: 7, clarity: 9, engagement: 6, trust: 7 },
-    scoresB: { usability: 5, aesthetics: 6, clarity: 5, engagement: 7, trust: 5 },
+    scoresA: overrides.scoresA ?? { usability: 8, aesthetics: 7, clarity: 9, engagement: 6, trust: 7 },
+    scoresB: overrides.scoresB ?? { usability: 5, aesthetics: 6, clarity: 5, engagement: 7, trust: 5 },
     status: "completed",
     personaDisplayName: `ペルソナ${personaId}`,
     evaluatedAt: new Date().toISOString(),
-    ...overrides,
-  };
-  await putItem(record as unknown as Record<string, unknown>);
-  return record;
+  });
 }
 
 describe("Report handler", () => {
@@ -143,18 +157,19 @@ describe("Report handler", () => {
       const userId = "user-report-5";
       const testId = "test-report-5";
       await seedTest(userId, testId, { personaIds: ["p1"] });
-      await putItem({
-        PK: `ABTEST#${testId}`,
-        SK: `EVAL#p1`,
+      // DynamoDBに直接 trust なしのデータを書き込む（旧データシミュレーション）
+      await evalRepo.save({
+        testId,
+        personaId: "p1",
         winner: "A",
         confidence: 80,
         reason: "理由",
-        scoresA: { usability: 8, aesthetics: 7, clarity: 9, engagement: 6 },
-        scoresB: { usability: 5, aesthetics: 6, clarity: 5, engagement: 7 },
+        scoresA: { usability: 8, aesthetics: 7, clarity: 9, engagement: 6, trust: 0 },
+        scoresB: { usability: 5, aesthetics: 6, clarity: 5, engagement: 7, trust: 0 },
         status: "completed",
         personaDisplayName: "旧ペルソナ",
         evaluatedAt: new Date().toISOString(),
-      } as unknown as Record<string, unknown>);
+      });
 
       const res = await getReport(makeEvent(userId, testId));
       const body = JSON.parse(res.body);

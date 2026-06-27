@@ -1,5 +1,14 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createTestTable, deleteTestTable } from "../helpers/dynamo.js";
+
+vi.mock("../../src/container.js", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("../../src/container.js")>();
+  return {
+    ...orig,
+    createContainer: (config?: unknown) => orig.createContainer(config as object),
+  };
+});
+
 import { listPersonas, createPersona, getPersona, updatePersona, deletePersona } from "../../src/persona/handler.js";
 
 function makeEvent(userId: string, pathParams: Record<string, string> = {}, body?: unknown) {

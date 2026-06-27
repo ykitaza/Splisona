@@ -1,10 +1,13 @@
 import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createTestTable, deleteTestTable } from "../helpers/dynamo.js";
 
-vi.mock("../../src/shared/s3.js", () => ({
-  s3Client: {},
-  IMAGE_BUCKET: "test-bucket",
-}));
+vi.mock("../../src/container.js", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("../../src/container.js")>();
+  return {
+    ...orig,
+    createContainer: (config?: unknown) => orig.createContainer(config as object),
+  };
+});
 
 import { getSettings, putSettings } from "../../src/settings/handler.js";
 

@@ -1,14 +1,22 @@
 import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createTestTable, deleteTestTable } from "../helpers/dynamo.js";
 
-const { mockGetSignedUrl } = vi.hoisted(() => ({ mockGetSignedUrl: vi.fn() }));
-vi.mock("../../src/shared/s3.js", () => ({
-  s3Client: {},
-  IMAGE_BUCKET: "test-bucket",
-}));
-vi.mock("@aws-sdk/s3-request-presigner", () => ({
-  getSignedUrl: mockGetSignedUrl,
-}));
+const mockStorageService = {
+  getUploadUrl: vi.fn(),
+  putObject: vi.fn(),
+  getPreviewUrl: vi.fn(),
+};
+
+vi.mock("../../src/container.js", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("../../src/container.js")>();
+  return {
+    ...orig,
+    createContainer: (config?: unknown) => orig.createContainer({
+      ...(config as object),
+      storageService: mockStorageService,
+    }),
+  };
+});
 
 import {
   createTest,
@@ -128,7 +136,10 @@ describe("ABTest CRUD handlers", () => {
       const createRes = await createTest(makeEvent("user-url-ab", {}, { title: "URLテスト" }));
       const created = JSON.parse(createRes.body);
 
-      mockGetSignedUrl.mockResolvedValueOnce("https://s3.example.com/presigned-url");
+      mockStorageService.getUploadUrl.mockResolvedValueOnce({
+        uploadUrl: "https://s3.example.com/presigned-url",
+        imageKey: `user-url-ab/${created.testId}/A.png`,
+      });
 
       const res = await getUploadUrl(makeEvent("user-url-ab", { id: created.testId }, {
         side: "A",

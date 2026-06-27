@@ -1,11 +1,23 @@
 import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createTestTable, deleteTestTable } from "../helpers/dynamo.js";
 
-const { mockBedrockSend } = vi.hoisted(() => ({ mockBedrockSend: vi.fn() }));
-vi.mock("../../src/shared/bedrock.js", () => ({
-  bedrockClient: { send: mockBedrockSend },
-  MODEL_ID: "amazon.nova-lite-v1:0",
-}));
+const mockAIService = {
+  generateDraft: vi.fn(),
+  chat: vi.fn(),
+  evaluateDesigns: vi.fn(),
+  summarizeReasons: vi.fn(),
+};
+
+vi.mock("../../src/container.js", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("../../src/container.js")>();
+  return {
+    ...orig,
+    createContainer: (config?: unknown) => orig.createContainer({
+      ...(config as object),
+      aiService: mockAIService,
+    }),
+  };
+});
 
 import { createPersona, generateDraft } from "../../src/persona/handler.js";
 
@@ -31,23 +43,9 @@ describe("generateDraft", () => {
     const createRes = await createPersona(makeEvent("user-draft", {}, { displayName: "ドラフトテスト", type: "consumer" }));
     const persona = JSON.parse(createRes.body);
 
-    mockBedrockSend.mockResolvedValueOnce({
-      output: {
-        message: {
-          content: [
-            {
-              toolUse: {
-                name: "generate_draft",
-                input: {
-                  freeText: "テスト自由記述テキスト",
-                  suggestedDescription: "テスト推奨説明",
-                },
-              },
-            },
-          ],
-        },
-      },
-      stopReason: "tool_use",
+    mockAIService.generateDraft.mockResolvedValueOnce({
+      freeText: "テスト自由記述テキスト",
+      suggestedDescription: "テスト推奨説明",
     });
 
     const res = await generateDraft(makeEvent("user-draft", { id: persona.personaId }));
@@ -74,7 +72,7 @@ describe("generateDraft", () => {
     const createRes = await createPersona(makeEvent("user-draft-503", {}, { displayName: "503テスト", type: "other" }));
     const persona = JSON.parse(createRes.body);
 
-    mockBedrockSend.mockRejectedValueOnce(new Error("Bedrock service unavailable"));
+    mockAIService.generateDraft.mockRejectedValueOnce(new Error("Bedrock service unavailable"));
 
     const res = await generateDraft(makeEvent("user-draft-503", { id: persona.personaId }));
     expect(res.statusCode).toBe(503);

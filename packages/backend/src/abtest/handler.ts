@@ -1,16 +1,24 @@
 import { getUserId, type ApiGatewayEvent } from "../shared/auth.js";
-import { queryByPK, putItem, getItem, deleteItem, abtestKey, evaluationKey } from "../shared/dynamo.js";
 import { badRequest, errorResponse } from "../shared/errors.js";
-import { type ABTestRecord, type EvaluationRecord } from "../shared/types.js";
-import { s3Client, IMAGE_BUCKET } from "../shared/s3.js";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import crypto from "node:crypto";
+import { createContainer, type AppContainer } from "../container.js";
+import { NotFoundError } from "../application/errors.js";
+import { toABTestDTO } from "../domain/types.js";
 
 type LambdaResponse = { statusCode: number; headers: Record<string, string>; body: string };
 
 function json(statusCode: number, body: unknown): LambdaResponse {
   return { statusCode, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+}
+
+function handleError(e: unknown): LambdaResponse {
+  if (e instanceof NotFoundError) return json(404, { error: "NOT_FOUND" });
+  return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+}
+
+let _container: AppContainer | undefined;
+function container(): AppContainer {
+  if (!_container) _container = createContainer();
+  return _container;
 }
 
 export async function createTest(
@@ -20,39 +28,20 @@ export async function createTest(
     const userId = getUserId(event);
     const input = JSON.parse(event.body ?? "{}");
     if (!input.title?.trim()) return badRequest("title is required", ["title"]) as LambdaResponse;
-
-    const testId = crypto.randomUUID();
-    const now = new Date().toISOString();
-    const dA = input.designAInput ?? {};
-    const dB = input.designBInput ?? {};
-    const record: ABTestRecord = {
-      ...abtestKey(userId, testId),
-      title: input.title,
-      status: "draft",
-      designAInputType: dA.inputType ?? input.designAInputType ?? "image_upload",
-      designBInputType: dB.inputType ?? input.designBInputType ?? "image_upload",
-      designAImageKey: dA.imageKey ?? input.designAImageKey,
-      designBImageKey: dB.imageKey ?? input.designBImageKey,
-      designAUrl: dA.figmaUrl ?? dA.siteUrl,
-      designBUrl: dB.figmaUrl ?? dB.siteUrl,
-      personaIds: input.personaIds ?? [],
-      createdAt: now,
-      updatedAt: now,
-    };
-    await putItem(record as unknown as Record<string, unknown>);
-    return json(201, toABTest(record));
+    const test = await container().abtestUseCases.create(userId, input);
+    return json(201, toABTestDTO(test));
   } catch (e) {
-    return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+    return handleError(e);
   }
 }
 
 export async function listTests(event: ApiGatewayEvent): Promise<LambdaResponse> {
   try {
     const userId = getUserId(event);
-    const items = await queryByPK<ABTestRecord>(`USER#${userId}`, "ABTEST#");
-    return json(200, items.map(toABTest));
+    const tests = await container().abtestUseCases.list(userId);
+    return json(200, tests.map(toABTestDTO));
   } catch (e) {
-    return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+    return handleError(e);
   }
 }
 
@@ -62,11 +51,11 @@ export async function getTest(
   try {
     const userId = getUserId(event);
     const testId = event.pathParameters?.id ?? "";
-    const item = await getItem<ABTestRecord>(abtestKey(userId, testId) as unknown as Record<string, string>);
-    if (!item) return json(404, { error: "NOT_FOUND" });
-    return json(200, toABTest(item));
+    const test = await container().abtestUseCases.get(userId, testId);
+    if (!test) return json(404, { error: "NOT_FOUND" });
+    return json(200, toABTestDTO(test));
   } catch (e) {
-    return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+    return handleError(e);
   }
 }
 
@@ -77,34 +66,10 @@ export async function updateTest(
     const userId = getUserId(event);
     const testId = event.pathParameters?.id ?? "";
     const input = JSON.parse(event.body ?? "{}");
-
-    const existing = await getItem<ABTestRecord>(abtestKey(userId, testId) as unknown as Record<string, string>);
-    if (!existing) return json(404, { error: "NOT_FOUND" });
-
-    const now = new Date().toISOString();
-    const dA = input.designAInput ?? {};
-    const dB = input.designBInput ?? {};
-    const updated: ABTestRecord = {
-      ...existing,
-      ...Object.fromEntries(
-        Object.entries({
-          title: input.title,
-          designAInputType: dA.inputType ?? input.designAInputType,
-          designBInputType: dB.inputType ?? input.designBInputType,
-          designAImageKey: dA.imageKey ?? input.designAImageKey,
-          designBImageKey: dB.imageKey ?? input.designBImageKey,
-          designAUrl: dA.figmaUrl ?? dA.siteUrl,
-          designBUrl: dB.figmaUrl ?? dB.siteUrl,
-          personaIds: input.personaIds,
-        }).filter(([, v]) => v !== undefined)
-      ),
-      updatedAt: now,
-    } as ABTestRecord;
-
-    await putItem(updated as unknown as Record<string, unknown>);
-    return json(200, toABTest(updated));
+    const test = await container().abtestUseCases.update(userId, testId, input);
+    return json(200, toABTestDTO(test));
   } catch (e) {
-    return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+    return handleError(e);
   }
 }
 
@@ -114,10 +79,10 @@ export async function deleteTest(
   try {
     const userId = getUserId(event);
     const testId = event.pathParameters?.id ?? "";
-    await deleteItem(abtestKey(userId, testId) as unknown as Record<string, string>);
+    await container().abtestUseCases.delete(userId, testId);
     return json(200, { deleted: true });
   } catch (e) {
-    return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+    return handleError(e);
   }
 }
 
@@ -128,22 +93,10 @@ export async function getUploadUrl(
     const userId = getUserId(event);
     const testId = event.pathParameters?.id ?? "";
     const { side, contentType = "image/png" } = JSON.parse(event.body ?? "{}");
-
-    const existing = await getItem<ABTestRecord>(abtestKey(userId, testId) as unknown as Record<string, string>);
-    if (!existing) return json(404, { error: "NOT_FOUND" });
-
-    const ext = contentType === "image/jpeg" ? "jpg" : contentType === "image/webp" ? "webp" : "png";
-    const imageKey = `${userId}/${testId}/${side}.${ext}`;
-
-    const uploadUrl = await getSignedUrl(
-      s3Client,
-      new PutObjectCommand({ Bucket: IMAGE_BUCKET, Key: imageKey, ContentType: contentType }),
-      { expiresIn: 900 }
-    );
-
-    return json(200, { uploadUrl, imageKey });
+    const result = await container().abtestUseCases.getUploadUrl(userId, testId, side, contentType);
+    return json(200, result);
   } catch (e) {
-    return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+    return handleError(e);
   }
 }
 
@@ -153,40 +106,9 @@ export async function getProgress(
   try {
     const userId = getUserId(event);
     const testId = event.pathParameters?.id ?? "";
-
-    const test = await getItem<ABTestRecord>(abtestKey(userId, testId) as unknown as Record<string, string>);
-    if (!test) return json(404, { error: "NOT_FOUND" });
-
-    const evaluations = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
-    const completed = evaluations.filter((e) => e.status === "completed").length;
-    const failed = evaluations.filter((e) => e.status === "failed").length;
-
-    return json(200, {
-      total: test.personaIds.length,
-      completed,
-      failed,
-      status: test.status,
-    });
+    const progress = await container().abtestUseCases.getProgress(userId, testId);
+    return json(200, progress);
   } catch (e) {
-    return errorResponse(500, "INTERNAL_ERROR", String(e)) as LambdaResponse;
+    return handleError(e);
   }
 }
-
-function toABTest(r: ABTestRecord) {
-  const testId = r.SK.replace("ABTEST#", "");
-  const userId = r.PK.replace("USER#", "");
-  return {
-    testId,
-    userId,
-    title: r.title,
-    status: r.status,
-    designAInput: { inputType: r.designAInputType, imageKey: r.designAImageKey, ...(r.designAUrl ? (r.designAInputType === 'figma_url' ? { figmaUrl: r.designAUrl } : { siteUrl: r.designAUrl }) : {}) },
-    designBInput: { inputType: r.designBInputType, imageKey: r.designBImageKey, ...(r.designBUrl ? (r.designBInputType === 'figma_url' ? { figmaUrl: r.designBUrl } : { siteUrl: r.designBUrl }) : {}) },
-    personaIds: r.personaIds,
-    createdAt: r.createdAt,
-    updatedAt: r.updatedAt,
-  };
-}
-
-// evaluationKey は dynamo.ts で定義済み（将来の evaluation handler 用）
-void evaluationKey;

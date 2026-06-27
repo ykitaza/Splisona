@@ -1,15 +1,37 @@
 import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createTestTable, deleteTestTable } from "../helpers/dynamo.js";
 
-const { mockSend } = vi.hoisted(() => ({ mockSend: vi.fn() }));
-vi.mock("../../src/shared/bedrock.js", () => ({
-  bedrockClient: { send: mockSend },
-  MODEL_ID: "amazon.nova-lite-v1:0",
-}));
+const mockAIService = {
+  generateDraft: vi.fn(),
+  chat: vi.fn(),
+  evaluateDesigns: vi.fn(),
+  summarizeReasons: vi.fn(),
+};
 
-import { executeTest, chunkArray } from "../../src/evaluation/orchestrator.js";
-import { putItem, abtestKey, queryByPK, getItem } from "../../src/shared/dynamo.js";
-import type { ABTestRecord, EvaluationRecord, PersonaRecord } from "../../src/shared/types.js";
+vi.mock("../../src/container.js", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("../../src/container.js")>();
+  return {
+    ...orig,
+    createContainer: (config?: unknown) => orig.createContainer({
+      ...(config as object),
+      aiService: mockAIService,
+    }),
+  };
+});
+
+import { executeTest } from "../../src/evaluation/orchestrator.js";
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+import { createContainer } from "../../src/container.js";
+
+const container = createContainer();
+const { personaRepo, testRepo, evalRepo } = container;
 
 function makeEvent(userId: string, testId: string) {
   return {
@@ -20,58 +42,43 @@ function makeEvent(userId: string, testId: string) {
   };
 }
 
-async function seedTest(userId: string, testId: string, overrides: Partial<ABTestRecord> = {}) {
-  const record: ABTestRecord = {
-    PK: `USER#${userId}`,
-    SK: `ABTEST#${testId}`,
-    title: "テスト",
-    status: "draft",
-    designAImageKey: "images/a.png",
-    designBImageKey: "images/b.png",
-    designAInputType: "image_upload",
-    designBInputType: "image_upload",
-    personaIds: [],
+async function seedTest(userId: string, testId: string, overrides: Partial<{
+  title: string; status: string; designAImageKey: string | undefined; designBImageKey: string | undefined;
+  designAInputType: string; designBInputType: string; personaIds: string[];
+}> = {}) {
+  await testRepo.save({
+    testId,
+    userId,
+    title: overrides.title ?? "テスト",
+    status: (overrides.status ?? "draft") as "draft",
+    designAImageKey: "designAImageKey" in overrides ? overrides.designAImageKey : "images/a.png",
+    designBImageKey: "designBImageKey" in overrides ? overrides.designBImageKey : "images/b.png",
+    designAInputType: (overrides.designAInputType ?? "image_upload") as "image_upload",
+    designBInputType: (overrides.designBInputType ?? "image_upload") as "image_upload",
+    personaIds: overrides.personaIds ?? [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    ...overrides,
-  };
-  await putItem(record as unknown as Record<string, unknown>);
-  return record;
+  });
 }
 
 async function seedPersona(userId: string, personaId: string) {
-  const record: PersonaRecord = {
-    PK: `USER#${userId}`,
-    SK: `PERSONA#${personaId}`,
+  await personaRepo.save({
+    personaId,
+    userId,
     displayName: `ペルソナ${personaId}`,
     type: "consumer",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  };
-  await putItem(record as unknown as Record<string, unknown>);
-  return record;
+  });
 }
 
-function makeBedrockResponse(winner: "A" | "B" = "A") {
+function makeEvaluationResponse(winner: "A" | "B" = "A") {
   return {
-    stopReason: "tool_use",
-    output: {
-      message: {
-        content: [
-          {
-            toolUse: {
-              name: "evaluate_designs",
-              input: {
-                winner,
-                confidence: 80,
-                reason: "デザインAが優れている",
-                scores: { usability: 8, aesthetics: 7, clarity: 9, engagement: 6 },
-              },
-            },
-          },
-        ],
-      },
-    },
+    winner,
+    confidence: 80,
+    reason: "デザインAが優れている",
+    scoresA: { usability: 8, aesthetics: 7, clarity: 9, engagement: 6, trust: 7 },
+    scoresB: { usability: 5, aesthetics: 6, clarity: 5, engagement: 4, trust: 5 },
   };
 }
 
@@ -93,19 +100,18 @@ describe("executeTest", () => {
       await seedPersona(userId, "p3");
       await seedTest(userId, testId, { personaIds: ["p1", "p2", "p3"] });
 
-      mockSend.mockResolvedValue(makeBedrockResponse("A"));
+      mockAIService.evaluateDesigns.mockResolvedValue(makeEvaluationResponse("A"));
+      mockAIService.summarizeReasons.mockResolvedValue({ reasonsA: ["理由A"], reasonsB: ["理由B"] });
 
       const res = await executeTest(makeEvent(userId, testId));
       expect(res.statusCode).toBe(200);
       expect(JSON.parse(res.body)).toEqual({ started: true });
 
-      const evaluations = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
+      const evaluations = await evalRepo.findAllByTest(testId);
       expect(evaluations).toHaveLength(3);
       expect(evaluations.every((e) => e.status === "completed")).toBe(true);
 
-      const updatedTest = await getItem<ABTestRecord>(
-        abtestKey(userId, testId) as unknown as Record<string, string>
-      );
+      const updatedTest = await testRepo.findById(userId, testId);
       expect(updatedTest?.status).toBe("completed");
     });
   });
@@ -167,23 +173,22 @@ describe("executeTest", () => {
       await seedPersona(userId, "p-fail");
       await seedTest(userId, testId, { personaIds: ["p-ok", "p-fail"] });
 
-      mockSend
-        .mockResolvedValueOnce(makeBedrockResponse("B"))
+      mockAIService.evaluateDesigns
+        .mockResolvedValueOnce(makeEvaluationResponse("B"))
         .mockRejectedValueOnce(new Error("Bedrock error"));
+      mockAIService.summarizeReasons.mockResolvedValue({ reasonsA: [], reasonsB: ["理由B"] });
 
       const res = await executeTest(makeEvent(userId, testId));
       expect(res.statusCode).toBe(200);
 
-      const evaluations = await queryByPK<EvaluationRecord>(`ABTEST#${testId}`, "EVAL#");
+      const evaluations = await evalRepo.findAllByTest(testId);
       expect(evaluations).toHaveLength(2);
       const failed = evaluations.find((e) => e.status === "failed");
       expect(failed).toBeDefined();
       const completed = evaluations.find((e) => e.status === "completed");
       expect(completed).toBeDefined();
 
-      const updatedTest = await getItem<ABTestRecord>(
-        abtestKey(userId, testId) as unknown as Record<string, string>
-      );
+      const updatedTest = await testRepo.findById(userId, testId);
       expect(updatedTest?.status).toBe("completed");
     });
   });
