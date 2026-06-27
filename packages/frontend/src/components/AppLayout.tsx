@@ -17,26 +17,33 @@ function AboutModal({ onClose }: { onClose: () => void }) {
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: 'rgba(0,0,0,0.75)' }}
+      style={{ background: '#05060799' }}
       onClick={onClose}
     >
       <div
         data-testid="about-modal-content"
-        className="flex flex-col items-center relative bg-surface px-8 py-10"
-        style={{ width: 320, borderRadius: 14, border: '1px solid var(--color-hairline)', boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}
+        className="flex flex-col items-center relative bg-surface"
+        style={{ width: 320, borderRadius: 14, border: '1px solid var(--color-hairline)', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', padding: '48px 32px 32px 32px' }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 flex items-center justify-center w-6 h-6 rounded-full transition-colors hover:bg-raised"
+          className="absolute top-3 right-3 flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-raised"
         >
           <X size={14} className="text-text-lo" />
         </button>
-        <div className="flex items-center justify-center mb-5 rounded-lg bg-base" style={{ width: 72, height: 72, borderRadius: 18 }}>
-          <span className="text-text-hi font-sans text-4xl font-bold leading-none">C</span>
+        <div className="mb-5" style={{ borderRadius: 18, boxShadow: '0 0 16px rgba(255,255,255,0.1), 0 0 4px rgba(255,255,255,0.06)' }}>
+          <svg width="72" height="72" viewBox="0 0 72 72" fill="none" style={{ display: 'block' }}>
+            <rect width="72" height="72" rx="18" fill="var(--color-raised)" />
+            <circle cx="24" cy="28" r="4" fill="#F2F4F7" />
+            <circle cx="48" cy="28" r="4" fill="#F2F4F7" />
+            <circle cx="24.5" cy="42.5" r="2.5" fill="#F2F4F7" />
+            <circle cx="36.5" cy="46.5" r="2.5" fill="#F2F4F7" />
+            <circle cx="47.5" cy="42.5" r="2.5" fill="#F2F4F7" />
+          </svg>
         </div>
-        <p className="text-text-hi font-sans text-xl font-bold mb-1.5">Chorus</p>
+        <p className="text-text-hi font-sans mb-1.5" style={{ fontSize: 22, fontWeight: 700 }}>Splisona</p>
         <p className="text-text-lo font-mono text-xs tracking-widest mb-1">AI PERSONA REVIEW</p>
         <p className="text-text-lo font-mono text-xs">バージョン {APP_VERSION} ({GIT_HASH})</p>
       </div>
@@ -76,7 +83,7 @@ export function AppLayout() {
     navigate('/signin', { replace: true });
   }
 
-  const sidebarWidth = collapsed ? 56 : 240;
+  const sidebarWidth = collapsed ? 56 : 236;
 
   return (
     <div className="flex h-screen bg-base">
@@ -84,28 +91,17 @@ export function AppLayout() {
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <aside
-        className="flex flex-col flex-shrink-0 bg-surface border-r border-hairline transition-[width,padding] duration-200 ease-out overflow-hidden"
+        className="flex flex-col flex-shrink-0 bg-surface transition-[width,padding] duration-200 ease-out overflow-hidden"
         style={{
           width: sidebarWidth,
           padding: collapsed ? '16px 8px' : '24px 16px',
-          gap: 8,
+          gap: 32,
         }}
       >
         {/* Brand */}
-        <div className="flex items-center px-2 py-2" style={{ gap: 10, justifyContent: collapsed ? 'center' : 'flex-start' }}>
+        <div className="flex items-center px-2 py-2" style={{ justifyContent: collapsed ? 'center' : 'space-between' }}>
           {!collapsed && (
-            <>
-              <div
-                className="flex items-center justify-center flex-shrink-0 rounded-md"
-                style={{ width: 28, height: 28, background: '#0A0A0A', borderRadius: 6 }}
-              >
-                <span className="text-text-hi font-sans text-sm font-semibold">C</span>
-              </div>
-              <div className="flex flex-col flex-1 overflow-hidden" style={{ gap: 1 }}>
-                <span className="text-text-hi font-sans text-sm font-semibold whitespace-nowrap">Chorus</span>
-                <span className="text-text-lo font-mono whitespace-nowrap" style={{ fontSize: 9, letterSpacing: '0.5px' }}>AI PERSONA REVIEW</span>
-              </div>
-            </>
+            <span className="text-text-hi font-sans font-semibold whitespace-nowrap" style={{ fontSize: 18, letterSpacing: '0.2px' }}>Splisona</span>
           )}
           <button
             type="button"
@@ -149,7 +145,7 @@ export function AppLayout() {
               title={collapsed ? label : undefined}
               className={({ isActive }) =>
                 `flex items-center rounded-md transition-colors ${
-                  isActive ? 'text-accent font-semibold bg-accent-dim' : 'text-text-mid hover:bg-raised'
+                  isActive ? 'text-text-hi font-semibold bg-accent-dim' : 'text-text-mid hover:bg-raised'
                 }`
               }
               style={() => ({
@@ -160,8 +156,8 @@ export function AppLayout() {
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={18} className={isActive ? 'text-accent' : 'text-text-mid'} />
-                  {!collapsed && <span className="font-sans text-sm whitespace-nowrap" style={{ fontWeight: isActive ? 600 : 500 }}>{label}</span>}
+                  <Icon size={18} className={isActive ? 'text-accent' : 'text-text-lo'} />
+                  {!collapsed && <span className="font-sans whitespace-nowrap" style={{ fontSize: 14, fontWeight: isActive ? 600 : 400 }}>{label}</span>}
                 </>
               )}
             </NavLink>
@@ -204,7 +200,7 @@ export function AppLayout() {
                 className="flex items-center gap-2.5 w-full px-4 py-2.5 transition-colors hover:bg-raised text-text-hi font-sans text-sm"
               >
                 <Info size={15} className="text-text-mid" />
-                Chorus について
+                Splisona について
               </button>
               <div className="h-px bg-hairline" />
               <button
@@ -228,7 +224,7 @@ export function AppLayout() {
               justifyContent: collapsed ? 'center' : 'flex-start',
             }}
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 bg-raised">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 bg-raised border border-hairline">
               <span className="text-text-mid font-sans text-xs font-semibold">YK</span>
             </div>
             {!collapsed && (
