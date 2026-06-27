@@ -62,7 +62,7 @@ export function TestPersonaSelectPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6" style={{ padding: 32 }}>
+    <div className="flex flex-col gap-6" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px' }}>
       {/* Header */}
       <div className="flex flex-col gap-2">
         <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.5 }}>

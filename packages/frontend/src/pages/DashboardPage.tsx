@@ -50,7 +50,7 @@ export function DashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-8 pb-10" style={{ minHeight: '100%' }}>
+    <div className="flex flex-col gap-6" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', minHeight: '100%' }}>
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1">

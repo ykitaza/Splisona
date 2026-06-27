@@ -113,7 +113,7 @@ export function PersonaEditPage() {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div className="flex flex-col" style={{ padding: 32, gap: 32 }}>
+      <div className="flex flex-col" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', gap: 32 }}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-2">

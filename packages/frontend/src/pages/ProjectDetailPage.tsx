@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Plus, MoreVertical, Pencil, Trash2, FolderMinus, X } from 'lucide-react';
 import { getProjectDetail, updateProject, deleteProject, removeTestFromProject } from '../api/projects';
-import { updateTest, deleteTest as apiDeleteTest } from '../api/tests';
+import { updateTest, deleteTest as apiDeleteTest, getReport } from '../api/tests';
 import { API_BASE } from '../api/client';
 import { testDraft } from '../lib/testDraft';
 import { TestRow, MoreButton, TestRowMenu, TestRowMenuButton, TestRowMenuDivider, relativeDate } from '../components/TestRow';
-import type { ProjectDetail, ABTest, DesignInput } from '../types';
+import type { ProjectDetail, ABTest, DesignInput, ReportSummary } from '../types';
 
 function ProjectMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
@@ -140,14 +140,17 @@ function EditProjectModal({ project, onClose, onSave }: {
   );
 }
 
-function DesignThumb({ imageKey, label }: { imageKey?: string; label: string }) {
+function DesignThumb({ imageKey, label, color }: { imageKey?: string; label: string; color: string }) {
   const src = imageKey ? `${API_BASE}/images/${imageKey}` : null;
   return (
     <div
-      className="overflow-hidden flex-shrink-0"
+      className="overflow-hidden flex-shrink-0 flex"
       style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}
     >
-      {src && <img src={src} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+      <div className="flex-shrink-0" style={{ width: 3, background: color }} />
+      <div className="flex-1 min-w-0" style={{ overflow: 'hidden' }}>
+        {src && <img src={src} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+      </div>
     </div>
   );
 }
@@ -160,6 +163,7 @@ export function ProjectDetailPage() {
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [summaries, setSummaries] = useState<Record<string, ReportSummary>>({});
 
   useEffect(() => {
     if (!id) return;
@@ -171,6 +175,14 @@ export function ProjectDetailPage() {
         }
         setDetail(d);
         setNameValue(d.project.name);
+        const completed = d.tests.filter((t) => t.status === 'completed');
+        Promise.all(
+          completed.map((t) => getReport(t.testId).then((r) => [t.testId, r.summary] as const).catch(() => null))
+        ).then((results) => {
+          const map: Record<string, ReportSummary> = {};
+          for (const r of results) if (r) map[r[0]] = r[1];
+          setSummaries(map);
+        });
       })
       .catch(() => navigate('/projects', { replace: true }))
       .finally(() => setIsLoading(false));
@@ -289,7 +301,7 @@ export function ProjectDetailPage() {
       </div>
 
       {/* Latest entry (hero) */}
-      {latest && <LatestEntry test={latest} index={tests.length} />}
+      {latest && <LatestEntry test={latest} index={tests.length} summary={summaries[latest.testId] ?? null} />}
 
       {/* Past iterations */}
       {past.length > 0 && (
@@ -304,6 +316,7 @@ export function ProjectDetailPage() {
                 test={test}
                 index={tests.length - 1 - i}
                 projectId={project.projectId}
+                summary={summaries[test.testId] ?? null}
                 onRemoved={() => {
                   setDetail({ ...detail, project: { ...project, testIds: project.testIds.filter((tid) => tid !== test.testId) }, tests: tests.filter((t) => t.testId !== test.testId) });
                 }}
@@ -323,7 +336,17 @@ export function ProjectDetailPage() {
   );
 }
 
-function LatestEntry({ test, index }: { test: ABTest; index: number }) {
+function LatestEntry({ test, index, summary }: { test: ABTest; index: number; summary: ReportSummary | null }) {
+  const winnerLabel = summary
+    ? summary.winner === 'A' ? 'デザイン A が支持されました'
+      : summary.winner === 'B' ? 'デザイン B が支持されました'
+      : '引き分けでした'
+    : null;
+  const winnerColor = summary?.winner === 'A' ? '#6E78D9' : summary?.winner === 'B' ? '#C9974F' : '#9BA1AC';
+  const voteCount = summary
+    ? `${summary.totalPersonas}人中${Math.round(summary.supportRateA * summary.totalPersonas + summary.supportRateB * summary.totalPersonas)}人が${summary.winner === 'tie' ? '評価' : summary.winner + 'を支持'}`
+    : null;
+
   return (
     <div
       className="flex" style={{ gap: 16, padding: '24px 8px', borderBottom: '1px solid #FFFFFF14' }}
@@ -337,10 +360,19 @@ function LatestEntry({ test, index }: { test: ABTest; index: number }) {
       <div className="flex flex-col flex-1" style={{ gap: 16 }}>
         <span className="font-sans text-text-hi font-semibold" style={{ fontSize: 20 }}>{test.title}</span>
         <div className="flex items-center" style={{ gap: 12 }}>
-          <DesignThumb imageKey={test.designAInput?.imageKey} label="A" />
+          <DesignThumb imageKey={test.designAInput?.imageKey} label="A" color="#6E78D9" />
           <span className="text-text-lo" style={{ fontSize: 14 }}>→</span>
-          <DesignThumb imageKey={test.designBInput?.imageKey} label="B" />
+          <DesignThumb imageKey={test.designBInput?.imageKey} label="B" color="#C9974F" />
         </div>
+        {summary && (
+          <div className="flex items-center" style={{ gap: 16 }}>
+            <span className="font-sans font-semibold" style={{ fontSize: 14, color: winnerColor }}>{winnerLabel}</span>
+            <span className="font-sans text-text-mid" style={{ fontSize: 13 }}>{voteCount}</span>
+          </div>
+        )}
+        {summary?.winnersReasonSummary && (
+          <span className="font-sans text-text-mid" style={{ fontSize: 13 }}>{summary.winnersReasonSummary}</span>
+        )}
         {test.status === 'completed' && (
           <Link
             to={`/tests/${test.testId}/report`}
@@ -399,8 +431,31 @@ function PastEntryMenu({ testId, projectId, onRename, onRemoved, onDeleted }: {
   );
 }
 
-function PastEntry({ test, index, projectId, onRemoved, onDeleted, onRenamed }: {
-  test: ABTest; index: number; projectId: string;
+function SummaryExtra({ summary }: { summary: ReportSummary | null }) {
+  if (!summary) return null;
+  const label = summary.winner === 'A' ? 'デザイン A が支持されました'
+    : summary.winner === 'B' ? 'デザイン B が支持されました'
+    : '引き分けでした';
+  const color = summary.winner === 'A' ? '#6E78D9' : summary.winner === 'B' ? '#C9974F' : '#9BA1AC';
+  const winSide = summary.winner === 'A' || summary.winner === 'B' ? summary.winner : null;
+  const winCount = winSide === 'A' ? Math.round(summary.supportRateA * summary.totalPersonas)
+    : winSide === 'B' ? Math.round(summary.supportRateB * summary.totalPersonas)
+    : 0;
+  return (
+    <div className="flex flex-col" style={{ gap: 8 }}>
+      <div className="flex items-center" style={{ gap: 16 }}>
+        <span className="font-sans font-semibold" style={{ fontSize: 14, color }}>{label}</span>
+        {winSide && <span className="font-sans text-text-mid" style={{ fontSize: 13 }}>{summary.totalPersonas}人中{winCount}人が{winSide}を支持</span>}
+      </div>
+      {summary.winnersReasonSummary && (
+        <span className="font-sans text-text-mid" style={{ fontSize: 13 }}>{summary.winnersReasonSummary}</span>
+      )}
+    </div>
+  );
+}
+
+function PastEntry({ test, index, projectId, summary, onRemoved, onDeleted, onRenamed }: {
+  test: ABTest; index: number; projectId: string; summary: ReportSummary | null;
   onRemoved: () => void; onDeleted: () => void; onRenamed: (title: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -425,6 +480,7 @@ function PastEntry({ test, index, projectId, onRemoved, onDeleted, onRenamed }: 
         }
       }}
       onRenameCancel={() => setIsRenaming(false)}
+      expandExtra={<SummaryExtra summary={summary} />}
       prefix={
         <div className="flex flex-col items-center flex-shrink-0" style={{ width: 32, gap: 2 }}>
           <span className="font-mono text-text-mid" style={{ fontSize: 12 }}>#{index}</span>
