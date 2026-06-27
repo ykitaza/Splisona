@@ -137,26 +137,30 @@ export function createRoutes() {
     try {
       const input = await c.req.json();
       if (!input.title) input.title = "";
-      return c.json(await c.var.container.abtestUseCases.create(c.var.userId, input), 201);
+      const test = await c.var.container.abtestUseCases.create(c.var.userId, input);
+      return c.json(toABTestDTO(test), 201);
     } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
   });
 
   api.get("/tests", async (c) => {
-    try { return c.json(await c.var.container.abtestUseCases.list(c.var.userId)); }
-    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    try {
+      const tests = await c.var.container.abtestUseCases.list(c.var.userId);
+      return c.json(tests.map(toABTestDTO));
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
   });
 
   api.get("/tests/:id", async (c) => {
     try {
       const test = await c.var.container.abtestUseCases.get(c.var.userId, c.req.param("id"));
       if (!test) return c.json({ error: "NOT_FOUND" }, 404);
-      return c.json(test);
+      return c.json(toABTestDTO(test));
     } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
   });
 
   api.put("/tests/:id", async (c) => {
     try {
-      return c.json(await c.var.container.abtestUseCases.update(c.var.userId, c.req.param("id"), await c.req.json()));
+      const test = await c.var.container.abtestUseCases.update(c.var.userId, c.req.param("id"), await c.req.json());
+      return c.json(toABTestDTO(test));
     } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
   });
 
