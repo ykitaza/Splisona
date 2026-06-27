@@ -4,7 +4,7 @@ import { serve } from "@hono/node-server";
 import { extname } from "node:path";
 import { createRoutes, type RouteEnv } from "./routes.js";
 import { createContainer } from "./container.js";
-import { MemoryPersonaRepository, MemoryABTestRepository, MemoryEvaluationRepository, MemorySettingsRepository } from "./infra/memory/memory-repos.js";
+import { MemoryPersonaRepository, MemoryABTestRepository, MemoryEvaluationRepository, MemorySettingsRepository, MemoryProjectRepository } from "./infra/memory/memory-repos.js";
 import { FileStorageService } from "./infra/memory/file-storage-service.js";
 import { StubAIService } from "./infra/memory/stub-ai-service.js";
 import type { ImageSource } from "./domain/ports/ai-service.js";
@@ -20,6 +20,7 @@ const container = createContainer({
   testRepo: new MemoryABTestRepository(),
   evalRepo: new MemoryEvaluationRepository(),
   settingsRepo: new MemorySettingsRepository(),
+  projectRepo: new MemoryProjectRepository(),
   storageService: fileStorage,
   ...(USE_LOCAL_BEDROCK ? {} : { aiService: new StubAIService() }),
 });
@@ -40,7 +41,7 @@ app.use("*", cors({
 }));
 
 app.use("*", async (c, next) => {
-  if (c.req.path.startsWith("/stub-upload/")) return next();
+  if (c.req.path.startsWith("/images/")) return next();
   const userId = c.req.header("x-local-user-id");
   if (!userId) return c.json({ error: "UNAUTHORIZED", message: "x-local-user-id header required in local mode" }, 401);
   c.set("container", container);
@@ -51,16 +52,16 @@ app.use("*", async (c, next) => {
 // Shared routes
 app.route("/", createRoutes());
 
-// --- Dev-only: stub upload (local file storage) ---
-app.put("/stub-upload/*", async (c) => {
-  const key = c.req.path.slice("/stub-upload/".length);
+// --- Dev-only: image upload & serving (local file storage) ---
+app.put("/images/*", async (c) => {
+  const key = c.req.path.slice("/images/".length);
   const arrayBuffer = await c.req.arrayBuffer();
   await fileStorage.putObject(key, Buffer.from(arrayBuffer), "");
   return c.text("", 200);
 });
 
-app.get("/stub-upload/*", (c) => {
-  const key = c.req.path.slice("/stub-upload/".length);
+app.get("/images/*", (c) => {
+  const key = c.req.path.slice("/images/".length);
   const buf = fileStorage.readFile(key);
   if (!buf) return c.text("Not Found", 404);
   const ext = extname(key).slice(1).toLowerCase();

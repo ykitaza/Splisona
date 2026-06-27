@@ -19,7 +19,7 @@ export class FileStorageService implements StorageService {
 
   async getUploadUrl(key: string, _contentType: string): Promise<UploadUrlResult> {
     return {
-      uploadUrl: `${this.baseUrl}/stub-upload/${key}`,
+      uploadUrl: `${this.baseUrl}/images/${key}`,
       imageKey: key,
     };
   }
@@ -29,7 +29,7 @@ export class FileStorageService implements StorageService {
   }
 
   getPreviewUrl(key: string): string {
-    return `${this.baseUrl}/stub-upload/${key}`;
+    return `${this.baseUrl}/images/${key}`;
   }
 
   readFile(key: string): Buffer | null {
