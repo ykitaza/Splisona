@@ -4,10 +4,10 @@ import { serve } from "@hono/node-server";
 import { extname } from "node:path";
 import { createRoutes, type RouteEnv } from "./routes.js";
 import { createContainer } from "./container.js";
-import { MemoryPersonaRepository, MemoryABTestRepository, MemoryEvaluationRepository, MemorySettingsRepository, MemoryProjectRepository } from "./infra/memory/memory-repos.js";
-import { FileStorageService } from "./infra/memory/file-storage-service.js";
-import { StubAIService } from "./infra/memory/stub-ai-service.js";
-import { captureWebsite } from "./infra/capture/screenshot-capture.js";
+import { MemoryPersonaRepository, MemoryABTestRepository, MemoryEvaluationRepository, MemorySettingsRepository, MemoryProjectRepository } from "./infra/local/memory-repos.js";
+import { FileStorageService } from "./infra/local/file-storage-service.js";
+import { StubAIService } from "./infra/local/stub-ai-service.js";
+import { captureWebsite } from "./infra/local/screenshot-capture.js";
 import type { ImageSource } from "./domain/ports/ai-service.js";
 
 const USE_LOCAL_BEDROCK = process.env.LOCAL_BEDROCK === "true";
