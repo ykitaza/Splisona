@@ -12,6 +12,7 @@ const mockFetchAuthSession = vi.mocked(fetchAuthSession);
 describe('useAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('VITE_COGNITO_USER_POOL_ID', 'test-pool');
   });
 
   it('isLoading が true でスタートする', () => {

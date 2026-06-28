@@ -2,6 +2,7 @@ import type { ABTestRepository } from "../domain/ports/abtest-repository.js";
 import type { EvaluationRepository } from "../domain/ports/evaluation-repository.js";
 import type { PersonaRepository } from "../domain/ports/persona-repository.js";
 import type { SettingsRepository } from "../domain/ports/settings-repository.js";
+import type { ProjectRepository } from "../domain/ports/project-repository.js";
 import type { AIService, ImageSource } from "../domain/ports/ai-service.js";
 import type { ABTest, Evaluation } from "../domain/types.js";
 import { chunkArray, dedupe, zeroScores, buildReasonSummaryFields, groupReasonsByWinner } from "../domain/services/evaluation-scoring.js";
@@ -13,6 +14,7 @@ export class EvaluationUseCases {
     private readonly evalRepo: EvaluationRepository,
     private readonly personaRepo: PersonaRepository,
     private readonly settingsRepo: SettingsRepository,
+    private readonly projectRepo: ProjectRepository,
     private readonly aiService: AIService,
     private readonly imageBucket: string,
   ) {}
@@ -45,7 +47,8 @@ export class EvaluationUseCases {
         const srcA = await buildSrc(test.designAImageKey!);
         const srcB = await buildSrc(test.designBImageKey!);
         test = { ...test, title: await this.aiService.generateTitle(srcA, srcB) };
-      } catch {
+      } catch (e) {
+        console.error("[generateTitle] failed:", e);
         test = { ...test, title: `A/B テスト ${new Date().toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}` };
       }
     }
@@ -61,31 +64,42 @@ export class EvaluationUseCases {
     };
     await this.testRepo.save(runningTest);
 
-    const batches = chunkArray(test.personaIds, 25);
+    const imageA = await buildSrc(test.designAImageKey!);
+    const imageB = await buildSrc(test.designBImageKey!);
+    const projectContext = await this.getProjectContext(userId, testId);
+    const evalContext = { projectContext, focusPoints: test.focusPoints };
+    const batches = chunkArray(test.personaIds, 5);
     for (const batch of batches) {
       if (opts?.onAbort?.aborted) break;
-      const imageA = await buildSrc(test.designAImageKey!);
-      const imageB = await buildSrc(test.designBImageKey!);
+      const current = await this.testRepo.findById(userId, testId);
+      if (current && current.status !== "running") break;
       await Promise.allSettled(
-        batch.map((personaId) =>
-          this.evaluateOnePersona(testId, personaId, userId, imageA, imageB)
+        batch.map((personaId, i) =>
+          new Promise<void>((r) => setTimeout(r, i * 400)).then(() =>
+            this.evaluateOnePersona(testId, personaId, userId, imageA, imageB, evalContext)
+          )
         )
       );
     }
 
-    if (opts?.onAbort?.aborted) return;
-
     const evals = await this.evalRepo.findAllByTest(testId);
     const completedEvals = evals.filter((e) => e.status === "completed");
-    const summaryFields = await this.generateReasonSummaryFields(completedEvals);
 
-    const completedTest: ABTest = {
-      ...runningTest,
-      status: "completed",
-      ...summaryFields,
-      updatedAt: new Date().toISOString(),
-    };
-    await this.testRepo.save(completedTest);
+    if (completedEvals.length > 0) {
+      const summaryFields = await this.generateReasonSummaryFields(completedEvals);
+      await this.testRepo.save({
+        ...runningTest,
+        status: "completed",
+        ...summaryFields,
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      await this.testRepo.save({
+        ...runningTest,
+        status: "failed",
+        updatedAt: new Date().toISOString(),
+      });
+    }
   }
 
   async abortTest(userId: string, testId: string): Promise<void> {
@@ -104,12 +118,23 @@ export class EvaluationUseCases {
     return buildReasonSummaryFields(completed, reasonsA, reasonsB);
   }
 
+  private async getProjectContext(userId: string, testId: string): Promise<string> {
+    try {
+      const projects = await this.projectRepo.findAllByUser(userId);
+      const project = projects.find((p) => p.testIds.includes(testId));
+      return project?.description ?? "";
+    } catch {
+      return "";
+    }
+  }
+
   private async evaluateOnePersona(
     testId: string,
     personaId: string,
     userId: string,
     imageA: ImageSource,
     imageB: ImageSource,
+    context: { projectContext: string; focusPoints?: string },
   ): Promise<void> {
     const persona = await this.personaRepo.findById(userId, personaId);
     const personaDisplayName = persona?.displayName ?? personaId;
@@ -133,6 +158,8 @@ export class EvaluationUseCases {
         imageA,
         imageB,
         additionalInstruction: additional,
+        projectContext: context.projectContext || undefined,
+        focusPoints: context.focusPoints || undefined,
       });
 
       const evalRecord: Evaluation = {

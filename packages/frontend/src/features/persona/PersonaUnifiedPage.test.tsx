@@ -99,6 +99,8 @@ describe('PersonaUnifiedPage', () => {
       expect(screen.getAllByText('ハルト').length).toBeGreaterThanOrEqual(1);
     });
 
+    await userEvent.click(screen.getByText('編集'));
+
     expect(screen.getByText('削除')).toBeInTheDocument();
     expect(screen.getByText('キャンセル')).toBeInTheDocument();
     expect(screen.getByText('保存する')).toBeInTheDocument();

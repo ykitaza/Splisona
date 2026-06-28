@@ -91,8 +91,13 @@ export function verifyFigmaToken(token: string): Promise<FigmaVerifyResponse> {
   });
 }
 
-export function captureUrl(testId: string, req: CaptureRequest): Promise<CaptureResponse> {
-  const figmaToken = localStorage.getItem('chorus_figma_token') ?? undefined;
+export async function captureUrl(testId: string, req: CaptureRequest): Promise<CaptureResponse> {
+  let figmaToken: string | undefined;
+  if (req.inputType === 'figma_url') {
+    const settings = await apiRequest<Record<string, unknown>>('/settings');
+    const figma = settings.figma as { token?: string } | undefined;
+    figmaToken = figma?.token || undefined;
+  }
   return apiRequest(`/tests/${testId}/capture`, {
     method: 'POST',
     body: JSON.stringify(figmaToken ? { ...req, figmaToken } : req),

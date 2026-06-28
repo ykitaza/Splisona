@@ -42,6 +42,7 @@ export interface ABTest {
   designAUrl?: string;
   designBUrl?: string;
   personaIds: string[];
+  focusPoints?: string;
   reasonSummaryStatus?: "generating" | "ready";
   reasonSummaryA?: string[];
   reasonSummaryB?: string[];
@@ -127,6 +128,7 @@ export function toABTestDTO(t: ABTest) {
       ...(t.designBUrl ? (t.designBInputType === "figma_url" ? { figmaUrl: t.designBUrl } : { siteUrl: t.designBUrl }) : {}),
     },
     personaIds: t.personaIds,
+    focusPoints: t.focusPoints,
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
   };

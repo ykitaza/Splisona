@@ -317,6 +317,7 @@ export function PersonaUnifiedPage() {
                     disabled={isReadOnly}
                     placeholder="例: せっかちなビジネスマン"
                     className="bg-transparent text-text-hi font-sans text-base outline-none disabled:opacity-50"
+                    style={{ outline: 'none', boxShadow: 'none' }}
                   />
                   {validationError && <p className="text-danger font-sans text-xs">{validationError}</p>}
                 </div>
@@ -427,6 +428,7 @@ export function PersonaUnifiedPage() {
                     disabled={isReadOnly}
                     placeholder="営業職"
                     className="bg-transparent text-text-hi font-sans text-base outline-none disabled:opacity-50"
+                    style={{ outline: 'none', boxShadow: 'none' }}
                   />
                 </div>
               </div>
@@ -457,7 +459,7 @@ export function PersonaUnifiedPage() {
                     rows={4}
                     placeholder="このペルソナの性格や行動特性を記述してください"
                     className="w-full bg-transparent text-text-mid font-sans text-base outline-none resize-none disabled:opacity-50"
-                    style={{ lineHeight: 1.6 }}
+                    style={{ lineHeight: 1.6, outline: 'none', boxShadow: 'none' }}
                   />
                 </div>
               </div>
@@ -547,6 +549,7 @@ export function PersonaUnifiedPage() {
                   disabled={isSending}
                   placeholder={`${displayName || persona.displayName} に質問する…`}
                   className="flex-1 bg-transparent text-text-hi font-sans text-sm outline-none"
+                  style={{ outline: 'none', boxShadow: 'none' }}
                 />
                 <button
                   type="button"

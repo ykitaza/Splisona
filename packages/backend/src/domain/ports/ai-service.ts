@@ -15,6 +15,8 @@ export interface EvaluateDesignsParams {
   imageA: ImageSource;
   imageB: ImageSource;
   additionalInstruction?: string;
+  projectContext?: string;
+  focusPoints?: string;
 }
 
 export type ImageSource =

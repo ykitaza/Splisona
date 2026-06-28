@@ -14,6 +14,7 @@ interface ABTestRow {
   design_a_url: string | null;
   design_b_url: string | null;
   persona_ids: string;
+  focus_points: string | null;
   reason_summary_status: string | null;
   reason_summary_a: string | null;
   reason_summary_b: string | null;
@@ -35,6 +36,7 @@ function toDomain(row: ABTestRow): ABTest {
     designAUrl: row.design_a_url ?? undefined,
     designBUrl: row.design_b_url ?? undefined,
     personaIds: JSON.parse(row.persona_ids) as string[],
+    focusPoints: row.focus_points ?? undefined,
     reasonSummaryStatus: (row.reason_summary_status as ABTest["reasonSummaryStatus"]) ?? undefined,
     reasonSummaryA: row.reason_summary_a ? JSON.parse(row.reason_summary_a) as string[] : undefined,
     reasonSummaryB: row.reason_summary_b ? JSON.parse(row.reason_summary_b) as string[] : undefined,
@@ -68,15 +70,16 @@ export class D1ABTestRepository implements ABTestRepository {
       .prepare(`INSERT OR REPLACE INTO abtests
         (test_id, user_id, title, status, design_a_image_key, design_b_image_key,
          design_a_input_type, design_b_input_type, design_a_url, design_b_url,
-         persona_ids, reason_summary_status, reason_summary_a, reason_summary_b,
+         persona_ids, focus_points, reason_summary_status, reason_summary_a, reason_summary_b,
          winners_reason_summary, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(
         test.testId, test.userId, test.title, test.status,
         test.designAImageKey ?? null, test.designBImageKey ?? null,
         test.designAInputType, test.designBInputType,
         test.designAUrl ?? null, test.designBUrl ?? null,
         JSON.stringify(test.personaIds),
+        test.focusPoints ?? null,
         test.reasonSummaryStatus ?? null,
         test.reasonSummaryA ? JSON.stringify(test.reasonSummaryA) : null,
         test.reasonSummaryB ? JSON.stringify(test.reasonSummaryB) : null,

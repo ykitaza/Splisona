@@ -3,7 +3,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ABTestRepository } from "../domain/ports/abtest-repository.js";
 import type { EvaluationRepository } from "../domain/ports/evaluation-repository.js";
-import { test1, evals1, test2, evals2 } from "./seed-data.js";
+import { buildSeedData } from "./seed-data.js";
 
 const SEED_ASSETS = join(dirname(fileURLToPath(import.meta.url)), "../../seed");
 const SEED_USER = "local-user";
@@ -18,7 +18,9 @@ export async function loadSeedIfEmpty(
 
   console.log("[seed] Seeding sample report data...");
 
-  for (const test of [test1, test2]) {
+  const seed = buildSeedData(SEED_USER);
+
+  for (const test of seed.tests) {
     await testRepo.save(test);
 
     for (const side of ["A", "B"] as const) {
@@ -32,9 +34,9 @@ export async function loadSeedIfEmpty(
     }
   }
 
-  for (const ev of [...evals1, ...evals2]) {
+  for (const ev of seed.evaluations) {
     await evalRepo.save(ev);
   }
 
-  console.log("[seed] Done: 2 tests, 12 evaluations");
+  console.log("[seed] Done: 2 tests, 24 evaluations");
 }

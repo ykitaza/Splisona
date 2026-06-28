@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Image, ImagePlus, Info, Link2, Camera, Maximize2, Play, SlidersHorizontal, Check, X } from 'lucide-react';
+import { Image, ImagePlus, Link2, Camera, Maximize2, Play, SlidersHorizontal, Check, X, ChevronDown } from 'lucide-react';
+import { HelpDot } from '@/shared/ui/HelpDot';
 import { ImageLightbox } from '@/shared/ui/ImageLightbox';
 import { Modal } from '@/shared/ui/Modal';
 import { testDraft, sideToDesignInput, type DesignSideData } from './testDraft';
@@ -439,6 +440,8 @@ export function TestInputPage() {
   const [sideB, setSideB] = useState<DesignSideData | null>(initial.sideB);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initial.personaIds));
   const [personaModalOpen, setPersonaModalOpen] = useState(false);
+  const [focusPoints, setFocusPoints] = useState('');
+  const [focusOpen, setFocusOpen] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -481,14 +484,15 @@ export function TestInputPage() {
       const personaIds = Array.from(selectedIds);
       const designAInput = sideToDesignInput(sideA);
       const designBInput = sideToDesignInput(sideB);
+      const fp = focusPoints.trim() || undefined;
 
       let testId: string;
       const draft = testDraft.get();
       if (draft.resumeId) {
         testId = draft.resumeId;
-        await updateTest(testId, { designAInput, designBInput, personaIds });
+        await updateTest(testId, { designAInput, designBInput, personaIds, focusPoints: fp });
       } else {
-        const created = await createTest({ title: '', designAInput, designBInput, personaIds });
+        const created = await createTest({ title: '', designAInput, designBInput, personaIds, focusPoints: fp });
         testId = created.testId;
       }
 
@@ -606,11 +610,30 @@ export function TestInputPage() {
         </div>
       </div>
 
-      <div className="flex items-start gap-2">
-        <Info size={14} className="text-text-lo flex-shrink-0 mt-0.5" />
-        <p className="text-text-lo font-sans text-xs">
-          FigmaやサイトのURLを入力した場合は、スクリーンショットを取得してから実行してください。
-        </p>
+      <div className="flex flex-col">
+        <button
+          type="button"
+          onClick={() => setFocusOpen((o) => !o)}
+          className="flex items-center gap-1.5 group"
+          style={{ padding: '8px 0' }}
+        >
+          <ChevronDown size={14} className="text-text-lo transition-transform" style={{ transform: focusOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
+          <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.2 }}>注目ポイント</span>
+          <HelpDot content="ペルソナが評価時に特に注目すべき観点を指定できます" />
+          {focusPoints.trim() && !focusOpen && (
+            <span className="text-accent font-mono text-xs ml-2">設定済</span>
+          )}
+        </button>
+        {focusOpen && (
+          <textarea
+            value={focusPoints}
+            onChange={(e) => setFocusPoints(e.target.value)}
+            placeholder="例: CTAボタンの視認性、ファーストビューの訴求力、フォーム導線の分かりやすさ"
+            rows={2}
+            className="bg-base border border-hairline rounded-lg font-sans text-text-hi placeholder:text-text-lo resize-y transition-colors focus:border-accent"
+            style={{ padding: '10px 14px', fontSize: 13, outline: 'none', boxShadow: 'none', marginTop: 4 }}
+          />
+        )}
       </div>
 
       {error && (

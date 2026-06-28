@@ -217,9 +217,9 @@ function CreateProjectModal({ onClose, onCreate }: { onClose: () => void; onCrea
             />
           </div>
           <div className="flex flex-col" style={{ gap: 8 }}>
-            <label className="font-sans font-semibold text-text-hi" style={{ fontSize: 14 }}>何を達成しようとしていますか？</label>
+            <label className="font-sans font-semibold text-text-hi" style={{ fontSize: 14 }}>誰のための、どんなデザインですか？</label>
             <textarea
-              placeholder="プロジェクトの目標やテーマを説明してください..."
+              placeholder="例: 20代男性向けECサイトのLP。購買率の改善が目標"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}

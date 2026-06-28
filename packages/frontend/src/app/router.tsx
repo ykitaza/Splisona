@@ -16,8 +16,8 @@ export const routeConfig = [
   {
     element: <AuthGuard />,
     children: [
-      { path: '/', element: <Navigate to="/personas" replace /> },
-      { path: '/dashboard', element: <Navigate to="/personas" replace /> },
+      { path: '/', element: <Navigate to="/results" replace /> },
+      { path: '/dashboard', element: <Navigate to="/results" replace /> },
       { path: '/personas', element: <PersonaListPage /> },
       { path: '/personas/new', element: <PersonaEditPage /> },
       { path: '/personas/:id', element: <PersonaUnifiedPage /> },

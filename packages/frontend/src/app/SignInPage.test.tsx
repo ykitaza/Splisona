@@ -26,6 +26,7 @@ function renderSignInPage() {
 describe('SignInPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('VITE_COGNITO_USER_POOL_ID', 'test-pool');
   });
 
   it('メールとパスワードの入力フィールドが表示される', () => {

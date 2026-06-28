@@ -23,13 +23,12 @@ describe('SettingsModal', () => {
     expect(screen.queryByText('設定')).not.toBeInTheDocument();
   });
 
-  it('open=true のとき 4 セクションのナビが表示される', async () => {
+  it('open=true のとき 3 セクションのナビが表示される', async () => {
     render(<SettingsModal open={true} onClose={() => {}} />);
 
     await waitFor(() => {
-      expect(screen.getAllByText('一般').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Figma 連携').length).toBeGreaterThanOrEqual(1);
     });
-    expect(screen.getByText('Figma 連携')).toBeInTheDocument();
     expect(screen.getByText('AI モデル')).toBeInTheDocument();
     expect(screen.getByText('プロンプト')).toBeInTheDocument();
   });
@@ -39,7 +38,7 @@ describe('SettingsModal', () => {
     render(<SettingsModal open={true} onClose={() => {}} />);
 
     await waitFor(() => {
-      expect(screen.getAllByText('一般').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Figma 連携').length).toBeGreaterThanOrEqual(1);
     });
 
     await user.click(screen.getByText('AI モデル'));

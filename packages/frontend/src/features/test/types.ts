@@ -22,6 +22,7 @@ export interface ABTest {
   designAInput: DesignInput;
   designBInput: DesignInput;
   personaIds: string[];
+  focusPoints?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +32,7 @@ export interface CreateABTestInput {
   designAInput: DesignInput;
   designBInput: DesignInput;
   personaIds: string[];
+  focusPoints?: string;
 }
 
 export type UpdateABTestInput = Partial<CreateABTestInput>;

@@ -131,6 +131,7 @@ export function TestListPage() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const hasAutoExpanded = useRef(false);
   const [moveMenuOpen, setMoveMenuOpen] = useState(false);
   const moveMenuRef = useRef<HTMLDivElement>(null);
   const [summaries, setSummaries] = useState<Record<string, ReportSummary>>({});
@@ -165,6 +166,17 @@ export function TestListPage() {
     const q = searchQuery.toLowerCase();
     return sorted.filter((t) => t.title.toLowerCase().includes(q));
   }, [tests, searchQuery]);
+
+  useEffect(() => {
+    if (!hasAutoExpanded.current && filtered.length > 0) {
+      hasAutoExpanded.current = true;
+      const first = filtered[0];
+      setExpandedId(first.testId);
+      if (first.status === 'completed') {
+        getReport(first.testId).then((r) => setSummaries((prev) => ({ ...prev, [first.testId]: r.summary }))).catch(() => {});
+      }
+    }
+  }, [filtered]);
 
   function toggleOne(id: string) {
     setSelected((prev) => {

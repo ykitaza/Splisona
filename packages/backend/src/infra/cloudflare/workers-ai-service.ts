@@ -46,16 +46,18 @@ export class WorkersAIService implements AIService {
   }
 
   async evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput> {
-    const { persona, imageA, imageB, additionalInstruction } = params;
+    const { persona, imageA, imageB, additionalInstruction, projectContext, focusPoints } = params;
     const prompt = [
       `あなたは「${persona.displayName}」というペルソナです。`,
       `タイプ: ${personaTypeLabel(persona.type)}`,
       persona.occupation ? `職業: ${persona.occupation}` : null,
       persona.freeText ? `詳細: ${persona.freeText}` : null,
+      projectContext ? `\nデザインの背景:\n${projectContext}` : null,
       "",
       "最初の画像がデザインA、次の画像がデザインBです。",
       "あなたのペルソナ視点から評価してください。",
       "scoresA と scoresB に、A案・B案それぞれの各軸スコア（0〜100）を採点してください。reason は必ず日本語で記述してください。",
+      focusPoints ? `\n注目ポイント:\n${focusPoints}` : null,
       additionalInstruction ? `\n追加指示:\n${additionalInstruction}` : null,
     ].filter((l) => l !== null).join("\n");
 

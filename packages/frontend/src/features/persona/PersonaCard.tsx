@@ -150,7 +150,7 @@ export function PersonaCard({ persona, onDelete, onDuplicate }: Props) {
                     {item.separator && <div style={{ height: 1, background: '#FFFFFF14' }} />}
                     <button
                       type="button"
-                      onClick={item.onClick}
+                      onClick={(e) => { e.stopPropagation(); item.onClick(); }}
                       className="flex items-center w-full font-sans transition-colors hover:bg-raised outline-none"
                       style={{ gap: 10, padding: '10px 14px', fontSize: 14, color }}
                     >

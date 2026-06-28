@@ -705,8 +705,11 @@ export function TestReportPage() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>解決済みプロンプト</span>
-                    <p className="text-text-mid font-sans text-xs" style={{ lineHeight: 1.5 }}>
-                      ペルソナ「{ev.personaDisplayName}」として、デザイン A と B を比較し、5軸で評価してください。
+                    <p className="text-text-mid font-sans text-xs whitespace-pre-wrap" style={{ lineHeight: 1.5 }}>
+                      {[
+                        `ペルソナ「${ev.personaDisplayName}」として、デザイン A と B を比較し、5軸で評価してください。`,
+                        abTest.focusPoints ? `\n注目ポイント:\n${abTest.focusPoints}` : null,
+                      ].filter(Boolean).join('')}
                     </p>
                   </div>
                   <div className="flex flex-col gap-1.5">

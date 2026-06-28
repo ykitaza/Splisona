@@ -115,7 +115,6 @@ app.post("/tests/:id/abort", async (c) => {
   if (ac) ac.abort();
   runningAbortControllers.delete(testId);
 
-  await container.testRepo.save({ ...test, status: "failed", updatedAt: new Date().toISOString() });
   return c.json({ aborted: true });
 });
 

@@ -56,7 +56,8 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
   const personaUseCases = new PersonaUseCases(personaRepo, settingsRepo, aiService, storageService);
   const abtestUseCases = new ABTestUseCases(testRepo, evalRepo, storageService);
   const interviewUseCases = new InterviewUseCases(personaRepo, settingsRepo, aiService);
-  const evaluationUseCases = new EvaluationUseCases(testRepo, evalRepo, personaRepo, settingsRepo, aiService, "");
+  const projectRepo = new D1ProjectRepository(env.DB);
+  const evaluationUseCases = new EvaluationUseCases(testRepo, evalRepo, personaRepo, settingsRepo, projectRepo, aiService, "");
   const reportUseCases = new ReportUseCases(testRepo, evalRepo);
   const settingsUseCases = new SettingsUseCases(settingsRepo);
   const captureUseCases = new CaptureUseCases(
@@ -67,7 +68,6 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
       : async () => { throw new Error("Browser binding not configured"); },
   );
 
-  const projectRepo = new D1ProjectRepository(env.DB);
   const projectUseCases = new ProjectUseCases(projectRepo, testRepo);
 
   return {

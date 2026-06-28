@@ -24,6 +24,8 @@ export function TestRunningPage() {
   const [startTime] = useState(() => Date.now());
   const { personas } = usePersonas();
   const consoleRef = useRef<HTMLDivElement>(null);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const userScrollTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   function elapsed() {
     const s = Math.floor((Date.now() - startTime) / 1000);
@@ -42,7 +44,8 @@ export function TestRunningPage() {
   }, [id]);
 
   const [isDone, setIsDone] = useState(false);
-  const [isAborting, setIsAborting] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const isClosingRef = useRef(false);
   const prevResultsRef = useRef<Record<string, EvaluationResult>>({});
   const hasLoggedStartRef = useRef(false);
   const hasLoggedSummaryRef = useRef(false);
@@ -122,16 +125,20 @@ export function TestRunningPage() {
         }
 
         if (data.status === 'completed' || data.status === 'failed') {
-          setIsDone(true);
-          if (data.status === 'completed') {
-            addLog('要約生成完了');
-            addLog('レポート書き込み完了');
-            addLog(`exit 0`);
+          if (isClosingRef.current && data.status === 'failed') {
+            // Backend is generating summaries — keep polling
           } else {
-            addLog('中止済み');
-            addLog(`exit 1`);
+            setIsDone(true);
+            if (data.status === 'completed') {
+              addLog('要約生成完了');
+              addLog('レポート書き込み完了');
+              addLog(`exit 0`);
+            } else {
+              addLog('中止済み');
+              addLog(`exit 1`);
+            }
+            return;
           }
-          return;
         }
       } catch {
         // ignore
@@ -145,8 +152,8 @@ export function TestRunningPage() {
 
   useEffect(() => {
     const el = consoleRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [logs]);
+    if (el && !isUserScrolling) el.scrollTop = el.scrollHeight;
+  }, [logs, isUserScrolling]);
 
   const total = progress?.total ?? 0;
   const completed = progress?.completed ?? 0;
@@ -157,7 +164,7 @@ export function TestRunningPage() {
     .map((pid) => personas.find((p) => p.personaId === pid))
     .filter(Boolean) as typeof personas;
 
-  const isFailed = progress?.status === 'failed';
+  const isFailed = progress?.status === 'failed' && !isClosing;
   const statusColor = isDone ? (isFailed ? 'var(--color-danger)' : 'var(--color-success)') : 'var(--color-accent)';
   const statusGlow = isDone ? (isFailed ? '#E06A6AAA' : '#54B587AA') : '#6E78D9AA';
 
@@ -203,26 +210,25 @@ export function TestRunningPage() {
         ) : (
           <button
             type="button"
-            disabled={isAborting}
+            disabled={isClosing}
             onClick={async () => {
               if (!id) return;
-              setIsAborting(true);
+              setIsClosing(true);
+              isClosingRef.current = true;
               try {
                 await abortTest(id);
-                addLog('テストを中止しました');
-                setIsDone(true);
-                setProgress((prev) => prev ? { ...prev, status: 'failed' } : prev);
+                addLog('ここまでの結果で集計します…');
               } catch {
-                addLog('中止に失敗しました');
-              } finally {
-                setIsAborting(false);
+                addLog('締めに失敗しました');
+                setIsClosing(false);
+                isClosingRef.current = false;
               }
             }}
             className="flex items-center bg-surface border border-hairline text-text-mid font-sans font-medium transition-colors hover:text-text-hi disabled:opacity-40"
             style={{ gap: 8, borderRadius: 10, padding: '10px 15px', fontSize: 13 }}
           >
-            <Square size={14} className="text-danger" />
-            {isAborting ? '中止中...' : '中止'}
+            <Square size={14} className="text-text-lo" />
+            {isClosing ? '集計中…' : 'ここで締める'}
           </button>
         )}
       </div>
@@ -309,8 +315,13 @@ export function TestRunningPage() {
           <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>ライブログ</span>
           <div
             ref={consoleRef}
-            className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-surface border border-hairline"
+            className={`flex flex-col flex-1 min-h-0 bg-surface border border-hairline ${isUserScrolling ? 'overflow-y-auto' : 'overflow-y-hidden'}`}
             style={{ gap: 7, padding: '16px 20px', borderRadius: 8 }}
+            onWheel={() => {
+              setIsUserScrolling(true);
+              clearTimeout(userScrollTimer.current);
+              userScrollTimer.current = setTimeout(() => setIsUserScrolling(false), 3000);
+            }}
           >
             {logs.map((entry, i) => (
               <div key={i} className="flex" style={{ gap: 12 }}>

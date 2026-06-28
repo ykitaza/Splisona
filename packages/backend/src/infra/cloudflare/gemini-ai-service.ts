@@ -48,16 +48,18 @@ export class GeminiAIService implements AIService {
   }
 
   async evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput> {
-    const { persona, imageA, imageB, additionalInstruction } = params;
+    const { persona, imageA, imageB, additionalInstruction, projectContext, focusPoints } = params;
     const prompt = [
       `あなたは「${persona.displayName}」というペルソナです。`,
       `タイプ: ${personaTypeLabel(persona.type)}`,
       persona.occupation ? `職業: ${persona.occupation}` : null,
       persona.freeText ? `詳細: ${persona.freeText}` : null,
+      projectContext ? `\nデザインの背景:\n${projectContext}` : null,
       "",
       "最初の画像がデザインA、次の画像がデザインBです。",
       "あなたのペルソナ視点から評価してください。",
       "scoresA と scoresB に、A案・B案それぞれの各軸スコア（0〜100）を採点してください。reason は必ず日本語で記述してください。",
+      focusPoints ? `\n注目ポイント:\n${focusPoints}` : null,
       additionalInstruction ? `\n追加指示:\n${additionalInstruction}` : null,
     ].filter((l) => l !== null).join("\n");
 
@@ -86,17 +88,26 @@ export class GeminiAIService implements AIService {
 
   async generateTitle(imageA: EvaluateDesignsParams["imageA"], imageB: EvaluateDesignsParams["imageA"]): Promise<string> {
     const parts: GeminiPart[] = [
-      { text: "2つのデザイン画像を見て、この比較テストに適した短いタイトルを1つだけ日本語で生成してください。15文字以内で、内容が分かる簡潔な名称にしてください。タイトルのみを出力し、他の説明は不要です。" },
+      { text: "2つのデザイン画像を見て、この比較テストに適した短いタイトルを1つだけ日本語で生成してください。15文字以内で、内容が分かる簡潔な名称にしてください。" },
       toImagePart(imageA),
       toImagePart(imageB),
     ];
 
     const result = await this.generate({
       contents: [{ role: "user", parts }],
-      generationConfig: { temperature: 0.3 },
+      generationConfig: {
+        temperature: 0.3,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: { title: { type: "string" } },
+          required: ["title"],
+        },
+      },
     });
 
-    return result.trim().replace(/^["「]|["」]$/g, "");
+    const parsed = JSON.parse(result) as { title: string };
+    return parsed.title.replace(/^["「]|["」]$/g, "");
   }
 
   async summarizeReasons(reasonsText: string): Promise<ReasonSummary> {
@@ -143,13 +154,13 @@ export class GeminiAIService implements AIService {
 
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`Gemini API error ${res.status}: ${body}`);
+      throw new Error(`Gemini API error ${res.status}: ${body.slice(0, 500)}`);
     }
 
     const data = await res.json() as GeminiResponse;
     const candidate = data.candidates?.[0];
     if (!candidate?.content?.parts?.length) {
-      throw new Error("No content in Gemini response");
+      throw new Error(`No content in Gemini response: ${JSON.stringify(data).slice(0, 300)}`);
     }
 
     return candidate.content.parts
@@ -176,6 +187,10 @@ interface GeminiRequest {
   systemInstruction?: {
     parts: Array<{ text: string }>;
   };
+  safetySettings?: Array<{
+    category: string;
+    threshold: string;
+  }>;
 }
 
 interface GeminiResponse {

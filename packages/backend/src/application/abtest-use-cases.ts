@@ -4,6 +4,7 @@ import type { EvaluationRepository } from "../domain/ports/evaluation-repository
 import type { StorageService } from "../domain/ports/storage-service.js";
 import type { ABTest, UploadUrlResult } from "../domain/types.js";
 import { NotFoundError } from "./errors.js";
+import { buildSeedData, SEED_IMAGE_KEYS } from "../seed/seed-data.js";
 
 export class ABTestUseCases {
   constructor(
@@ -21,6 +22,7 @@ export class ABTestUseCases {
     designAImageKey?: string;
     designBImageKey?: string;
     personaIds?: string[];
+    focusPoints?: string;
   }): Promise<ABTest> {
     const testId = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -38,6 +40,7 @@ export class ABTestUseCases {
       designAUrl: dA.figmaUrl ?? dA.siteUrl,
       designBUrl: dB.figmaUrl ?? dB.siteUrl,
       personaIds: input.personaIds ?? [],
+      focusPoints: input.focusPoints,
       createdAt: now,
       updatedAt: now,
     };
@@ -46,7 +49,18 @@ export class ABTestUseCases {
   }
 
   async list(userId: string): Promise<ABTest[]> {
-    return this.testRepo.findAllByUser(userId);
+    const tests = await this.testRepo.findAllByUser(userId);
+    if (tests.length > 0) return tests;
+
+    const seed = buildSeedData(userId);
+    for (const t of seed.tests) await this.testRepo.save(t);
+    for (const e of seed.evaluations) await this.evalRepo.save(e);
+    if (this.storageService.copyObject) {
+      for (const { src, dest } of SEED_IMAGE_KEYS(userId)) {
+        try { await this.storageService.copyObject(src, dest); } catch { /* ignore */ }
+      }
+    }
+    return seed.tests;
   }
 
   async get(userId: string, testId: string): Promise<ABTest | undefined> {
@@ -62,6 +76,7 @@ export class ABTestUseCases {
     designAImageKey?: string;
     designBImageKey?: string;
     personaIds?: string[];
+    focusPoints?: string;
   }): Promise<ABTest> {
     const existing = await this.testRepo.findById(userId, testId);
     if (!existing) throw new NotFoundError("ABTest");
@@ -81,6 +96,7 @@ export class ABTestUseCases {
           designAUrl: dA.figmaUrl ?? dA.siteUrl,
           designBUrl: dB.figmaUrl ?? dB.siteUrl,
           personaIds: input.personaIds,
+          focusPoints: input.focusPoints,
         }).filter(([, v]) => v !== undefined)
       ),
       updatedAt: now,
@@ -125,13 +141,10 @@ export class ABTestUseCases {
       }
     }
 
-    const d = new Date();
-    const autoTitle = `A/B テスト ${d.getMonth() + 1}/${d.getDate()}`;
-
     const cloned: ABTest = {
       ...existing,
       testId: newTestId,
-      title: autoTitle,
+      title: "",
       status: "draft",
       designAImageKey: newImageKeyA,
       designBImageKey: newImageKeyB,
