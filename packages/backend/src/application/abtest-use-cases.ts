@@ -114,7 +114,7 @@ export class ABTestUseCases {
     if (!existing) throw new NotFoundError("ABTest");
 
     const ext = contentType === "image/jpeg" ? "jpg" : contentType === "image/webp" ? "webp" : "png";
-    const imageKey = `${userId}/${testId}/${side}.${ext}`;
+    const imageKey = `${userId}/${testId}/${side}_${Date.now()}.${ext}`;
     return this.storageService.getUploadUrl(imageKey, contentType);
   }
 
