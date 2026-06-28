@@ -49,8 +49,16 @@ function SidebarTestItem({
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(test.title);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [overflowing, setOverflowing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (textRef.current) {
+      setOverflowing(textRef.current.scrollWidth > textRef.current.clientWidth);
+    }
+  }, [test.title]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -93,7 +101,18 @@ function SidebarTestItem({
         style={() => ({ padding: '7px 12px', justifyContent: 'flex-start' })}
       >
         {({ isActive }) => (
-          <span className="font-sans text-sm whitespace-nowrap truncate flex-1" style={{ fontWeight: isActive ? 500 : 400 }}>
+          <span
+            ref={textRef}
+            className="font-sans text-sm whitespace-nowrap overflow-hidden"
+            style={{
+              fontWeight: isActive ? 500 : 400,
+              maxWidth: 'calc(100% - 24px)',
+              ...(overflowing ? {
+                maskImage: 'linear-gradient(to right, black calc(100% - 16px), transparent)',
+                WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 16px), transparent)',
+              } : {}),
+            }}
+          >
             {test.title || '無題'}
           </span>
         )}
