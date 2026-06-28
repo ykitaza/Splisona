@@ -14,6 +14,9 @@ CF_ACCESS_AUD = "980dfeb527bf01dccd8d363daa9768e920577325494dbe8172590e22fa36498
 [ai]
 binding = "AI"
 
+[browser]
+binding = "BROWSER"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "chorus-db"

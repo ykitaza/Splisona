@@ -5,6 +5,8 @@ import { D1SettingsRepository } from "./d1-settings-repository.js";
 import { D1ProjectRepository } from "./d1-project-repository.js";
 import { GeminiAIService } from "./gemini-ai-service.js";
 import { WorkersAIService } from "./workers-ai-service.js";
+import { captureWebsiteWithBrowser } from "./browser-capture.js";
+import { captureFigmaNode } from "../local/figma-capture.js";
 import { R2StorageService, type R2Bucket } from "./r2-storage-service.js";
 import { PersonaUseCases } from "../../application/persona-use-cases.js";
 import { ABTestUseCases } from "../../application/abtest-use-cases.js";
@@ -24,6 +26,7 @@ export interface CloudflareEnv {
     get(key: string): Promise<unknown>;
   };
   AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
+  BROWSER?: { fetch(url: string | Request, init?: RequestInit): Promise<Response> };
   AI_PROVIDER?: string;
   WORKERS_AI_MODEL?: string;
   GEMINI_API_KEY: string;
@@ -58,8 +61,10 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
   const settingsUseCases = new SettingsUseCases(settingsRepo);
   const captureUseCases = new CaptureUseCases(
     storageService,
-    async () => { throw new Error("Figma capture not supported on Workers"); },
-    async () => { throw new Error("Website capture not supported on Workers"); },
+    captureFigmaNode,
+    env.BROWSER
+      ? (url: string) => captureWebsiteWithBrowser(env.BROWSER!, url)
+      : async () => { throw new Error("Browser binding not configured"); },
   );
 
   const projectRepo = new D1ProjectRepository(env.DB);
