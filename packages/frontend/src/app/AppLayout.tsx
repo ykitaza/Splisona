@@ -307,7 +307,13 @@ export function AppLayout() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [groupMenuOpen]);
 
+  const isCloudflare = !localUserId && !import.meta.env?.VITE_COGNITO_USER_POOL_ID;
+
   async function handleSignOut() {
+    if (isCloudflare) {
+      window.location.href = '/cdn-cgi/access/logout';
+      return;
+    }
     if (!localUserId) await signOut();
     navigate('/signin', { replace: true });
   }

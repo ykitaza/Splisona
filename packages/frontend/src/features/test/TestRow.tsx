@@ -34,6 +34,7 @@ export interface TestRowProps {
   expandPadding?: string;
   borderBottom?: boolean;
   expandExtra?: ReactNode;
+  winner?: 'A' | 'B' | 'tie' | null;
 }
 
 export function TestRow({
@@ -54,6 +55,7 @@ export function TestRow({
   expandPadding = '8px 12px 16px 12px',
   borderBottom,
   expandExtra,
+  winner,
 }: TestRowProps) {
   const thumbA = test.designAInput?.imageKey ? `${API_BASE}/images/${test.designAInput.imageKey}` : null;
   const thumbB = test.designBInput?.imageKey ? `${API_BASE}/images/${test.designBInput.imageKey}` : null;
@@ -120,14 +122,14 @@ export function TestRow({
         <div className="flex flex-col" style={{ padding: expandPadding, gap: 12 }}>
           <div className="flex items-center" style={{ gap: 12 }}>
             <div className="overflow-hidden flex-shrink-0 flex" style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}>
-              <div className="flex-shrink-0" style={{ width: 3, background: '#6E78D9' }} />
+              {winner === 'A' && <div className="flex-shrink-0" style={{ width: 3, background: '#6E78D9' }} />}
               <div className="flex-1 min-w-0" style={{ overflow: 'hidden' }}>
                 {thumbA && <img src={thumbA} alt="A" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
               </div>
             </div>
             <span className="text-text-lo" style={{ fontSize: 14 }}>→</span>
             <div className="overflow-hidden flex-shrink-0 flex" style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}>
-              <div className="flex-shrink-0" style={{ width: 3, background: '#C9974F' }} />
+              {winner === 'B' && <div className="flex-shrink-0" style={{ width: 3, background: '#C9974F' }} />}
               <div className="flex-1 min-w-0" style={{ overflow: 'hidden' }}>
                 {thumbB && <img src={thumbB} alt="B" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
               </div>

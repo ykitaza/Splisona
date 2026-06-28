@@ -248,7 +248,7 @@ export function PersonaUnifiedPage() {
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header + tabs */}
         <div className="flex-shrink-0 border-b border-hairline">
-          <div className="flex flex-col pb-0" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px 0 24px' }}>
+          <div className="flex flex-col pb-0" style={{ width: '100%', maxWidth: 640, margin: '0 auto', padding: '48px 32px 0 32px' }}>
             <div className="flex flex-col mb-6" style={{ gap: 4 }}>
               <button
                 type="button"
@@ -296,7 +296,7 @@ export function PersonaUnifiedPage() {
         {/* Tab content */}
         {(tab === 'edit' || tab === 'detail') ? (
           <form onSubmit={handleSave} noValidate className="flex flex-col flex-1 overflow-y-auto">
-            <div className="flex flex-col gap-6 pb-24" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', paddingBottom: 96 }}>
+            <div className="flex flex-col gap-6 pb-24" style={{ width: '100%', maxWidth: 640, margin: '0 auto', padding: '48px 32px', paddingBottom: 96 }}>
               {error && (
                 <div role="alert" className="rounded-md bg-danger/10 text-danger px-4 py-3 font-sans text-sm">
                   {error}
@@ -503,7 +503,7 @@ export function PersonaUnifiedPage() {
         ) : (
           /* Interview tab */
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto flex flex-col" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', gap: 24 }}>
+            <div className="flex-1 overflow-y-auto flex flex-col" style={{ width: '100%', maxWidth: 640, margin: '0 auto', padding: '48px 32px', gap: 24 }}>
               {messages.length === 0 && !isSending && !chatError && (
                 <div className="flex flex-col items-center justify-center flex-1 py-16">
                   <p className="text-text-lo font-sans text-sm">{persona.displayName}に話しかけてみましょう</p>
@@ -537,7 +537,7 @@ export function PersonaUnifiedPage() {
               )}
               <div ref={bottomRef} />
             </div>
-            <div className="flex-shrink-0" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '16px 24px' }}>
+            <div className="flex-shrink-0" style={{ width: '100%', maxWidth: 640, margin: '0 auto', padding: '16px 32px' }}>
               <div className="flex items-center gap-3 bg-base border border-hairline py-2 pl-4 pr-2" style={{ borderRadius: 10 }}>
                 <input
                   type="text"

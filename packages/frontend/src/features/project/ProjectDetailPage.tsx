@@ -143,14 +143,14 @@ function EditProjectModal({ project, onClose, onSave }: {
   );
 }
 
-function DesignThumb({ imageKey, label, color }: { imageKey?: string; label: string; color: string }) {
+function DesignThumb({ imageKey, label, color, isWinner }: { imageKey?: string; label: string; color: string; isWinner?: boolean }) {
   const src = imageKey ? `${API_BASE}/images/${imageKey}` : null;
   return (
     <div
       className="overflow-hidden flex-shrink-0 flex"
       style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}
     >
-      <div className="flex-shrink-0" style={{ width: 3, background: color }} />
+      {isWinner && <div className="flex-shrink-0" style={{ width: 3, background: color }} />}
       <div className="flex-1 min-w-0" style={{ overflow: 'hidden' }}>
         {src && <img src={src} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
       </div>
@@ -379,9 +379,9 @@ function LatestEntry({ test, index, summary }: { test: ABTest; index: number; su
       <div className="flex flex-col flex-1" style={{ gap: 16 }}>
         <span className="font-sans text-text-hi font-semibold" style={{ fontSize: 20 }}>{test.title}</span>
         <div className="flex items-center" style={{ gap: 12 }}>
-          <DesignThumb imageKey={test.designAInput?.imageKey} label="A" color="#6E78D9" />
+          <DesignThumb imageKey={test.designAInput?.imageKey} label="A" color="#6E78D9" isWinner={summary?.winner === 'A'} />
           <span className="text-text-lo" style={{ fontSize: 14 }}>→</span>
-          <DesignThumb imageKey={test.designBInput?.imageKey} label="B" color="#C9974F" />
+          <DesignThumb imageKey={test.designBInput?.imageKey} label="B" color="#C9974F" isWinner={summary?.winner === 'B'} />
         </div>
         {summary && (
           <div className="flex items-center" style={{ gap: 16 }}>
@@ -500,6 +500,7 @@ function PastEntry({ test, index, projectId, summary, onRemoved, onDeleted, onRe
       }}
       onRenameCancel={() => setIsRenaming(false)}
       expandExtra={<SummaryExtra summary={summary} />}
+      winner={summary?.winner as 'A' | 'B' | 'tie' | null}
       prefix={
         <div className="flex flex-col items-center flex-shrink-0" style={{ width: 32, gap: 2 }}>
           <span className="font-mono text-text-mid" style={{ fontSize: 12 }}>#{index}</span>

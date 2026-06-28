@@ -309,15 +309,6 @@ export function TestListPage() {
             <>
               <button
                 type="button"
-                className="flex items-center border transition-colors hover:bg-raised"
-                style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
-              >
-                <span className="font-sans" style={{ fontSize: 13, color: '#9BA1AC' }}>絞り込み</span>
-                <span className="font-sans font-semibold" style={{ fontSize: 13, color: '#F2F4F7' }}>すべて</span>
-                <ChevronDown size={14} style={{ color: '#5B616B' }} />
-              </button>
-              <button
-                type="button"
                 onClick={() => setSelectionMode(true)}
                 className="flex items-center border transition-colors hover:bg-raised"
                 style={{ gap: 6, borderRadius: 6, padding: '8px 14px', borderColor: '#FFFFFF14' }}
@@ -395,6 +386,7 @@ export function TestListPage() {
                 }}
                 onRenameCancel={() => setRenamingId(null)}
                 onNavigateToDraft={() => navigateToDraft(test)}
+                winner={summaries[test.testId]?.winner as 'A' | 'B' | 'tie' | null}
                 expandExtra={(() => {
                   const s = summaries[test.testId];
                   if (!s) return undefined;

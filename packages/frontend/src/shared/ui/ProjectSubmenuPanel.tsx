@@ -22,8 +22,8 @@ export function ProjectSubmenuPanel({ projects, onSelect }: Props) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           autoFocus
-          className="flex-1 bg-transparent outline-none font-sans text-sm"
-          style={{ padding: 0, border: 'none', color: '#E1E4EA', caretColor: '#6E78D9' }}
+          className="flex-1 bg-transparent font-sans text-sm"
+          style={{ padding: 0, border: 'none', outline: 'none', boxShadow: 'none', color: '#E1E4EA', caretColor: '#6E78D9' }}
           onClick={(e) => e.stopPropagation()}
         />
       </div>

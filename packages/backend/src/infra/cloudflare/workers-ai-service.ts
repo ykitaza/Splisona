@@ -119,9 +119,8 @@ export class WorkersAIService implements AIService {
     messages: Array<{ role: string; content: string }>,
     opts?: Record<string, unknown>,
   ): Promise<string> {
-    const response = await this.ai.run(this.modelId, { messages, ...opts }) as { response?: string };
-    if (!response?.response) throw new Error("Empty response from Workers AI");
-    return response.response;
+    const response = await this.ai.run(this.modelId, { messages, ...opts });
+    return this.extractResponse(response);
   }
 
   private async runWithImages(
@@ -142,9 +141,20 @@ export class WorkersAIService implements AIService {
       ],
     }];
 
-    const response = await this.ai.run(this.modelId, { messages, ...opts }) as { response?: string };
-    if (!response?.response) throw new Error("Empty response from Workers AI");
-    return response.response;
+    const response = await this.ai.run(this.modelId, { messages, ...opts });
+    return this.extractResponse(response);
+  }
+
+  private extractResponse(response: unknown): string {
+    if (!response) throw new Error("Workers AI returned null/undefined");
+    const r = response as Record<string, unknown>;
+    if (typeof r.response === "string") return r.response;
+    if (typeof r.result === "string") return r.result;
+    if (r.choices && Array.isArray(r.choices)) {
+      const msg = (r.choices[0] as Record<string, unknown>)?.message as Record<string, unknown> | undefined;
+      if (msg?.content && typeof msg.content === "string") return msg.content;
+    }
+    throw new Error(`Unexpected Workers AI response format: ${JSON.stringify(response).slice(0, 500)}`);
   }
 }
 

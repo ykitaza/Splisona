@@ -21,15 +21,28 @@ export function useUserProfile(): UserProfile {
   const isCloudflare = !localUserId && !import.meta.env?.VITE_COGNITO_USER_POOL_ID;
 
   const [profile, setProfile] = useState<UserProfile>(() => {
-    if (localUserId || isCloudflare) {
-      const name = localName || localUserId || DEFAULT_PROFILE.name;
+    if (localUserId) {
+      const name = localName || localUserId;
       return { name, email: localEmail || '', initials: extractInitials(name) };
     }
     return DEFAULT_PROFILE;
   });
 
   useEffect(() => {
-    if (localUserId || isCloudflare) return;
+    if (localUserId) return;
+
+    if (isCloudflare) {
+      fetch('/cdn-cgi/access/get-identity')
+        .then((r) => r.ok ? r.json() as Promise<{ name?: string; email?: string }> : null)
+        .then((data) => {
+          if (!data) return;
+          const name = data.name || data.email?.split('@')[0] || DEFAULT_PROFILE.name;
+          const email = data.email || '';
+          setProfile({ name, email, initials: extractInitials(name) });
+        })
+        .catch(() => {});
+      return;
+    }
 
     import('aws-amplify/auth').then(({ fetchUserAttributes }) =>
       fetchUserAttributes().then((attrs) => {

@@ -1,4 +1,3 @@
-export { ABTestTable } from './ABTestTable';
 export { TestRow } from './TestRow';
 export { TestInputPage } from './TestInputPage';
 export { TestRunningPage } from './TestRunningPage';

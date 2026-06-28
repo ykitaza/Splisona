@@ -482,9 +482,6 @@ export function TestReportPage() {
       {/* Header */}
       <div className="flex items-center justify-between" style={{ marginTop: -16 }}>
         <div className="flex flex-col" style={{ gap: 7 }}>
-          <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.5 }}>
-            PHASE 2 · RESULTS
-          </span>
           <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>
             結果レポート
           </h1>

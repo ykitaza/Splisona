@@ -13,7 +13,7 @@ export function SourcePopover() {
   return (
     <HelpDot
       title="データソース"
-      content="スコアは Amazon Bedrock 上の LLM がペルソナの属性・性格に基づいて生成したものです。実際のユーザーテストとは異なります。"
+      content="スコアは LLM がペルソナの属性・性格に基づいて生成したものです。実際のユーザーテストとは異なります。"
     />
   );
 }
