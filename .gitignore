@@ -22,6 +22,10 @@ test-results/
 e2e-screenshots/
 *.png
 !packages/backend/seed/*.png
+!packages/video/public/screenshots/*.png
+
+# Video build output
+packages/video/out/
 
 # Wrangler
 .wrangler/
