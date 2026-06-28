@@ -268,7 +268,7 @@ export function ProjectDetailPage() {
               </h1>
             )}
             <span className="text-text-lo font-mono" style={{ fontSize: 13 }}>
-              {tests.length} イテレーション
+              {tests.length} 件のテスト
               {firstDate && ` · 開始 ${firstDate}`}
               {tests.length > 0 && ` · 最終更新 ${relativeDate(sorted[0].updatedAt)}`}
             </span>
@@ -307,7 +307,7 @@ export function ProjectDetailPage() {
       {past.length > 0 && (
         <>
           <span className="font-mono text-text-lo" style={{ fontSize: 10, letterSpacing: 0.5 }}>
-            過去のイテレーション
+            過去のテスト
           </span>
           <div className="flex flex-col">
             {past.map((test, i) => (

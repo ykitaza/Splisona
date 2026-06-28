@@ -125,9 +125,13 @@ export class ABTestUseCases {
       }
     }
 
+    const d = new Date();
+    const autoTitle = `A/B テスト ${d.getMonth() + 1}/${d.getDate()}`;
+
     const cloned: ABTest = {
       ...existing,
       testId: newTestId,
+      title: autoTitle,
       status: "draft",
       designAImageKey: newImageKeyA,
       designBImageKey: newImageKeyB,

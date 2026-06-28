@@ -5,8 +5,8 @@ import { Search, ChevronDown, Plus, Trash2, Check, Pencil, FolderPlus, FolderMin
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { TestRow, MoreButton, TestRowMenu, TestRowMenuButton, TestRowMenuDivider } from '../components/TestRow';
 import { listProjects, addTestToProject, removeTestFromProject } from '../api/projects';
-import { updateTest } from '../api/tests';
-import type { ABTest, Project } from '../types';
+import { updateTest, getReport } from '../api/tests';
+import type { ABTest, Project, ReportSummary } from '../types';
 import { testDraft, type DesignSideData } from '../lib/testDraft';
 
 function restoreSide(input: ABTest['designAInput']): DesignSideData | null {
@@ -142,6 +142,7 @@ export function TestListPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [moveMenuOpen, setMoveMenuOpen] = useState(false);
   const moveMenuRef = useRef<HTMLDivElement>(null);
+  const [summaries, setSummaries] = useState<Record<string, ReportSummary>>({});
 
   useEffect(() => {
     listProjects().then(setAllProjects);
@@ -213,7 +214,11 @@ export function TestListPage() {
 
   function handleRowClick(test: ABTest) {
     if (selectionMode) { toggleOne(test.testId); return; }
-    setExpandedId(expandedId === test.testId ? null : test.testId);
+    const opening = expandedId !== test.testId;
+    setExpandedId(opening ? test.testId : null);
+    if (opening && test.status === 'completed' && !summaries[test.testId]) {
+      getReport(test.testId).then((r) => setSummaries((prev) => ({ ...prev, [test.testId]: r.summary }))).catch(() => {});
+    }
   }
 
   function navigateToDraft(test: ABTest) {
@@ -399,6 +404,23 @@ export function TestListPage() {
                 }}
                 onRenameCancel={() => setRenamingId(null)}
                 onNavigateToDraft={() => navigateToDraft(test)}
+                expandExtra={(() => {
+                  const s = summaries[test.testId];
+                  if (!s) return undefined;
+                  const label = s.winner === 'A' ? 'デザイン A が支持されました' : s.winner === 'B' ? 'デザイン B が支持されました' : '引き分けでした';
+                  const color = s.winner === 'A' ? '#6E78D9' : s.winner === 'B' ? '#C9974F' : '#9BA1AC';
+                  const winSide = s.winner === 'A' || s.winner === 'B' ? s.winner : null;
+                  const winCount = winSide === 'A' ? Math.round(s.supportRateA * s.totalPersonas) : winSide === 'B' ? Math.round(s.supportRateB * s.totalPersonas) : 0;
+                  return (
+                    <div className="flex flex-col" style={{ gap: 8 }}>
+                      <div className="flex items-center" style={{ gap: 16 }}>
+                        <span className="font-sans font-semibold" style={{ fontSize: 14, color }}>{label}</span>
+                        {winSide && <span className="font-sans text-text-mid" style={{ fontSize: 13 }}>{s.totalPersonas}人中{winCount}人が{winSide}を支持</span>}
+                      </div>
+                      {s.winnersReasonSummary && <span className="font-sans text-text-mid" style={{ fontSize: 13 }}>{s.winnersReasonSummary}</span>}
+                    </div>
+                  );
+                })()}
                 prefix={selectionMode ? (
                   <div
                     className="flex items-center justify-center flex-shrink-0"

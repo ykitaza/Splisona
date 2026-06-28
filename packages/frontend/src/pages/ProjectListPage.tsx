@@ -197,7 +197,7 @@ function CreateProjectModal({ onClose, onCreate }: { onClose: () => void; onCrea
         <div className="flex flex-col rounded-lg mb-6" style={{ padding: 16, background: '#1C1F23', gap: 8 }}>
           <span className="font-sans font-semibold text-text-hi" style={{ fontSize: 13 }}>プロジェクトの使い方</span>
           <span className="font-sans text-text-lo" style={{ fontSize: 13, lineHeight: 1.6 }}>
-            A/Bテストをプロジェクトでまとめ、イテレーションを管理できます。同じページの改善を繰り返し検証する際に便利です。
+            同じページやデザインの改善を複数回テストし、結果の推移をまとめて確認できます。
           </span>
         </div>
 
@@ -303,7 +303,7 @@ export function ProjectListPage() {
         <div className="group flex items-center" style={{ gap: 8 }}>
           <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>プロジェクト</h1>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-            <HelpDot content="A/Bテストをプロジェクトでまとめ、イテレーションを管理できます。同じページの改善を繰り返し検証する際に便利です。" />
+            <HelpDot content="同じページやデザインの改善を複数回テストし、結果の推移をまとめて確認できます。" />
           </div>
         </div>
         <div className="flex items-center" style={{ gap: 8 }}>
@@ -371,7 +371,7 @@ export function ProjectListPage() {
           <FolderKanban size={48} className="text-text-lo" style={{ opacity: 0.4 }} />
           <p className="text-text-hi font-sans font-medium" style={{ fontSize: 16 }}>プロジェクトを始めませんか？</p>
           <p className="text-text-lo font-sans text-center" style={{ fontSize: 14, maxWidth: 360, lineHeight: 1.6 }}>
-            A/Bテストをプロジェクトでまとめ、イテレーションを管理できます。
+            関連するテストをまとめて、改善の流れを追跡できます。
           </p>
           <button
             type="button"

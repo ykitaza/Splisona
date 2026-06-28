@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Check, Sparkles, Camera, X, Trash2 } from 'lucide-react';
 import { createPersona, generateDraft, uploadPersonaAvatar, updatePersona, getAvatarUrl } from '../api/personas';
 import { getApiErrorMessage } from '../api/client';
-import { PERSONA_TYPE_LABELS, type PersonaType } from '../types';
+import { PERSONA_TYPE_LABELS, PERSONA_TYPE_DESCRIPTIONS, type PersonaType } from '../types';
 import { PersonaNode, getNodeColor } from '../components/persona/PersonaNode';
 import { FieldSelect } from '../components/ui/FieldSelect';
+import { HelpDot } from '../components/report/HelpDot';
 
 const PERSONA_TYPES = Object.entries(PERSONA_TYPE_LABELS) as [PersonaType, string][];
 
@@ -201,7 +202,13 @@ export function PersonaEditPage() {
               <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 0.5 }}>基本情報</span>
 
               <div className="flex flex-col gap-1">
-                <span className="text-text-mid font-sans text-sm">タイプ</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-text-mid font-sans text-sm">タイプ</span>
+                  <HelpDot
+                    title={(PERSONA_TYPE_LABELS as Record<string, string>)[type] ?? type}
+                    content={(PERSONA_TYPE_DESCRIPTIONS as Record<string, string>)[type] ?? ''}
+                  />
+                </div>
                 <FieldSelect
                   id="type"
                   value={type}

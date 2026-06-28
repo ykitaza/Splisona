@@ -247,47 +247,49 @@ export function PersonaUnifiedPage() {
       {/* Main area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header + tabs */}
-        <div className="flex flex-col pb-0 flex-shrink-0 border-b border-hairline" style={{ paddingTop: 48, paddingLeft: 128, paddingRight: 128 }}>
-          <div className="flex flex-col mb-6" style={{ gap: 4 }}>
-            <button
-              type="button"
-              onClick={() => navigate('/personas')}
-              className="flex items-center transition-colors hover:text-text-mid"
-              style={{ gap: 4, color: '#9BA1AC' }}
-            >
-              <ArrowLeft size={14} />
-              <span className="font-sans" style={{ fontSize: 13 }}>ペルソナ一覧</span>
-            </button>
-            <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>{displayName || persona.displayName}</h1>
-          </div>
-          <div className="flex" style={{ gap: 24 }}>
-            {(['detail', 'edit', 'interview'] as const).map((t) => {
-              const label = t === 'detail' ? '詳細' : t === 'edit' ? '編集' : 'インタビュー';
-              const isActive = tab === t;
-              const disabled = t === 'edit' && isDefault;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => { if (!disabled) setTab(t); }}
-                  disabled={disabled}
-                  className="font-sans transition-colors"
-                  style={{
-                    fontSize: 14,
-                    fontWeight: isActive ? 600 : 400,
-                    color: disabled ? 'var(--color-text-lo)' : isActive ? 'var(--color-text-hi)' : 'var(--color-text-mid)',
-                    borderBottom: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
-                    paddingBottom: isActive ? 4 : 4,
-                    marginBottom: -1,
-                    cursor: disabled ? 'not-allowed' : 'pointer',
-                    opacity: disabled ? 0.5 : 1,
-                  }}
-                  title={disabled ? 'デフォルトペルソナは編集できません' : undefined}
-                >
-                  {label}
-                </button>
-              );
-            })}
+        <div className="flex-shrink-0 border-b border-hairline">
+          <div className="flex flex-col pb-0" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px 0 24px' }}>
+            <div className="flex flex-col mb-6" style={{ gap: 4 }}>
+              <button
+                type="button"
+                onClick={() => navigate('/personas')}
+                className="flex items-center transition-colors hover:text-text-mid"
+                style={{ gap: 4, color: '#9BA1AC' }}
+              >
+                <ArrowLeft size={14} />
+                <span className="font-sans" style={{ fontSize: 13 }}>ペルソナ一覧</span>
+              </button>
+              <h1 className="text-text-hi font-sans font-semibold" style={{ fontSize: 24 }}>{displayName || persona.displayName}</h1>
+            </div>
+            <div className="flex" style={{ gap: 24 }}>
+              {(['detail', 'edit', 'interview'] as const).map((t) => {
+                const label = t === 'detail' ? '詳細' : t === 'edit' ? '編集' : 'インタビュー';
+                const isActive = tab === t;
+                const disabled = t === 'edit' && isDefault;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => { if (!disabled) setTab(t); }}
+                    disabled={disabled}
+                    className="font-sans transition-colors"
+                    style={{
+                      fontSize: 14,
+                      fontWeight: isActive ? 600 : 400,
+                      color: disabled ? 'var(--color-text-lo)' : isActive ? 'var(--color-text-hi)' : 'var(--color-text-mid)',
+                      borderBottom: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
+                      paddingBottom: isActive ? 4 : 4,
+                      marginBottom: -1,
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      opacity: disabled ? 0.5 : 1,
+                    }}
+                    title={disabled ? 'デフォルトペルソナは編集できません' : undefined}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -535,7 +537,7 @@ export function PersonaUnifiedPage() {
               )}
               <div ref={bottomRef} />
             </div>
-            <div className="flex-shrink-0" style={{ padding: '16px 128px' }}>
+            <div className="flex-shrink-0" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '16px 24px' }}>
               <div className="flex items-center gap-3 bg-base border border-hairline py-2 pl-4 pr-2" style={{ borderRadius: 10 }}>
                 <input
                   type="text"

@@ -5,6 +5,14 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { AppLayout } from './AppLayout';
 
 vi.mock('aws-amplify/auth', () => ({ signOut: vi.fn() }));
+vi.mock('../hooks/useABTests', () => ({
+  useABTests: () => ({ tests: [], isLoading: false, error: null, deleteTest: vi.fn(), deleteTests: vi.fn(), refresh: vi.fn() }),
+}));
+vi.mock('../hooks/useProjects', () => ({
+  useProjects: () => ({ projects: [], isLoading: false, error: null, deleteProject: vi.fn(), refresh: vi.fn() }),
+}));
+vi.mock('../api/tests', () => ({ updateTest: vi.fn(), deleteTest: vi.fn() }));
+vi.mock('../api/projects', () => ({ addTestToProject: vi.fn() }));
 
 function renderLayout(path = '/personas') {
   return render(
@@ -27,12 +35,12 @@ describe('AppLayout', () => {
   });
 
   describe('ナビゲーション項目', () => {
-    it('「新規A/Bテスト」「A/Bテスト」「ペルソナ」の3項目が表示される', () => {
+    it('「新規A/Bテスト」「A/Bテスト」「プロジェクト」「ペルソナ」が表示される', () => {
       renderLayout();
 
       expect(screen.getByText('新規A/Bテスト')).toBeInTheDocument();
       expect(screen.getByText('A/Bテスト')).toBeInTheDocument();
-      expect(screen.getByText('ペルソナ')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'ペルソナ' })).toBeInTheDocument();
     });
 
     it('「ダッシュボード」ナビ項目が存在しない', () => {
@@ -46,7 +54,7 @@ describe('AppLayout', () => {
 
       const newTestLink = screen.getByText('新規A/Bテスト').closest('a');
       const testLink = screen.getByText('A/Bテスト').closest('a');
-      const personaLink = screen.getByText('ペルソナ').closest('a');
+      const personaLink = screen.getByRole('link', { name: 'ペルソナ' });
       expect(newTestLink).toHaveAttribute('href', '/tests/new');
       expect(testLink).toHaveAttribute('href', '/results');
       expect(personaLink).toHaveAttribute('href', '/personas');

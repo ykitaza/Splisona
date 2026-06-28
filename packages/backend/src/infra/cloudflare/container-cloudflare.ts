@@ -2,6 +2,7 @@ import { D1PersonaRepository } from "./d1-persona-repository.js";
 import { D1ABTestRepository } from "./d1-abtest-repository.js";
 import { D1EvaluationRepository } from "./d1-evaluation-repository.js";
 import { D1SettingsRepository } from "./d1-settings-repository.js";
+import { D1ProjectRepository } from "./d1-project-repository.js";
 import { GeminiAIService } from "./gemini-ai-service.js";
 import { R2StorageService, type R2Bucket } from "./r2-storage-service.js";
 import { PersonaUseCases } from "../../application/persona-use-cases.js";
@@ -13,7 +14,6 @@ import { SettingsUseCases } from "../../application/settings-use-cases.js";
 import { CaptureUseCases } from "../../application/capture-use-cases.js";
 import { ProjectUseCases } from "../../application/project-use-cases.js";
 import type { AppContainer } from "../../container.js";
-import type { ProjectRepository } from "../../domain/ports/project-repository.js";
 import type { D1Database } from "./d1-types.js";
 
 export interface CloudflareEnv {
@@ -52,9 +52,7 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
     async () => { throw new Error("Website capture not supported on Workers"); },
   );
 
-  const projectRepo = new Proxy({} as ProjectRepository, {
-    get: () => () => { throw new Error("ProjectRepository not configured for D1 yet"); },
-  });
+  const projectRepo = new D1ProjectRepository(env.DB);
   const projectUseCases = new ProjectUseCases(projectRepo, testRepo);
 
   return {
