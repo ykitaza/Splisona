@@ -2,7 +2,7 @@
 
 AI ペルソナを使った A/B テスト評価プラットフォーム。複数の AI ペルソナがデザイン案を評価し、定量スコアとレポートを生成します。
 
-<video src="https://github.com/user-attachments/assets/19dd66c4-b7dd-4b25-8db2-525b008dc266" controls width="600"></video>
+<video src="https://github.com/user-attachments/assets/532a9c1c-2beb-4755-a4f2-5bc67ea4062a" controls width="600"></video>
 
 ## Tech Stack
 
