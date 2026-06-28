@@ -43,26 +43,27 @@ export class EvaluationUseCases {
     }));
 
     if (!test.title?.trim()) {
+      let generatedTitle: string;
       try {
         const srcA = await buildSrc(test.designAImageKey!);
         const srcB = await buildSrc(test.designBImageKey!);
-        test = { ...test, title: await this.aiService.generateTitle(srcA, srcB) };
+        generatedTitle = await this.aiService.generateTitle(srcA, srcB);
       } catch (e) {
         console.error("[generateTitle] failed:", e);
-        test = { ...test, title: `A/B テスト ${new Date().toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}` };
+        generatedTitle = `A/B テスト ${new Date().toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}`;
       }
+      await this.testRepo.updateFields(userId, testId, { title: generatedTitle });
+      test = { ...test, title: generatedTitle };
     }
 
-    const runningTest: ABTest = {
-      ...test,
+    await this.testRepo.updateFields(userId, testId, {
       status: "running",
       reasonSummaryStatus: undefined,
       reasonSummaryA: undefined,
       reasonSummaryB: undefined,
       winnersReasonSummary: undefined,
       updatedAt: new Date().toISOString(),
-    };
-    await this.testRepo.save(runningTest);
+    });
 
     const imageA = await buildSrc(test.designAImageKey!);
     const imageB = await buildSrc(test.designBImageKey!);
@@ -87,15 +88,13 @@ export class EvaluationUseCases {
 
     if (completedEvals.length > 0) {
       const summaryFields = await this.generateReasonSummaryFields(completedEvals);
-      await this.testRepo.save({
-        ...runningTest,
+      await this.testRepo.updateFields(userId, testId, {
         status: "completed",
         ...summaryFields,
         updatedAt: new Date().toISOString(),
       });
     } else {
-      await this.testRepo.save({
-        ...runningTest,
+      await this.testRepo.updateFields(userId, testId, {
         status: "failed",
         updatedAt: new Date().toISOString(),
       });
@@ -105,7 +104,7 @@ export class EvaluationUseCases {
   async abortTest(userId: string, testId: string): Promise<void> {
     const test = await this.testRepo.findById(userId, testId);
     if (!test) throw new NotFoundError("ABTest");
-    await this.testRepo.save({ ...test, status: "failed", updatedAt: new Date().toISOString() });
+    await this.testRepo.updateFields(userId, testId, { status: "failed", updatedAt: new Date().toISOString() });
   }
 
   async generateReasonSummaryFields(completed: Evaluation[]): Promise<{

@@ -89,6 +89,23 @@ export class D1ABTestRepository implements ABTestRepository {
       .run();
   }
 
+  async updateFields(userId: string, testId: string, fields: Partial<Pick<ABTest, 'status' | 'title' | 'reasonSummaryStatus' | 'reasonSummaryA' | 'reasonSummaryB' | 'winnersReasonSummary' | 'updatedAt'>>): Promise<void> {
+    const sets: string[] = [];
+    const values: unknown[] = [];
+    if (fields.status !== undefined) { sets.push("status = ?"); values.push(fields.status); }
+    if (fields.title !== undefined) { sets.push("title = ?"); values.push(fields.title); }
+    if (fields.reasonSummaryStatus !== undefined) { sets.push("reason_summary_status = ?"); values.push(fields.reasonSummaryStatus ?? null); }
+    if (fields.reasonSummaryA !== undefined) { sets.push("reason_summary_a = ?"); values.push(fields.reasonSummaryA ? JSON.stringify(fields.reasonSummaryA) : null); }
+    if (fields.reasonSummaryB !== undefined) { sets.push("reason_summary_b = ?"); values.push(fields.reasonSummaryB ? JSON.stringify(fields.reasonSummaryB) : null); }
+    if (fields.winnersReasonSummary !== undefined) { sets.push("winners_reason_summary = ?"); values.push(fields.winnersReasonSummary ?? null); }
+    if (fields.updatedAt !== undefined) { sets.push("updated_at = ?"); values.push(fields.updatedAt); }
+    if (sets.length === 0) return;
+    await this.db
+      .prepare(`UPDATE abtests SET ${sets.join(", ")} WHERE user_id = ? AND test_id = ?`)
+      .bind(...values, userId, testId)
+      .run();
+  }
+
   async remove(userId: string, testId: string): Promise<void> {
     await this.db
       .prepare("DELETE FROM abtests WHERE user_id = ? AND test_id = ?")

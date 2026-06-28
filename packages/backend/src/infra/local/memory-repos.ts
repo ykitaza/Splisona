@@ -80,6 +80,12 @@ export class MemoryABTestRepository implements ABTestRepository {
     this.flush();
   }
 
+  async updateFields(userId: string, testId: string, fields: Partial<Pick<ABTest, 'status' | 'title' | 'reasonSummaryStatus' | 'reasonSummaryA' | 'reasonSummaryB' | 'winnersReasonSummary' | 'updatedAt'>>): Promise<void> {
+    const existing = await this.findById(userId, testId);
+    if (!existing) return;
+    await this.save({ ...existing, ...fields });
+  }
+
   async remove(userId: string, testId: string): Promise<void> {
     const t = this.store.get(testId);
     if (t?.userId === userId) { this.store.delete(testId); this.flush(); }

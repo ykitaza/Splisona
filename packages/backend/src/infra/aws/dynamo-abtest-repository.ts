@@ -86,6 +86,12 @@ export class DynamoABTestRepository implements ABTestRepository {
     await this.db.putItem(toRecord(test) as unknown as Record<string, unknown>);
   }
 
+  async updateFields(userId: string, testId: string, fields: Partial<Pick<ABTest, 'status' | 'title' | 'reasonSummaryStatus' | 'reasonSummaryA' | 'reasonSummaryB' | 'winnersReasonSummary' | 'updatedAt'>>): Promise<void> {
+    const existing = await this.findById(userId, testId);
+    if (!existing) return;
+    await this.save({ ...existing, ...fields });
+  }
+
   async remove(userId: string, testId: string): Promise<void> {
     await this.db.deleteItem(toKey(userId, testId));
   }

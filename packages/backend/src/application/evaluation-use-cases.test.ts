@@ -63,6 +63,7 @@ describe("EvaluationUseCases", () => {
       findAllByUser: vi.fn().mockResolvedValue([test]),
       findById: vi.fn().mockResolvedValue(test),
       save: vi.fn().mockImplementation(async (t: ABTest) => { savedTests.push(t); }),
+      updateFields: vi.fn(),
       remove: vi.fn(),
     };
 
@@ -111,7 +112,7 @@ describe("EvaluationUseCases", () => {
   });
 
   describe("executeTest - normal completion", () => {
-    it("sets status to completed with summaries", async () => {
+    it("sets status to completed with summaries via updateFields", async () => {
       const completedEvals = [makeEval("p1", "A"), makeEval("p2", "B"), makeEval("p3", "A")];
       (evalRepo.findAllByTest as ReturnType<typeof vi.fn>).mockResolvedValue(completedEvals);
 
@@ -119,9 +120,10 @@ describe("EvaluationUseCases", () => {
         buildImageSource: () => ({ kind: "bytes", data: Buffer.from(""), format: "png" }),
       });
 
-      const finalTest = savedTests[savedTests.length - 1];
-      expect(finalTest.status).toBe("completed");
-      expect(finalTest.reasonSummaryStatus).toBe("ready");
+      const calls = (testRepo.updateFields as ReturnType<typeof vi.fn>).mock.calls;
+      const lastCall = calls[calls.length - 1];
+      expect(lastCall[2].status).toBe("completed");
+      expect(lastCall[2].reasonSummaryStatus).toBe("ready");
     });
   });
 
@@ -144,9 +146,10 @@ describe("EvaluationUseCases", () => {
         onAbort: ac.signal,
       });
 
-      const finalTest = savedTests[savedTests.length - 1];
-      expect(finalTest.status).toBe("completed");
-      expect(finalTest.reasonSummaryStatus).toBe("ready");
+      const calls = (testRepo.updateFields as ReturnType<typeof vi.fn>).mock.calls;
+      const lastCall = calls[calls.length - 1];
+      expect(lastCall[2].status).toBe("completed");
+      expect(lastCall[2].reasonSummaryStatus).toBe("ready");
       expect(aiService.summarizeReasons).toHaveBeenCalled();
     });
   });
@@ -163,8 +166,9 @@ describe("EvaluationUseCases", () => {
         onAbort: ac.signal,
       });
 
-      const finalTest = savedTests[savedTests.length - 1];
-      expect(finalTest.status).toBe("failed");
+      const calls = (testRepo.updateFields as ReturnType<typeof vi.fn>).mock.calls;
+      const lastCall = calls[calls.length - 1];
+      expect(lastCall[2].status).toBe("failed");
       expect(aiService.summarizeReasons).not.toHaveBeenCalled();
     });
   });
@@ -186,8 +190,9 @@ describe("EvaluationUseCases", () => {
         buildImageSource: () => ({ kind: "bytes", data: Buffer.from(""), format: "png" }),
       });
 
-      const finalTest = savedTests[savedTests.length - 1];
-      expect(finalTest.status).toBe("completed");
+      const calls = (testRepo.updateFields as ReturnType<typeof vi.fn>).mock.calls;
+      const lastCall = calls[calls.length - 1];
+      expect(lastCall[2].status).toBe("completed");
     });
   });
 });

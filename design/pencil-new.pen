@@ -53,21 +53,27 @@
       "stroke": "#FFFFFF0F",
       "strokeWidth": 1,
       "layout": "vertical",
-      "gap": "$space-4",
-      "padding": "$space-5",
+      "gap": "$space-3",
+      "padding": [
+        16,
+        20
+      ],
       "children": [
         {
           "type": "frame",
           "id": "gHdqY",
           "name": "Top",
           "width": "fill_container",
-          "gap": "$space-4",
+          "gap": "$space-3",
           "children": [
             {
               "id": "JWJef",
               "type": "ref",
               "ref": "CtjwC",
               "name": "Node",
+              "width": 48,
+              "height": 48,
+              "cornerRadius": 12,
               "descendants": {
                 "pokq0": {
                   "inputs": {
@@ -75,7 +81,11 @@
                     "seed": "takumi",
                     "grid": 5,
                     "dot": 0.78
-                  }
+                  },
+                  "x": 10,
+                  "y": 10,
+                  "width": 28,
+                  "height": 28
                 }
               }
             },
@@ -85,7 +95,7 @@
               "name": "Identity",
               "width": "fill_container",
               "layout": "vertical",
-              "gap": "$space-2",
+              "gap": 6,
               "children": [
                 {
                   "type": "text",
@@ -94,7 +104,7 @@
                   "fill": "$text-hi",
                   "content": "タクミ",
                   "fontFamily": "$font-sans",
-                  "fontSize": "$text-lg",
+                  "fontSize": 16,
                   "fontWeight": "600"
                 },
                 {
@@ -165,16 +175,8 @@
           "content": "常に時間に追われており、3秒で要点が伝わらないUIは即離脱する。最短手数でゴールに到達したい。",
           "lineHeight": 1.5,
           "fontFamily": "$font-sans",
-          "fontSize": "$text-base",
+          "fontSize": "$text-sm",
           "fontWeight": "normal"
-        },
-        {
-          "type": "frame",
-          "id": "OzjbR",
-          "name": "Divider",
-          "width": "fill_container",
-          "height": 1,
-          "fill": "$hairline"
         },
         {
           "type": "text",
@@ -4206,7 +4208,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            52
           ],
           "children": [
             {
@@ -4731,7 +4733,10 @@
           "fill": "$bg-base",
           "layout": "vertical",
           "gap": "$space-6",
-          "padding": "$space-6",
+          "padding": [
+            48,
+            170
+          ],
           "children": [
             {
               "type": "frame",
@@ -7078,7 +7083,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
@@ -8616,7 +8621,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
@@ -10516,7 +10521,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
@@ -11494,7 +11499,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
@@ -11969,7 +11974,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
@@ -12572,7 +12577,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
@@ -15848,7 +15853,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
@@ -16559,7 +16564,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            52
           ],
           "children": [
             {
@@ -17234,7 +17239,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
@@ -18594,7 +18599,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            52
           ],
           "children": [
             {
@@ -19810,7 +19815,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
@@ -20371,7 +20376,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
@@ -21106,7 +21111,7 @@
           "gap": 32,
           "padding": [
             48,
-            128
+            170
           ],
           "children": [
             {
