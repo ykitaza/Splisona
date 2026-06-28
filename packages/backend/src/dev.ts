@@ -7,7 +7,7 @@ import { createContainer } from "./container.js";
 import { MemoryPersonaRepository, MemoryABTestRepository, MemoryEvaluationRepository, MemorySettingsRepository, MemoryProjectRepository } from "./infra/memory/memory-repos.js";
 import { FileStorageService } from "./infra/memory/file-storage-service.js";
 import { StubAIService } from "./infra/memory/stub-ai-service.js";
-import { captureWebsite } from "./capture/screenshot.js";
+import { captureWebsite } from "./infra/capture/screenshot-capture.js";
 import type { ImageSource } from "./domain/ports/ai-service.js";
 
 const USE_LOCAL_BEDROCK = process.env.LOCAL_BEDROCK === "true";
