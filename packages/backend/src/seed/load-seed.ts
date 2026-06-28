@@ -6,7 +6,7 @@ import type { EvaluationRepository } from "../domain/ports/evaluation-repository
 import { buildSeedData } from "./seed-data.js";
 
 const SEED_ASSETS = join(dirname(fileURLToPath(import.meta.url)), "../../seed");
-const SEED_USER = "local-user";
+const SEED_USER = "local-user-1";
 
 export async function loadSeedIfEmpty(
   testRepo: ABTestRepository,
@@ -26,8 +26,7 @@ export async function loadSeedIfEmpty(
     for (const side of ["A", "B"] as const) {
       const srcFile = join(SEED_ASSETS, side === "A" ? "design-a.png" : "design-b.png");
       const destKey = `${SEED_USER}/${test.testId}/${side}.png`;
-      const destPath = join(uploadDir, destKey);
-      mkdirSync(dirname(destPath), { recursive: true });
+      const destPath = join(uploadDir, destKey.replace(/\//g, "_"));
       if (existsSync(srcFile)) {
         copyFileSync(srcFile, destPath);
       }

@@ -322,6 +322,35 @@ function AttributePopoverInline({ persona, onClose }: { persona: Persona; onClos
   );
 }
 
+function RevealSection({ children, delay = 0, enabled }: { children: React.ReactNode; delay?: number; enabled: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(!enabled);
+
+  useEffect(() => {
+    if (!enabled || !ref.current) return;
+    const el = ref.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [enabled]);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'none' : 'translateY(24px)',
+        transition: enabled ? `opacity 0.7s cubic-bezier(0.4,0,0.2,1) ${delay}s, transform 0.7s cubic-bezier(0.4,0,0.2,1) ${delay}s` : 'none',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function TestReportPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -335,6 +364,12 @@ export function TestReportPage() {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const { personas } = usePersonas();
+  const [reveal] = useState(() => {
+    const key = `splisona:report-revealed:${id}`;
+    if (sessionStorage.getItem(key)) return false;
+    sessionStorage.setItem(key, '1');
+    return true;
+  });
 
   useEffect(() => {
     if (!id) return;
@@ -518,51 +553,56 @@ export function TestReportPage() {
       </div>
 
       {/* 総合結果 card */}
-      <div
-        className="flex flex-col bg-base border border-hairline"
-        style={{ gap: 16, borderRadius: 14, padding: 20 }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col" style={{ gap: 10 }}>
-            <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.2 }}>総合結果</span>
-            <div className="flex items-baseline gap-3">
-              {winnerDesignLabel ? (
-                <span className="font-sans" style={{ fontSize: 24 }}>
-                  <span style={{ fontWeight: 700, color: winnerSide === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)' }}>{winnerDesignLabel}</span>
-                  <span className="text-text-hi" style={{ fontWeight: 600 }}> の勝ち</span>
-                </span>
-              ) : (
-                <span className="text-text-hi font-sans" style={{ fontSize: 24, fontWeight: 600 }}>引き分け</span>
-              )}
-              <MethodPopover />
+      <RevealSection enabled={reveal} delay={0.1}>
+        <div
+          className="flex flex-col bg-base border border-hairline"
+          style={{ gap: 16, borderRadius: 14, padding: 20 }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col" style={{ gap: 10 }}>
+              <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.2 }}>総合結果</span>
+              <div className="flex items-baseline gap-3">
+                {winnerDesignLabel ? (
+                  <span className="font-sans" style={{ fontSize: 24 }}>
+                    <span style={{ fontWeight: 700, color: winnerSide === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)' }}>{winnerDesignLabel}</span>
+                    <span className="text-text-hi" style={{ fontWeight: 600 }}> の勝ち</span>
+                  </span>
+                ) : (
+                  <span className="text-text-hi font-sans" style={{ fontSize: 24, fontWeight: 600 }}>引き分け</span>
+                )}
+                <MethodPopover />
+              </div>
+              <p className="text-text-mid font-sans text-sm">
+                {summary.totalPersonas}人中{winnerSide === 'A' ? supportCountA : winnerSide === 'B' ? supportCountB : supportCountA}人が {winnerDesignLabel ?? 'A/B同数'} を支持
+              </p>
             </div>
-            <p className="text-text-mid font-sans text-sm">
-              {summary.totalPersonas}人中{winnerSide === 'A' ? supportCountA : winnerSide === 'B' ? supportCountB : supportCountA}人が {winnerDesignLabel ?? 'A/B同数'} を支持
-            </p>
           </div>
-        </div>
-        <SegmentBar countA={supportCountA} countB={supportCountB} countNone={countNone} />
+          <SegmentBar countA={supportCountA} countB={supportCountB} countNone={countNone} />
 
-        {summary.winnersReasonSummary && (
-          <div className="flex items-start gap-2.5 px-4 py-3 rounded-md bg-accent-dim">
-            <Lightbulb size={18} className="text-accent flex-shrink-0 mt-0.5" />
-            <p className="text-text-hi font-sans text-sm">主な理由: {summary.winnersReasonSummary}</p>
-          </div>
-        )}
-      </div>
+          {summary.winnersReasonSummary && (
+            <div className="flex items-start gap-2.5 px-4 py-3 rounded-md bg-accent-dim">
+              <Lightbulb size={18} className="text-accent flex-shrink-0 mt-0.5" />
+              <p className="text-text-hi font-sans text-sm">主な理由: {summary.winnersReasonSummary}</p>
+            </div>
+          )}
+        </div>
+      </RevealSection>
 
       <div className="h-px bg-hairline" />
 
       {/* 比較したデザイン */}
-      <div className="flex flex-col" style={{ gap: 14 }}>
-        <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>比較したデザイン</span>
-        <div className="flex min-w-0" style={{ gap: 32 }}>
-          <DesignCard side="A" input={abTest.designAInput} isWinner={summary.winner === 'A'} supportCount={supportCountA} totalCount={summary.totalPersonas} />
-          <DesignCard side="B" input={abTest.designBInput} isWinner={summary.winner === 'B'} supportCount={supportCountB} totalCount={summary.totalPersonas} />
+      <RevealSection enabled={reveal} delay={0.2}>
+        <div className="flex flex-col" style={{ gap: 14 }}>
+          <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>比較したデザイン</span>
+          <div className="flex min-w-0" style={{ gap: 32 }}>
+            <DesignCard side="A" input={abTest.designAInput} isWinner={summary.winner === 'A'} supportCount={supportCountA} totalCount={summary.totalPersonas} />
+            <DesignCard side="B" input={abTest.designBInput} isWinner={summary.winner === 'B'} supportCount={supportCountB} totalCount={summary.totalPersonas} />
+          </div>
         </div>
-      </div>
+      </RevealSection>
 
       {/* 分析: 2カラム (理由 | レーダー) */}
+      <RevealSection enabled={reveal}>
       <div className="flex" style={{ gap: 24 }}>
         {/* 評価のまとめ */}
         <div
@@ -603,17 +643,22 @@ export function TestReportPage() {
             </span>
           </div>
           <div className="flex flex-col items-center" style={{ gap: 16 }}>
-            <RadarChart scoresA={summary.avgScores.A} scoresB={summary.avgScores.B} />
+            <RadarChart scoresA={summary.avgScores.A} scoresB={summary.avgScores.B} animate={reveal} />
           </div>
         </div>
       </div>
+      </RevealSection>
 
       {/* Attribute Heatmap */}
       {personas.length > 0 && evaluations.length > 0 && (
-        <AttributeHeatmap evaluations={evaluations} personas={personas} />
+        <RevealSection enabled={reveal}>
+          <AttributeHeatmap evaluations={evaluations} personas={personas} />
+        </RevealSection>
       )}
 
       {/* ペルソナ別の評価 */}
+      <RevealSection enabled={reveal}>
+      <div className="flex flex-col" style={{ gap: 32 }}>
       <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>ペルソナ別の評価</span>
       <div className="bg-base border border-hairline overflow-hidden" style={{ borderRadius: 14 }}>
         <div className="flex items-center px-4 border-b border-hairline bg-base" style={{ gap: 16, padding: '12px 16px' }}>
@@ -734,6 +779,8 @@ export function TestReportPage() {
       <p className="text-text-lo font-sans text-xs">
         ペルソナ名クリックで属性、行クリックで使用モデル・プロンプト・各軸スコアを表示。見出しの ? で生成元を確認できます。
       </p>
+      </div>
+      </RevealSection>
 
       {/* Footer navigation */}
       <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--color-hairline)' }}>

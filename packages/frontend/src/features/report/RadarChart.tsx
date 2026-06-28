@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { EvaluationScores } from './types';
 
 const AXES: { key: keyof EvaluationScores; label: string }[] = [
@@ -21,9 +22,9 @@ function pt(i: number, radius: number, cx: number, cy: number): [number, number]
   return [cx + radius * Math.cos(a), cy + radius * Math.sin(a)];
 }
 
-function polygonPoints(scores: EvaluationScores, r: number, cx: number, cy: number) {
+function polygonPoints(scores: EvaluationScores, r: number, cx: number, cy: number, progress = 1) {
   return AXES.map((axis, i) => {
-    const val = Math.min((scores[axis.key] ?? 0), MAX);
+    const val = Math.min((scores[axis.key] ?? 0), MAX) * progress;
     const [x, y] = pt(i, (r * val) / MAX, cx, cy);
     return `${x.toFixed(2)},${y.toFixed(2)}`;
   }).join(' ');
@@ -40,15 +41,43 @@ interface RadarChartProps {
   scoresA: EvaluationScores;
   scoresB: EvaluationScores;
   size?: number;
+  animate?: boolean;
 }
 
-export function RadarChart({ scoresA, scoresB, size = 300 }: RadarChartProps) {
+export function RadarChart({ scoresA, scoresB, size = 300, animate = false }: RadarChartProps) {
   const cx = size / 2;
   const cy = size / 2;
   const r = (Math.min(size, size) / 2) * 0.72;
 
+  const ref = useRef<SVGSVGElement>(null);
+  const [progress, setProgress] = useState(animate ? 0 : 1);
+
+  useEffect(() => {
+    if (!animate || !ref.current) return;
+    const el = ref.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          observer.disconnect();
+          const start = performance.now();
+          const duration = 800;
+          function tick(now: number) {
+            const t = Math.min((now - start) / duration, 1);
+            const eased = 1 - (1 - t) * (1 - t);
+            setProgress(eased);
+            if (t < 1) requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [animate]);
+
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <svg ref={ref} width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       {/* Grid rings */}
       {Array.from({ length: RINGS }, (_, k) => {
         const rr = (r * (k + 1)) / RINGS;
@@ -82,20 +111,22 @@ export function RadarChart({ scoresA, scoresB, size = 300 }: RadarChartProps) {
 
       {/* B polygon (behind) */}
       <polygon
-        points={polygonPoints(scoresB, r, cx, cy)}
+        points={polygonPoints(scoresB, r, cx, cy, progress)}
         fill="var(--color-win-b, #C9974F)"
-        fillOpacity={0.2}
+        fillOpacity={0.2 * progress}
         stroke="var(--color-win-b, #C9974F)"
         strokeWidth={2}
+        strokeOpacity={progress}
       />
 
       {/* A polygon (front) */}
       <polygon
-        points={polygonPoints(scoresA, r, cx, cy)}
+        points={polygonPoints(scoresA, r, cx, cy, progress)}
         fill="var(--color-accent, #6E78D9)"
-        fillOpacity={0.2}
+        fillOpacity={0.2 * progress}
         stroke="var(--color-accent, #6E78D9)"
         strokeWidth={2}
+        strokeOpacity={progress}
       />
 
       {/* Labels */}
