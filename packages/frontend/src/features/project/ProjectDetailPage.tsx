@@ -6,6 +6,7 @@ import { updateTest, deleteTest as apiDeleteTest, getReport } from '@/features/t
 import { API_BASE } from '@/shared/api/client';
 import { testDraft } from '@/features/test/testDraft';
 import { TestRow, MoreButton, TestRowMenu, TestRowMenuButton, TestRowMenuDivider, relativeDate } from '@/features/test/TestRow';
+import { ConfirmDeleteModal } from '@/shared/ui/ConfirmDeleteModal';
 import type { ProjectDetail } from './types';
 import type { ABTest, DesignInput } from '@/features/test/types';
 import type { ReportSummary } from '@/features/report/types';
@@ -165,6 +166,8 @@ export function ProjectDetailPage() {
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
   const [summaries, setSummaries] = useState<Record<string, ReportSummary>>({});
 
   useEffect(() => {
@@ -227,6 +230,23 @@ export function ProjectDetailPage() {
           }}
         />
       )}
+      {deleteConfirmOpen && (
+        <ConfirmDeleteModal
+          title="プロジェクトを削除しますか？"
+          message={`「${project.name}」を削除します。紐づくテストは残りますが、プロジェクトとの関連は解除されます。`}
+          isDeleting={isDeletingProject}
+          onCancel={() => setDeleteConfirmOpen(false)}
+          onConfirm={async () => {
+            setIsDeletingProject(true);
+            try {
+              await deleteProject(project.projectId);
+              navigate('/projects', { replace: true });
+            } finally {
+              setIsDeletingProject(false);
+            }
+          }}
+        />
+      )}
 
       {/* Header */}
       <div className="flex flex-col" style={{ gap: 16 }}>
@@ -240,10 +260,7 @@ export function ProjectDetailPage() {
           </div>
           <ProjectMenu
             onEdit={() => setEditModalOpen(true)}
-            onDelete={async () => {
-              await deleteProject(project.projectId);
-              navigate('/projects', { replace: true });
-            }}
+            onDelete={() => setDeleteConfirmOpen(true)}
           />
         </div>
 

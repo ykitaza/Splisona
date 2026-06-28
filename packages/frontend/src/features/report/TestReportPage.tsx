@@ -18,6 +18,7 @@ import { PERSONA_TYPE_LABELS } from '@/features/persona/types';
 import type { ReportResponse, EvaluationScores } from './types';
 import type { DesignInput } from '@/features/test/types';
 import type { Persona } from '@/features/persona/types';
+import { ProjectSubmenuPanel } from '@/shared/ui/ProjectSubmenuPanel';
 import type { Project } from '@/features/project/types';
 
 const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
@@ -125,10 +126,9 @@ function TestTitleMenu({
               プロジェクトから削除
             </button>
           ) : (
-            <div className="relative">
+            <div className="relative" onMouseEnter={() => setProjectSubOpen(true)} onMouseLeave={() => setProjectSubOpen(false)}>
               <button
                 type="button"
-                onClick={() => setProjectSubOpen((o) => !o)}
                 className="flex items-center justify-between w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
                 style={{ color: '#E1E4EA' }}
               >
@@ -138,22 +138,15 @@ function TestTitleMenu({
                 </span>
                 <ChevronDown size={12} style={{ color: '#5B616B', transform: 'rotate(-90deg)' }} />
               </button>
-              {projectSubOpen && allProjects.length > 0 && (
+              {projectSubOpen && (
                 <div
-                  className="absolute left-full top-0 ml-1 bg-surface border border-hairline rounded-lg overflow-hidden"
-                  style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 180 }}
+                  className="absolute left-full top-0 bg-surface border border-hairline rounded-lg overflow-hidden"
+                  style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 200 }}
                 >
-                  {allProjects.map((p) => (
-                    <button
-                      key={p.projectId}
-                      type="button"
-                      onClick={() => { setOpen(false); setProjectSubOpen(false); onAddToProject(p.projectId); }}
-                      className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised truncate"
-                      style={{ color: '#E1E4EA' }}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
+                  <ProjectSubmenuPanel
+                    projects={allProjects}
+                    onSelect={(projectId) => { setOpen(false); setProjectSubOpen(false); onAddToProject(projectId); }}
+                  />
                 </div>
               )}
             </div>

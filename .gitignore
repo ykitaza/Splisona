@@ -16,3 +16,14 @@ dist/
 .agents/
 images/
 .claude/worktrees/
+
+# Test results / screenshots
+test-results/
+e2e-screenshots/
+*.png
+
+# Wrangler
+.wrangler/
+
+# Environment
+.env.development

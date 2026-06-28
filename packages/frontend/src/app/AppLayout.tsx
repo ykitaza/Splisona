@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Users, FlaskConical, FolderKanban, Plus, Settings, LogOut, ChevronsUpDown, Info, X, PanelLeft, PanelLeftClose, SlidersHorizontal, Check, MoreVertical, Pencil, FolderPlus, Trash2 } from 'lucide-react';
 import { signOut } from 'aws-amplify/auth';
 import { SettingsModal } from '@/features/settings/SettingsModal';
@@ -8,6 +8,7 @@ import { useABTests } from '@/features/test/useABTests';
 import { useProjects } from '@/features/project/useProjects';
 import { updateTest, deleteTest as apiDeleteTest } from '@/features/test/api';
 import { addTestToProject } from '@/features/project/api';
+import { ProjectSubmenuPanel } from '@/shared/ui/ProjectSubmenuPanel';
 import type { ABTest } from '@/features/test/types';
 
 const NAV_MAIN = [
@@ -147,10 +148,9 @@ function SidebarTestItem({
             <Pencil size={14} style={{ color: '#9BA1AC' }} />
             名前を変更
           </button>
-          <div className="relative">
+          <div className="relative" onMouseEnter={() => setSubOpen(true)} onMouseLeave={() => setSubOpen(false)}>
             <button
               type="button"
-              onClick={() => setSubOpen((o) => !o)}
               className="flex items-center justify-between w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
               style={{ color: '#E1E4EA' }}
             >
@@ -163,21 +163,12 @@ function SidebarTestItem({
             {subOpen && (
               <div
                 className="absolute left-full top-0 bg-surface border border-hairline rounded-lg overflow-hidden"
-                style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 180, marginLeft: 4 }}
+                style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 200 }}
               >
-                {allProjects.length > 0 ? allProjects.map((p) => (
-                  <button
-                    key={p.projectId}
-                    type="button"
-                    onClick={() => { setMenuOpen(false); setSubOpen(false); onAddToProject(test.testId, p.projectId); }}
-                    className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised truncate"
-                    style={{ color: '#E1E4EA' }}
-                  >
-                    {p.name}
-                  </button>
-                )) : (
-                  <span className="block px-4 py-2.5 font-sans text-sm text-text-lo">利用可能なプロジェクトがありません</span>
-                )}
+                <ProjectSubmenuPanel
+                  projects={allProjects}
+                  onSelect={(projectId) => { setMenuOpen(false); setSubOpen(false); onAddToProject(test.testId, projectId); }}
+                />
               </div>
             )}
           </div>
@@ -241,10 +232,16 @@ function AboutModal({ onClose }: { onClose: () => void }) {
 
 export function AppLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const localUserId = import.meta.env?.VITE_LOCAL_USER_ID as string | undefined;
   const userProfile = useUserProfile();
   const { tests, deleteTest, refresh } = useABTests();
   const { projects, refresh: refreshProjects } = useProjects();
+
+  useEffect(() => {
+    refresh();
+    refreshProjects();
+  }, [location.pathname, refresh, refreshProjects]);
   const recentTests = tests
     .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
     .slice(0, 8);

@@ -2,13 +2,15 @@ import { useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
 
 type Props = {
-  count: number;
+  count?: number;
+  title?: string;
+  message?: string;
   isDeleting?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 };
 
-export function ConfirmDeleteModal({ count, isDeleting, onConfirm, onCancel }: Props) {
+export function ConfirmDeleteModal({ count, title, message, isDeleting, onConfirm, onCancel }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !isDeleting) onCancel();
@@ -35,10 +37,10 @@ export function ConfirmDeleteModal({ count, isDeleting, onConfirm, onCancel }: P
 
         <div className="flex flex-col gap-2">
           <h2 className="text-text-hi font-sans text-lg font-semibold">
-            テストを削除しますか？
+            {title ?? 'テストを削除しますか？'}
           </h2>
           <p className="text-text-mid font-sans text-sm leading-relaxed">
-            選択した {count} 件のテストとレビュー結果がすべて削除されます。この操作は取り消せません。
+            {message ?? `選択した ${count} 件のテストとレビュー結果がすべて削除されます。この操作は取り消せません。`}
           </p>
         </div>
 

@@ -5,6 +5,7 @@ import { Search, ChevronDown, Plus, Trash2, Check, Pencil, FolderPlus, FolderMin
 import { ConfirmDeleteModal } from '@/shared/ui/ConfirmDeleteModal';
 import { TestRow, MoreButton, TestRowMenu, TestRowMenuButton, TestRowMenuDivider } from './TestRow';
 import { listProjects, addTestToProject, removeTestFromProject } from '@/features/project/api';
+import { ProjectSubmenuPanel } from '@/shared/ui/ProjectSubmenuPanel';
 import { updateTest, getReport } from './api';
 import type { ABTest } from './types';
 import type { Project } from '@/features/project/types';
@@ -65,43 +66,31 @@ function RowMenu({
             const targets = parentProject
               ? allProjects.filter((p) => p.projectId !== parentProject.projectId)
               : allProjects;
-            if (targets.length === 0 && !parentProject) return null;
             return (
-              <div className="relative">
+              <div className="relative" onMouseEnter={() => setSubOpen(true)} onMouseLeave={() => setSubOpen(false)}>
                 <button
                   type="button"
-                  onClick={() => setSubOpen((o) => !o)}
                   className="flex items-center justify-between w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-                  style={{ color: targets.length === 0 ? '#5B616B' : '#E1E4EA' }}
-                  disabled={targets.length === 0}
+                  style={{ color: '#E1E4EA' }}
                 >
                   <span className="flex items-center" style={{ gap: 10 }}>
                     <FolderPlus size={14} style={{ color: '#9BA1AC' }} />
                     {parentProject ? 'プロジェクトを変更' : 'プロジェクトに追加'}
                   </span>
-                  {targets.length > 0 && (
-                    <ChevronDown size={12} style={{ color: '#5B616B', transform: 'rotate(-90deg)' }} />
-                  )}
+                  <ChevronDown size={12} style={{ color: '#5B616B', transform: 'rotate(-90deg)' }} />
                 </button>
-                {subOpen && targets.length > 0 && (
+                {subOpen && (
                   <div
-                    className="absolute right-full top-0 mr-1 bg-surface border border-hairline rounded-lg overflow-hidden"
-                    style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 180 }}
+                    className="absolute right-full top-0 bg-surface border border-hairline rounded-lg overflow-hidden"
+                    style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 200 }}
                   >
-                    {targets.map((p) => (
-                      <button
-                        key={p.projectId}
-                        type="button"
-                        onClick={async () => {
-                          if (parentProject) await onRemoveFromProject();
-                          setOpen(false); setSubOpen(false); onAddToProject(p.projectId);
-                        }}
-                        className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised truncate"
-                        style={{ color: '#E1E4EA' }}
-                      >
-                        {p.name}
-                      </button>
-                    ))}
+                    <ProjectSubmenuPanel
+                      projects={targets}
+                      onSelect={async (projectId) => {
+                        if (parentProject) await onRemoveFromProject();
+                        setOpen(false); setSubOpen(false); onAddToProject(projectId);
+                      }}
+                    />
                   </div>
                 )}
               </div>

@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, ChevronDown, Plus, X, FolderKanban, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { HelpDot } from '@/shared/ui/HelpDot';
+import { ConfirmDeleteModal } from '@/shared/ui/ConfirmDeleteModal';
 import { useProjects } from './useProjects';
 import { createProject, updateProject } from './api';
 import type { Project } from './types';
@@ -260,6 +261,8 @@ export function ProjectListPage() {
   const [sortOpen, setSortOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Project | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filtered = useMemo(() => {
     let list = [...projects];
@@ -289,6 +292,23 @@ export function ProjectListPage() {
 
   return (
     <div className="flex flex-col" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', gap: 24, height: '100%' }}>
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          title="プロジェクトを削除しますか？"
+          message={`「${deleteTarget.name}」を削除します。紐づくテストは残りますが、プロジェクトとの関連は解除されます。`}
+          isDeleting={isDeleting}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={async () => {
+            setIsDeleting(true);
+            try {
+              await deleteProject(deleteTarget.projectId);
+              setDeleteTarget(null);
+            } finally {
+              setIsDeleting(false);
+            }
+          }}
+        />
+      )}
       {modalOpen && <CreateProjectModal onClose={() => setModalOpen(false)} onCreate={handleCreate} />}
       {editTarget && (
         <EditProjectModal
@@ -405,7 +425,7 @@ export function ProjectListPage() {
                 </span>
                 <CardMenu
                   onEdit={() => setEditTarget(project)}
-                  onDelete={() => deleteProject(project.projectId)}
+                  onDelete={() => setDeleteTarget(project)}
                 />
               </div>
               {project.description && (
