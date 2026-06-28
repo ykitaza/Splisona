@@ -3,7 +3,8 @@ import type { EvaluationRepository } from "../domain/ports/evaluation-repository
 import type { PersonaRepository } from "../domain/ports/persona-repository.js";
 import type { SettingsRepository } from "../domain/ports/settings-repository.js";
 import type { AIService, ImageSource } from "../domain/ports/ai-service.js";
-import type { ABTest, Evaluation, EvaluationScores } from "../domain/types.js";
+import type { ABTest, Evaluation } from "../domain/types.js";
+import { chunkArray, dedupe, zeroScores, buildReasonSummaryFields, groupReasonsByWinner } from "../domain/services/evaluation-scoring.js";
 import { NotFoundError, ValidationError, ConflictError } from "./errors.js";
 
 export class EvaluationUseCases {
@@ -99,18 +100,8 @@ export class EvaluationUseCases {
     reasonSummaryB: string[];
     winnersReasonSummary: string;
   }> {
-    const countA = completed.filter((e) => e.winner === "A").length;
-    const countB = completed.filter((e) => e.winner === "B").length;
-    const winner: "A" | "B" | "tie" = countA > countB ? "A" : countB > countA ? "B" : "tie";
-
     const { reasonsA, reasonsB } = await this.summarizeReasons(completed);
-    const winnerReasons = winner === "A" ? reasonsA : winner === "B" ? reasonsB : [];
-    return {
-      reasonSummaryStatus: "ready",
-      reasonSummaryA: reasonsA,
-      reasonSummaryB: reasonsB,
-      winnersReasonSummary: winnerReasons.join("、"),
-    };
+    return buildReasonSummaryFields(completed, reasonsA, reasonsB);
   }
 
   private async evaluateOnePersona(
@@ -125,10 +116,9 @@ export class EvaluationUseCases {
 
     const additional = await this.getAdditionalInstruction(userId, "evaluation");
 
-    const zeroScores: EvaluationScores = { usability: 0, aesthetics: 0, clarity: 0, engagement: 0, trust: 0 };
     await this.evalRepo.save({
       testId, personaId, winner: "none", confidence: 0, reason: "",
-      scoresA: zeroScores, scoresB: zeroScores,
+      scoresA: zeroScores(), scoresB: zeroScores(),
       status: "evaluating", personaDisplayName, evaluatedAt: new Date().toISOString(),
     });
 
@@ -165,8 +155,8 @@ export class EvaluationUseCases {
         winner: "none",
         confidence: 0,
         reason: "",
-        scoresA: zeroScores,
-        scoresB: zeroScores,
+        scoresA: zeroScores(),
+        scoresB: zeroScores(),
         status: "failed",
         personaDisplayName,
         evaluatedAt: new Date().toISOString(),
@@ -178,8 +168,7 @@ export class EvaluationUseCases {
   private async summarizeReasons(
     completed: Evaluation[],
   ): Promise<{ reasonsA: string[]; reasonsB: string[] }> {
-    const a = completed.filter((e) => e.winner === "A" && e.reason);
-    const b = completed.filter((e) => e.winner === "B" && e.reason);
+    const { aReasons: a, bReasons: b } = groupReasonsByWinner(completed);
     if (a.length === 0 && b.length === 0) return { reasonsA: [], reasonsB: [] };
 
     const fallback = () => ({
@@ -215,14 +204,3 @@ export class EvaluationUseCases {
   }
 }
 
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    chunks.push(arr.slice(i, i + size));
-  }
-  return chunks;
-}
-
-function dedupe(items: string[]): string[] {
-  return [...new Set(items.map((s) => s.trim()).filter(Boolean))];
-}

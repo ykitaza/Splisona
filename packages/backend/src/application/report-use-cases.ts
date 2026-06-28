@@ -1,6 +1,7 @@
 import type { ABTestRepository } from "../domain/ports/abtest-repository.js";
 import type { EvaluationRepository } from "../domain/ports/evaluation-repository.js";
-import { toABTestDTO, type ABTest, type Evaluation, type EvaluationScores } from "../domain/types.js";
+import { toABTestDTO, type ABTest } from "../domain/types.js";
+import { computeSummary, zeroScores } from "../domain/services/evaluation-scoring.js";
 import { NotFoundError } from "./errors.js";
 
 export class ReportUseCases {
@@ -76,68 +77,4 @@ export class ReportUseCases {
   }
 }
 
-function zeroScores(): EvaluationScores {
-  return { usability: 0, aesthetics: 0, clarity: 0, engagement: 0, trust: 0 };
-}
-
-function computeSummary(evaluations: Evaluation[], totalPersonas: number) {
-  const completed = evaluations.filter((e) => e.status === "completed");
-  const completedPersonas = completed.length;
-
-  const countA = completed.filter((e) => e.winner === "A").length;
-  const countB = completed.filter((e) => e.winner === "B").length;
-  const countNone = completed.filter((e) => e.winner === "none").length;
-
-  const supportRateA = completedPersonas > 0 ? countA / completedPersonas : 0;
-  const supportRateB = completedPersonas > 0 ? countB / completedPersonas : 0;
-  const supportRateNone = completedPersonas > 0 ? countNone / completedPersonas : 0;
-
-  const winner: "A" | "B" | "tie" =
-    countA > countB ? "A" : countB > countA ? "B" : "tie";
-
-  const scoresOf = (e: Evaluation, side: "A" | "B") => {
-    const legacy = (e as unknown as { scores?: EvaluationScores }).scores;
-    return (side === "A" ? e.scoresA : e.scoresB) ?? legacy ?? zeroScores();
-  };
-
-  const sumScores = (side: "A" | "B") =>
-    completed.reduce((acc, e) => {
-      const s = scoresOf(e, side);
-      return {
-        usability: acc.usability + s.usability,
-        aesthetics: acc.aesthetics + s.aesthetics,
-        clarity: acc.clarity + s.clarity,
-        engagement: acc.engagement + s.engagement,
-        trust: acc.trust + (s.trust ?? 0),
-      };
-    }, zeroScores());
-
-  const avgOf = (sum: EvaluationScores, count: number) =>
-    count > 0
-      ? {
-          usability: sum.usability / count,
-          aesthetics: sum.aesthetics / count,
-          clarity: sum.clarity / count,
-          engagement: sum.engagement / count,
-          trust: sum.trust / count,
-        }
-      : zeroScores();
-
-  return {
-    winner,
-    supportRateA,
-    supportRateB,
-    supportRateNone,
-    totalPersonas,
-    completedPersonas,
-    avgScores: {
-      A: avgOf(sumScores("A"), completedPersonas),
-      B: avgOf(sumScores("B"), completedPersonas),
-    },
-    winnersReasonSummary: "",
-    reasonSummaryA: [] as string[],
-    reasonSummaryB: [] as string[],
-    reasonSummaryStatus: undefined as "generating" | "ready" | undefined,
-  };
-}
 
