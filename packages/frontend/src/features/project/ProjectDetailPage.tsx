@@ -1,0 +1,505 @@
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ChevronLeft, Plus, MoreVertical, Pencil, Trash2, FolderMinus, X } from 'lucide-react';
+import { getProjectDetail, updateProject, deleteProject, removeTestFromProject } from './api';
+import { updateTest, deleteTest as apiDeleteTest, getReport } from '@/features/test/api';
+import { API_BASE } from '@/shared/api/client';
+import { testDraft } from '@/features/test/testDraft';
+import { TestRow, MoreButton, TestRowMenu, TestRowMenuButton, TestRowMenuDivider, relativeDate } from '@/features/test/TestRow';
+import type { ProjectDetail } from './types';
+import type { ABTest, DesignInput } from '@/features/test/types';
+import type { ReportSummary } from '@/features/report/types';
+
+function ProjectMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center justify-center w-8 h-8 rounded-md transition-colors hover:bg-raised"
+      >
+        <MoreVertical size={16} style={{ color: '#5B616B' }} />
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1 bg-surface border border-hairline rounded-lg overflow-hidden z-20"
+          style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 160 }}
+        >
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onEdit(); }}
+            className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+            style={{ gap: 10, color: '#E1E4EA' }}
+          >
+            <Pencil size={14} style={{ color: '#9BA1AC' }} />
+            詳細を編集
+          </button>
+          <div style={{ height: 1, background: '#FFFFFF14', margin: '0 12px' }} />
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onDelete(); }}
+            className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
+            style={{ gap: 10, color: '#E5484D' }}
+          >
+            <Trash2 size={14} style={{ color: '#E5484D' }} />
+            削除
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EditProjectModal({ project, onClose, onSave }: {
+  project: { projectId: string; name: string; description: string };
+  onClose: () => void;
+  onSave: (updated: { name: string; description: string }) => void;
+}) {
+  const [name, setName] = useState(project.name);
+  const [description, setDescription] = useState(project.description);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    if (!name.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      await updateProject(project.projectId, { name: name.trim(), description: description.trim() });
+      onSave({ name: name.trim(), description: description.trim() });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ background: '#05060799' }}
+      onClick={onClose}
+    >
+      <div
+        className="flex flex-col bg-surface"
+        style={{ width: 520, borderRadius: 14, border: '1px solid var(--color-hairline)', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', padding: '32px' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-text-hi font-sans font-semibold" style={{ fontSize: 20 }}>詳細を編集</h2>
+          <button type="button" onClick={onClose} className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-raised">
+            <X size={16} className="text-text-lo" />
+          </button>
+        </div>
+        <div className="flex flex-col" style={{ gap: 20 }}>
+          <div className="flex flex-col" style={{ gap: 8 }}>
+            <label className="font-sans font-semibold text-text-hi" style={{ fontSize: 14 }}>名前</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+              autoFocus
+              className="bg-raised border border-hairline rounded-lg outline-none font-sans text-text-hi transition-colors focus:border-accent"
+              style={{ padding: '10px 14px', fontSize: 14 }}
+            />
+          </div>
+          <div className="flex flex-col" style={{ gap: 8 }}>
+            <label className="font-sans font-semibold text-text-hi" style={{ fontSize: 14 }}>説明</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={5}
+              className="bg-raised border border-hairline rounded-lg outline-none font-sans text-text-hi resize-y transition-colors focus:border-accent"
+              style={{ padding: '10px 14px', fontSize: 14 }}
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-end mt-6" style={{ gap: 12 }}>
+          <button type="button" onClick={onClose} className="font-sans font-medium rounded-lg transition-colors hover:bg-raised" style={{ padding: '8px 20px', fontSize: 14, color: '#9BA1AC' }}>
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!name.trim() || submitting}
+            className="font-sans font-semibold rounded-lg transition-opacity disabled:opacity-40"
+            style={{ padding: '8px 20px', fontSize: 14, color: '#0A0B0D', background: '#F2F4F7' }}
+          >
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesignThumb({ imageKey, label, color }: { imageKey?: string; label: string; color: string }) {
+  const src = imageKey ? `${API_BASE}/images/${imageKey}` : null;
+  return (
+    <div
+      className="overflow-hidden flex-shrink-0 flex"
+      style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}
+    >
+      <div className="flex-shrink-0" style={{ width: 3, background: color }} />
+      <div className="flex-1 min-w-0" style={{ overflow: 'hidden' }}>
+        {src && <img src={src} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+      </div>
+    </div>
+  );
+}
+
+export function ProjectDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [detail, setDetail] = useState<ProjectDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [summaries, setSummaries] = useState<Record<string, ReportSummary>>({});
+
+  useEffect(() => {
+    if (!id) return;
+    getProjectDetail(id)
+      .then((d) => {
+        if (d.tests.length === 0) {
+          navigate(`/tests/new?projectId=${id}`, { replace: true });
+          return;
+        }
+        setDetail(d);
+        setNameValue(d.project.name);
+        const completed = d.tests.filter((t) => t.status === 'completed');
+        Promise.all(
+          completed.map((t) => getReport(t.testId).then((r) => [t.testId, r.summary] as const).catch(() => null))
+        ).then((results) => {
+          const map: Record<string, ReportSummary> = {};
+          for (const r of results) if (r) map[r[0]] = r[1];
+          setSummaries(map);
+        });
+      })
+      .catch(() => navigate('/projects', { replace: true }))
+      .finally(() => setIsLoading(false));
+  }, [id, navigate]);
+
+  async function saveName() {
+    if (!id || !detail || !nameValue.trim()) return;
+    const updated = await updateProject(id, { name: nameValue.trim() });
+    setDetail({ ...detail, project: { ...detail.project, ...updated } });
+    setEditingName(false);
+  }
+
+  if (isLoading || !detail) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div role="status" className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
+      </div>
+    );
+  }
+
+  const { project, tests } = detail;
+  const sorted = [...tests].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const latest = sorted[0];
+  const past = sorted.slice(1);
+
+  const firstDate = sorted.length > 0
+    ? new Date(sorted[sorted.length - 1].createdAt).toLocaleDateString('ja-JP')
+    : null;
+
+  return (
+    <div className="flex flex-col" style={{ width: '100%', maxWidth: 864, margin: '0 auto', padding: '48px 24px', gap: 32, height: '100%' }}>
+      {editModalOpen && (
+        <EditProjectModal
+          project={project}
+          onClose={() => setEditModalOpen(false)}
+          onSave={(updated) => {
+            setDetail({ ...detail, project: { ...project, ...updated } });
+            setNameValue(updated.name);
+            setEditModalOpen(false);
+          }}
+        />
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col" style={{ gap: 16 }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <Link to="/projects" className="text-text-lo font-sans text-sm hover:text-text-mid transition-colors">
+              プロジェクト
+            </Link>
+            <ChevronLeft size={12} className="text-text-lo" style={{ transform: 'rotate(180deg)' }} />
+            <span className="text-text-mid font-sans text-sm">{project.name}</span>
+          </div>
+          <ProjectMenu
+            onEdit={() => setEditModalOpen(true)}
+            onDelete={async () => {
+              await deleteProject(project.projectId);
+              navigate('/projects', { replace: true });
+            }}
+          />
+        </div>
+
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col" style={{ gap: 8 }}>
+            {editingName ? (
+              <input
+                type="text"
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                onBlur={saveName}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false); }}
+                autoFocus
+                className="bg-transparent border-0 outline-none text-text-hi font-sans font-semibold"
+                style={{ fontSize: 28 }}
+              />
+            ) : (
+              <h1
+                className="text-text-hi font-sans font-semibold cursor-pointer"
+                style={{ fontSize: 28 }}
+                onClick={() => setEditingName(true)}
+              >
+                {project.name}
+              </h1>
+            )}
+            <span className="text-text-lo font-mono" style={{ fontSize: 13 }}>
+              {tests.length} 件のテスト
+              {firstDate && ` · 開始 ${firstDate}`}
+              {tests.length > 0 && ` · 最終更新 ${relativeDate(sorted[0].updatedAt)}`}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (latest) {
+                const toSide = (input: DesignInput) => {
+                  if (input.inputType === 'figma_url') return { inputType: 'figma_url' as const, url: input.figmaUrl ?? '', imageKey: input.imageKey ?? '' };
+                  if (input.inputType === 'site_url') return { inputType: 'site_url' as const, url: input.siteUrl ?? '', imageKey: input.imageKey ?? '' };
+                  return { inputType: 'image_upload' as const, file: new File([], ''), imageKey: input.imageKey ?? '' };
+                };
+                testDraft.resume({
+                  title: '',
+                  sideA: toSide(latest.designAInput),
+                  sideB: toSide(latest.designBInput),
+                  personaIds: latest.personaIds,
+                });
+              }
+              navigate(`/tests/new?projectId=${id}`);
+            }}
+            className="flex items-center border transition-colors hover:bg-raised"
+            style={{ gap: 8, borderRadius: 6, padding: '8px 12px', borderColor: '#FFFFFF14', background: '#6E78D90F' }}
+          >
+            <Plus size={14} style={{ color: '#F2F4F7' }} />
+            <span className="font-sans font-semibold" style={{ fontSize: 13, color: '#F2F4F7' }}>次のテストを作成</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Latest entry (hero) */}
+      {latest && <LatestEntry test={latest} index={tests.length} summary={summaries[latest.testId] ?? null} />}
+
+      {/* Past iterations */}
+      {past.length > 0 && (
+        <>
+          <span className="font-mono text-text-lo" style={{ fontSize: 10, letterSpacing: 0.5 }}>
+            過去のテスト
+          </span>
+          <div className="flex flex-col">
+            {past.map((test, i) => (
+              <PastEntry
+                key={test.testId}
+                test={test}
+                index={tests.length - 1 - i}
+                projectId={project.projectId}
+                summary={summaries[test.testId] ?? null}
+                onRemoved={() => {
+                  setDetail({ ...detail, project: { ...project, testIds: project.testIds.filter((tid) => tid !== test.testId) }, tests: tests.filter((t) => t.testId !== test.testId) });
+                }}
+                onDeleted={() => {
+                  setDetail({ ...detail, project: { ...project, testIds: project.testIds.filter((tid) => tid !== test.testId) }, tests: tests.filter((t) => t.testId !== test.testId) });
+                }}
+                onRenamed={(newTitle) => {
+                  setDetail({ ...detail, tests: tests.map((t) => t.testId === test.testId ? { ...t, title: newTitle } : t) });
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+    </div>
+  );
+}
+
+function LatestEntry({ test, index, summary }: { test: ABTest; index: number; summary: ReportSummary | null }) {
+  const winnerLabel = summary
+    ? summary.winner === 'A' ? 'デザイン A が支持されました'
+      : summary.winner === 'B' ? 'デザイン B が支持されました'
+      : '引き分けでした'
+    : null;
+  const winnerColor = summary?.winner === 'A' ? '#6E78D9' : summary?.winner === 'B' ? '#C9974F' : '#9BA1AC';
+  const voteCount = summary
+    ? `${summary.totalPersonas}人中${Math.round(summary.supportRateA * summary.totalPersonas + summary.supportRateB * summary.totalPersonas)}人が${summary.winner === 'tie' ? '評価' : summary.winner + 'を支持'}`
+    : null;
+
+  return (
+    <div
+      className="flex" style={{ gap: 16, padding: '24px 8px', borderBottom: '1px solid #FFFFFF14' }}
+    >
+      <div className="flex flex-col items-center flex-shrink-0" style={{ width: 32, gap: 2, paddingTop: 4 }}>
+        <span className="font-mono text-text-mid font-semibold" style={{ fontSize: 12 }}>#{index}</span>
+        <span className="font-mono text-text-lo" style={{ fontSize: 10 }}>
+          {new Date(test.createdAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
+        </span>
+      </div>
+      <div className="flex flex-col flex-1" style={{ gap: 16 }}>
+        <span className="font-sans text-text-hi font-semibold" style={{ fontSize: 20 }}>{test.title}</span>
+        <div className="flex items-center" style={{ gap: 12 }}>
+          <DesignThumb imageKey={test.designAInput?.imageKey} label="A" color="#6E78D9" />
+          <span className="text-text-lo" style={{ fontSize: 14 }}>→</span>
+          <DesignThumb imageKey={test.designBInput?.imageKey} label="B" color="#C9974F" />
+        </div>
+        {summary && (
+          <div className="flex items-center" style={{ gap: 16 }}>
+            <span className="font-sans font-semibold" style={{ fontSize: 14, color: winnerColor }}>{winnerLabel}</span>
+            <span className="font-sans text-text-mid" style={{ fontSize: 13 }}>{voteCount}</span>
+          </div>
+        )}
+        {summary?.winnersReasonSummary && (
+          <span className="font-sans text-text-mid" style={{ fontSize: 13 }}>{summary.winnersReasonSummary}</span>
+        )}
+        {test.status === 'completed' && (
+          <Link
+            to={`/tests/${test.testId}/report`}
+            className="font-sans font-medium text-accent"
+            style={{ fontSize: 13 }}
+          >
+            詳細レポートを見る →
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PastEntryMenu({ testId, projectId, onRename, onRemoved, onDeleted }: {
+  testId: string; projectId: string;
+  onRename: () => void; onRemoved: () => void; onDeleted: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <MoreButton onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }} />
+      {open && (
+        <TestRowMenu>
+          <TestRowMenuButton
+            onClick={() => { setOpen(false); onRename(); }}
+            icon={<Pencil size={14} style={{ color: '#9BA1AC' }} />}
+            label="名前を変更"
+          />
+          <TestRowMenuButton
+            onClick={async () => { setOpen(false); await removeTestFromProject(projectId, testId); onRemoved(); }}
+            icon={<FolderMinus size={14} style={{ color: '#9BA1AC' }} />}
+            label="プロジェクトから削除"
+          />
+          <TestRowMenuDivider />
+          <TestRowMenuButton
+            onClick={async () => { setOpen(false); await apiDeleteTest(testId); onDeleted(); }}
+            icon={<Trash2 size={14} style={{ color: '#E5484D' }} />}
+            label="削除"
+            danger
+          />
+        </TestRowMenu>
+      )}
+    </div>
+  );
+}
+
+function SummaryExtra({ summary }: { summary: ReportSummary | null }) {
+  if (!summary) return null;
+  const label = summary.winner === 'A' ? 'デザイン A が支持されました'
+    : summary.winner === 'B' ? 'デザイン B が支持されました'
+    : '引き分けでした';
+  const color = summary.winner === 'A' ? '#6E78D9' : summary.winner === 'B' ? '#C9974F' : '#9BA1AC';
+  const winSide = summary.winner === 'A' || summary.winner === 'B' ? summary.winner : null;
+  const winCount = winSide === 'A' ? Math.round(summary.supportRateA * summary.totalPersonas)
+    : winSide === 'B' ? Math.round(summary.supportRateB * summary.totalPersonas)
+    : 0;
+  return (
+    <div className="flex flex-col" style={{ gap: 8 }}>
+      <div className="flex items-center" style={{ gap: 16 }}>
+        <span className="font-sans font-semibold" style={{ fontSize: 14, color }}>{label}</span>
+        {winSide && <span className="font-sans text-text-mid" style={{ fontSize: 13 }}>{summary.totalPersonas}人中{winCount}人が{winSide}を支持</span>}
+      </div>
+      {summary.winnersReasonSummary && (
+        <span className="font-sans text-text-mid" style={{ fontSize: 13 }}>{summary.winnersReasonSummary}</span>
+      )}
+    </div>
+  );
+}
+
+function PastEntry({ test, index, projectId, summary, onRemoved, onDeleted, onRenamed }: {
+  test: ABTest; index: number; projectId: string; summary: ReportSummary | null;
+  onRemoved: () => void; onDeleted: () => void; onRenamed: (title: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+
+  return (
+    <TestRow
+      test={test}
+      expanded={expanded}
+      onToggleExpand={() => { if (!isRenaming) setExpanded((e) => !e); }}
+      borderBottom
+      expandPadding="8px 8px 16px 56px"
+      isRenaming={isRenaming}
+      renameValue={renameValue}
+      onRenameChange={setRenameValue}
+      onRenameSubmit={async () => {
+        if (renameValue.trim()) {
+          await updateTest(test.testId, { title: renameValue.trim() });
+          onRenamed(renameValue.trim());
+          setIsRenaming(false);
+        }
+      }}
+      onRenameCancel={() => setIsRenaming(false)}
+      expandExtra={<SummaryExtra summary={summary} />}
+      prefix={
+        <div className="flex flex-col items-center flex-shrink-0" style={{ width: 32, gap: 2 }}>
+          <span className="font-mono text-text-mid" style={{ fontSize: 12 }}>#{index}</span>
+          <span className="font-mono text-text-lo" style={{ fontSize: 10 }}>
+            {new Date(test.createdAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
+          </span>
+        </div>
+      }
+      menu={
+        <PastEntryMenu
+          testId={test.testId}
+          projectId={projectId}
+          onRename={() => { setRenameValue(test.title); setIsRenaming(true); }}
+          onRemoved={onRemoved}
+          onDeleted={onDeleted}
+        />
+      }
+    />
+  );
+}

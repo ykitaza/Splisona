@@ -38,7 +38,7 @@ const runningAbortControllers = new Map<string, AbortController>();
 const app = new Hono<RouteEnv>();
 
 app.use("*", cors({
-  origin: "http://localhost:5173",
+  origin: (origin) => origin?.startsWith("http://localhost:") ? origin : "http://localhost:5173",
   credentials: true,
 }));
 
