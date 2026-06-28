@@ -21,6 +21,7 @@ images/
 test-results/
 e2e-screenshots/
 *.png
+!packages/backend/seed/*.png
 
 # Wrangler
 .wrangler/

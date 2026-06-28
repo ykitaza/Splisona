@@ -9,6 +9,7 @@ import { FileStorageService } from "./infra/local/file-storage-service.js";
 import { StubAIService } from "./infra/local/stub-ai-service.js";
 import { captureWebsite } from "./infra/local/screenshot-capture.js";
 import type { ImageSource } from "./domain/ports/ai-service.js";
+import { loadSeedIfEmpty } from "./seed/load-seed.js";
 
 const USE_LOCAL_BEDROCK = process.env.LOCAL_BEDROCK === "true";
 const port = Number(process.env.PORT ?? 3001);
@@ -118,5 +119,8 @@ app.post("/tests/:id/abort", async (c) => {
   return c.json({ aborted: true });
 });
 
-console.log(`Chorus local dev server running on http://localhost:${port}`);
-serve({ fetch: app.fetch, port });
+loadSeedIfEmpty(container.testRepo, container.evalRepo, LOCAL_UPLOAD_DIR)
+  .then(() => {
+    console.log(`Chorus local dev server running on http://localhost:${port}`);
+    serve({ fetch: app.fetch, port });
+  });
