@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, Plus } from 'lucide-react';
 import { PersonaCard } from './PersonaCard';
 import { usePersonas } from './usePersonas';
-import type { Persona } from './types';
+import { createPersona } from './api';
+import type { Persona, CreatePersonaInput } from './types';
 
 type FilterKey = 'all' | 'default' | 'custom';
 
@@ -20,8 +21,19 @@ export function PersonaListPage() {
   const [filter, setFilter] = useState<FilterKey>('all');
 
   async function handleDuplicate(persona: Persona) {
-    // Navigate to edit page for duplication (handled there)
-    navigate(`/personas/${persona.personaId}/edit`);
+    const input: CreatePersonaInput = {
+      displayName: `${persona.displayName} (コピー)`,
+      type: persona.type,
+      age: persona.age,
+      gender: persona.gender,
+      occupation: persona.occupation,
+      deviationScore: persona.deviationScore,
+      annualIncome: persona.annualIncome,
+      education: persona.education,
+      freeText: persona.freeText,
+    };
+    const created = await createPersona(input);
+    navigate(`/personas/${created.personaId}/edit`);
   }
 
   if (isLoading) {
@@ -47,13 +59,10 @@ export function PersonaListPage() {
   }).sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
 
   return (
-    <div className="flex flex-col" style={{ width: '100%', maxWidth: 1100, margin: '0 auto', padding: '48px 24px', gap: 32 }}>
+    <div className="flex flex-col" style={{ width: '100%', maxWidth: 1024, margin: '0 auto', padding: '48px 32px', gap: 32 }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-2">
-          <span className="font-mono text-xs text-text-lo" style={{ letterSpacing: 1.5 }}>
-            PHASE 2 · PERSONAS
-          </span>
           <div className="flex items-center gap-3">
             <h1 className="text-text-hi font-sans text-xl font-semibold" style={{ fontSize: 24 }}>ペルソナ管理</h1>
             <span

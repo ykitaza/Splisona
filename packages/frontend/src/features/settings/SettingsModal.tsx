@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Settings, Link as LinkIcon, Cpu, FileText, Search, ChevronRight, Lock, Plus, ArrowLeft, RotateCcw } from 'lucide-react';
+import { X, Link as LinkIcon, Cpu, FileText, ChevronRight, Lock, Plus, ArrowLeft, RotateCcw } from 'lucide-react';
 import { Modal } from '@/shared/ui/Modal';
 import { getSettings, putSettings, getConfig, type SettingsSection } from './api';
 
 const SECTIONS = [
-  { key: 'general' as const, label: '一般', icon: Settings },
   { key: 'figma' as const, label: 'Figma 連携', icon: LinkIcon },
   { key: 'model' as const, label: 'AI モデル', icon: Cpu },
   { key: 'prompt' as const, label: 'プロンプト', icon: FileText },
@@ -49,8 +48,8 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
-  const [section, setSection] = useState<SettingsSection>('general');
-  const [data, setData] = useState<Record<string, unknown>>({});
+  const [section, setSection] = useState<SettingsSection>('figma');
+  const [_data, setData] = useState<Record<string, unknown>>({});
   const [modelId, setModelId] = useState<string>('');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [promptData, setPromptData] = useState<PromptData>({});
@@ -100,13 +99,6 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
           style={{ width: 220, padding: '24px 16px', gap: 20 }}
         >
           <span className="text-text-hi font-sans text-lg font-semibold px-3">設定</span>
-          <div
-            className="flex items-center bg-raised"
-            style={{ gap: 8, borderRadius: 6, padding: '8px 12px' }}
-          >
-            <Search size={14} className="text-text-lo flex-shrink-0" />
-            <span className="text-text-lo font-sans text-sm">検索</span>
-          </div>
           <div className="flex flex-col" style={{ gap: 2 }}>
             {SECTIONS.map((s) => {
               const Icon = s.icon;
@@ -165,7 +157,6 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                 <p className="text-text-mid font-sans text-sm">{SECTION_DESCS[section]}</p>
               )}
               <div className="flex-1">
-                {section === 'general' && <GeneralSection />}
                 {section === 'figma' && <FigmaSection />}
                 {section === 'model' && <ModelSection modelId={modelId} />}
                 {section === 'prompt' && <PromptSection promptData={promptData} onSelect={setSelectedTemplate} />}
@@ -175,14 +166,6 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         </div>
       </div>
     </Modal>
-  );
-}
-
-function GeneralSection() {
-  return (
-    <div className="flex flex-col gap-4">
-      <p className="text-text-mid font-sans text-sm">一般設定はまだ項目がありません。</p>
-    </div>
   );
 }
 

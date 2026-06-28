@@ -9,9 +9,8 @@ vi.mock('./api', () => ({
   getConfig: vi.fn().mockResolvedValue({ modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0' }),
 }));
 
-import { getSettings, putSettings } from './api';
+import { getSettings } from './api';
 const mockGetSettings = vi.mocked(getSettings);
-const mockPutSettings = vi.mocked(putSettings);
 
 describe('SettingsModal', () => {
   beforeEach(() => {

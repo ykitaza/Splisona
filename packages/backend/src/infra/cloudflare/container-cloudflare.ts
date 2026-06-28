@@ -4,6 +4,7 @@ import { D1EvaluationRepository } from "./d1-evaluation-repository.js";
 import { D1SettingsRepository } from "./d1-settings-repository.js";
 import { D1ProjectRepository } from "./d1-project-repository.js";
 import { GeminiAIService } from "./gemini-ai-service.js";
+import { WorkersAIService } from "./workers-ai-service.js";
 import { R2StorageService, type R2Bucket } from "./r2-storage-service.js";
 import { PersonaUseCases } from "../../application/persona-use-cases.js";
 import { ABTestUseCases } from "../../application/abtest-use-cases.js";
@@ -22,6 +23,9 @@ export interface CloudflareEnv {
     put(key: string, value: ArrayBuffer | ReadableStream | string, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
     get(key: string): Promise<unknown>;
   };
+  AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
+  AI_PROVIDER?: string;
+  WORKERS_AI_MODEL?: string;
   GEMINI_API_KEY: string;
   GEMINI_MODEL_ID?: string;
   PUBLIC_IMAGE_URL?: string;
@@ -29,7 +33,6 @@ export interface CloudflareEnv {
 }
 
 export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
-  const modelId = env.GEMINI_MODEL_ID ?? "gemini-2.5-flash";
   const publicImageUrl = env.PUBLIC_IMAGE_URL ?? "";
   const workerUrl = env.WORKER_URL ?? "";
 
@@ -37,7 +40,14 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
   const testRepo = new D1ABTestRepository(env.DB);
   const evalRepo = new D1EvaluationRepository(env.DB);
   const settingsRepo = new D1SettingsRepository(env.DB);
-  const aiService = new GeminiAIService(env.GEMINI_API_KEY, modelId);
+
+  const useWorkersAI = env.AI_PROVIDER === "workers-ai" && env.AI;
+  const modelId = useWorkersAI
+    ? (env.WORKERS_AI_MODEL ?? "@cf/google/gemma-4-26b-a4b-it")
+    : (env.GEMINI_MODEL_ID ?? "gemini-2.5-flash");
+  const aiService = useWorkersAI
+    ? new WorkersAIService(env.AI!, modelId)
+    : new GeminiAIService(env.GEMINI_API_KEY, modelId);
   const storageService = new R2StorageService(env.IMAGES as R2Bucket, publicImageUrl, workerUrl);
 
   const personaUseCases = new PersonaUseCases(personaRepo, settingsRepo, aiService, storageService);

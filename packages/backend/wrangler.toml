@@ -5,9 +5,14 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 GEMINI_MODEL_ID = "gemini-3.1-flash-lite"
+AI_PROVIDER = "workers-ai"
+WORKERS_AI_MODEL = "@cf/google/gemma-4-26b-a4b-it"
 WORKER_URL = "https://splisona.pages.dev/api"
 CF_ACCESS_TEAM_DOMAIN = "https://plain-sky-61dc.cloudflareaccess.com"
 CF_ACCESS_AUD = "980dfeb527bf01dccd8d363daa9768e920577325494dbe8172590e22fa364988"
+
+[ai]
+binding = "AI"
 
 [[d1_databases]]
 binding = "DB"

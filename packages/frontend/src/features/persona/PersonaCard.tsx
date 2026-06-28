@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MoreHorizontal, Eye, Copy, Trash2 } from 'lucide-react';
-import { PERSONA_TYPE_LABELS } from './types';
 import type { Persona, PersonaType } from './types';
 import { PersonaNode, getNodeColor } from './PersonaNode';
 import { getAvatarUrl } from './api';

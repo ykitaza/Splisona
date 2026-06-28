@@ -6,7 +6,7 @@ import { SettingsModal } from '@/features/settings/SettingsModal';
 import { useUserProfile } from '@/shared/hooks/useUserProfile';
 import { useABTests } from '@/features/test/useABTests';
 import { useProjects } from '@/features/project/useProjects';
-import { updateTest, deleteTest as apiDeleteTest } from '@/features/test/api';
+import { updateTest } from '@/features/test/api';
 import { addTestToProject } from '@/features/project/api';
 import { ProjectSubmenuPanel } from '@/shared/ui/ProjectSubmenuPanel';
 import type { ABTest } from '@/features/test/types';
@@ -188,8 +188,10 @@ function SidebarTestItem({
   );
 }
 
-const APP_VERSION = '0.0.1';
-const GIT_HASH = '0f8b632';
+declare const __APP_VERSION__: string;
+declare const __GIT_HASH__: string;
+const APP_VERSION = __APP_VERSION__;
+const GIT_HASH = __GIT_HASH__;
 const COLLAPSE_BREAKPOINT = 1024;
 
 function AboutModal({ onClose }: { onClose: () => void }) {
@@ -244,7 +246,7 @@ export function AppLayout() {
   }, [location.pathname, refresh, refreshProjects]);
   const recentTests = tests
     .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
-    .slice(0, 8);
+    .slice(0, 15);
   const recentGroups = recentTests.reduce<{ label: string; items: typeof recentTests }[]>((acc, t) => {
     const label = dateGroup(t.updatedAt ?? t.createdAt);
     const last = acc[acc.length - 1];

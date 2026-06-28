@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { TestReportPage } from './TestReportPage';
 import type { ReportResponse } from './types';
@@ -28,9 +27,8 @@ vi.mock('@/features/settings/api', () => ({
   getConfig: vi.fn().mockResolvedValue({ modelId: '' }),
 }));
 
-import { getReport, executeTest } from '@/features/test/api';
+import { getReport } from '@/features/test/api';
 const mockGetReport = vi.mocked(getReport);
-const mockExecuteTest = vi.mocked(executeTest);
 
 const mockReport: ReportResponse = {
   abTest: {

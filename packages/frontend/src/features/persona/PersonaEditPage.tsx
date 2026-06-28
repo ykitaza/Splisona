@@ -1,6 +1,6 @@
 import { useState, useRef, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Sparkles, Camera, X, Trash2 } from 'lucide-react';
+import { Check, Sparkles, Camera, X } from 'lucide-react';
 import { createPersona, generateDraft, uploadPersonaAvatar, updatePersona, getAvatarUrl } from './api';
 import { getApiErrorMessage } from '@/shared/api/client';
 import { PERSONA_TYPE_LABELS, PERSONA_TYPE_DESCRIPTIONS, type PersonaType } from './types';
@@ -19,7 +19,7 @@ export function PersonaEditPage() {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [occupation, setOccupation] = useState('');
-  const [deviationScore, setDeviationScore] = useState('');
+  const [deviationScore, _setDeviationScore] = useState('');
   const [annualIncome, setAnnualIncome] = useState('');
   const [education, setEducation] = useState('');
   const [freeText, setFreeText] = useState('');

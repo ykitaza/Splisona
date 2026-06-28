@@ -1,0 +1,192 @@
+import type { AIService, ConversationMessage, EvaluateDesignsParams, ImageSource } from "../../domain/ports/ai-service.js";
+import { personaTypeLabel } from "../../domain/types.js";
+import type { DraftResult, EvaluationInput, ReasonSummary } from "../../domain/types.js";
+
+interface AiBinding {
+  run(model: string, input: Record<string, unknown>): Promise<unknown>;
+}
+
+const DEFAULT_MODEL = "@cf/google/gemma-4-26b-a4b-it";
+
+export class WorkersAIService implements AIService {
+  constructor(
+    private readonly ai: AiBinding,
+    private readonly modelId: string = DEFAULT_MODEL,
+  ) {}
+
+  async generateDraft(personaName: string, attributes: string): Promise<DraftResult> {
+    const result = await this.run([
+      { role: "system", content: "あなたはペルソナ設計の専門家です。与えられた属性から人物像の自由記述と推奨説明を日本語で生成してください。" },
+      { role: "user", content: `ペルソナ名: ${personaName}\n${attributes}\n\nこのペルソナの自由記述（freeText）と推奨説明（suggestedDescription）をJSON形式で生成してください。` },
+    ], {
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "draft_result",
+          schema: {
+            type: "object",
+            properties: {
+              freeText: { type: "string" },
+              suggestedDescription: { type: "string" },
+            },
+            required: ["freeText", "suggestedDescription"],
+          },
+        },
+      },
+    });
+    return JSON.parse(result) as DraftResult;
+  }
+
+  async chat(systemPrompt: string, messages: ConversationMessage[]): Promise<string> {
+    const msgs = [
+      { role: "system" as const, content: systemPrompt },
+      ...messages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+    ];
+    return this.run(msgs);
+  }
+
+  async evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput> {
+    const { persona, imageA, imageB, additionalInstruction } = params;
+    const prompt = [
+      `あなたは「${persona.displayName}」というペルソナです。`,
+      `タイプ: ${personaTypeLabel(persona.type)}`,
+      persona.occupation ? `職業: ${persona.occupation}` : null,
+      persona.freeText ? `詳細: ${persona.freeText}` : null,
+      "",
+      "最初の画像がデザインA、次の画像がデザインBです。",
+      "あなたのペルソナ視点から評価してください。",
+      "scoresA と scoresB に、A案・B案それぞれの各軸スコア（0〜100）を採点してください。reason は必ず日本語で記述してください。",
+      additionalInstruction ? `\n追加指示:\n${additionalInstruction}` : null,
+    ].filter((l) => l !== null).join("\n");
+
+    const images = [toBase64(imageA), toBase64(imageB)];
+
+    const result = await this.runWithImages(prompt, images, {
+      temperature: 0.2,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "evaluation",
+          schema: evaluateDesignsSchema,
+        },
+      },
+    });
+
+    const input = JSON.parse(result) as EvaluationInput;
+    return {
+      winner: input.winner,
+      confidence: input.confidence ?? 0,
+      reason: input.reason,
+      scoresA: input.scoresA,
+      scoresB: input.scoresB,
+    };
+  }
+
+  async generateTitle(imageA: ImageSource, imageB: ImageSource): Promise<string> {
+    const images = [toBase64(imageA), toBase64(imageB)];
+    const result = await this.runWithImages(
+      "2つのデザイン画像を見て、この比較テストに適した短いタイトルを1つだけ日本語で生成してください。15文字以内で、内容が分かる簡潔な名称にしてください。タイトルのみを出力し、他の説明は不要です。",
+      images,
+      { temperature: 0.3 },
+    );
+    return result.trim().replace(/^["「]|["」]$/g, "");
+  }
+
+  async summarizeReasons(reasonsText: string): Promise<ReasonSummary> {
+    const result = await this.run([
+      { role: "user", content: reasonsText },
+    ], {
+      temperature: 0.2,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "reason_summary",
+          schema: {
+            type: "object",
+            properties: {
+              reasonsA: { type: "array", items: { type: "string" } },
+              reasonsB: { type: "array", items: { type: "string" } },
+            },
+            required: ["reasonsA", "reasonsB"],
+          },
+        },
+      },
+    });
+    return JSON.parse(result) as ReasonSummary;
+  }
+
+  private async run(
+    messages: Array<{ role: string; content: string }>,
+    opts?: Record<string, unknown>,
+  ): Promise<string> {
+    const response = await this.ai.run(this.modelId, { messages, ...opts }) as { response?: string };
+    if (!response?.response) throw new Error("Empty response from Workers AI");
+    return response.response;
+  }
+
+  private async runWithImages(
+    prompt: string,
+    images: string[],
+    opts?: Record<string, unknown>,
+  ): Promise<string> {
+    const imageContent = images.map((b64) => ({
+      type: "image_url" as const,
+      image_url: { url: b64 },
+    }));
+
+    const messages = [{
+      role: "user",
+      content: [
+        ...imageContent,
+        { type: "text" as const, text: prompt },
+      ],
+    }];
+
+    const response = await this.ai.run(this.modelId, { messages, ...opts }) as { response?: string };
+    if (!response?.response) throw new Error("Empty response from Workers AI");
+    return response.response;
+  }
+}
+
+function toBase64(src: ImageSource): string {
+  if (src.kind === "bytes") {
+    const mime = src.format === "jpeg" ? "image/jpeg"
+      : src.format === "webp" ? "image/webp"
+      : src.format === "gif" ? "image/gif"
+      : "image/png";
+    return `data:${mime};base64,${src.data.toString("base64")}`;
+  }
+  throw new Error("Workers AI Service does not support S3 URIs directly. Use bytes instead.");
+}
+
+const evaluateDesignsSchema = {
+  type: "object",
+  properties: {
+    winner: { type: "string", enum: ["A", "B", "none"] },
+    confidence: { type: "number" },
+    reason: { type: "string" },
+    scoresA: {
+      type: "object",
+      properties: {
+        usability: { type: "number" },
+        aesthetics: { type: "number" },
+        clarity: { type: "number" },
+        engagement: { type: "number" },
+        trust: { type: "number" },
+      },
+      required: ["usability", "aesthetics", "clarity", "engagement", "trust"],
+    },
+    scoresB: {
+      type: "object",
+      properties: {
+        usability: { type: "number" },
+        aesthetics: { type: "number" },
+        clarity: { type: "number" },
+        engagement: { type: "number" },
+        trust: { type: "number" },
+      },
+      required: ["usability", "aesthetics", "clarity", "engagement", "trust"],
+    },
+  },
+  required: ["winner", "reason", "scoresA", "scoresB"],
+};
