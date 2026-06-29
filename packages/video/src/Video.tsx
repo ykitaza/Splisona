@@ -6,6 +6,7 @@ import { RunningScene } from './scenes/RunningScene';
 import { ResultsScene } from './scenes/ResultsScene';
 import { PersonaScene } from './scenes/PersonaScene';
 import { ClosingScene } from './scenes/ClosingScene';
+import { BrowserFrame } from './components/BrowserFrame';
 
 export const Video: React.FC = () => {
   return (
@@ -14,16 +15,24 @@ export const Video: React.FC = () => {
         <HookScene />
       </Sequence>
       <Sequence from={SCENES.testCreation.start} durationInFrames={SCENES.testCreation.duration} name="Test Creation">
-        <TestCreationScene />
+        <BrowserFrame>
+          <TestCreationScene />
+        </BrowserFrame>
       </Sequence>
       <Sequence from={SCENES.running.start} durationInFrames={SCENES.running.duration} name="Running">
-        <RunningScene />
+        <BrowserFrame>
+          <RunningScene />
+        </BrowserFrame>
       </Sequence>
       <Sequence from={SCENES.results.start} durationInFrames={SCENES.results.duration} name="Results">
-        <ResultsScene />
+        <BrowserFrame>
+          <ResultsScene />
+        </BrowserFrame>
       </Sequence>
       <Sequence from={SCENES.personas.start} durationInFrames={SCENES.personas.duration} name="Personas">
-        <PersonaScene />
+        <BrowserFrame>
+          <PersonaScene />
+        </BrowserFrame>
       </Sequence>
       <Sequence from={SCENES.closing.start} durationInFrames={SCENES.closing.duration} name="Closing">
         <ClosingScene />

@@ -394,7 +394,7 @@ export const RunningScene: React.FC = () => {
 
       {/* Caption overlay */}
       <div style={{
-        position: 'absolute', bottom: 40, left: 0, right: 0,
+        position: 'absolute', bottom: 100, left: 0, right: 0,
         display: 'flex', justifyContent: 'center',
       }}>
         <Caption text="各ペルソナが、それぞれの視点で並列に評価" startFrame={20} />

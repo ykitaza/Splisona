@@ -619,7 +619,7 @@ export const TestCreationScene: React.FC = () => {
       </div>
 
       <div style={{
-        position: 'absolute', bottom: 40, left: 0, right: 0,
+        position: 'absolute', bottom: 100, left: 0, right: 0,
         display: 'flex', justifyContent: 'center', zIndex: 50,
       }}>
         <Caption text={caption} startFrame={captionStart} />

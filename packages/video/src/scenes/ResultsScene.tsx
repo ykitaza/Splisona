@@ -602,7 +602,7 @@ export const ResultsScene: React.FC = () => {
         </div>
 
         {/* Caption overlay */}
-        <div style={{ position: 'absolute', bottom: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', bottom: 100, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
           {activeCaption && <Caption text={activeCaption.text} startFrame={activeCaption.start} />}
         </div>
       </div>

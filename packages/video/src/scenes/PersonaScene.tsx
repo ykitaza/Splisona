@@ -557,7 +557,7 @@ export const PersonaScene: React.FC = () => {
       </AppShell>
 
       {/* Caption overlay */}
-      <div style={{ position: 'absolute', bottom: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 50 }}>
+      <div style={{ position: 'absolute', bottom: 100, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 50 }}>
         <Caption text={caption} startFrame={frame < 130 ? 35 : 140} />
       </div>
     </div>
