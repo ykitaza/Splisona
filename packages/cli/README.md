@@ -56,6 +56,8 @@ splisona auth logout
 | `splisona report get <testId> [--json] [--fail-below <n>] [--axis <axis>] [--design <A\|B\|winner>]` | レポート取得、しきい値判定 |
 | `splisona report open <testId>` | ブラウザでレポートページを開く |
 | `splisona capture <url> -o <out.png> [--width 1280] [--keep-overlays] [--json]` | URLをスクリーンショットとして保存(Playwrightが必要) |
+| `splisona capture <url> -o <out.png> --split` | 縦長ページを原本+分割セグメントで保存 |
+| `splisona split <image> [-o <base.png>] [--json]` | ローカル画像を評価用セグメントに分割(Playwrightが必要) |
 
 すべてのコマンドは `--json` を付けると生JSONを標準出力します。
 

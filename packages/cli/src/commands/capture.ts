@@ -224,4 +224,66 @@ export function registerCaptureCommand(program: Command): void {
         }
       },
     );
+
+  program
+    .command("split")
+    .description("ローカル画像ファイルを評価用セグメントに分割する（原寸維持・のりしろ150px・最大6分割）")
+    .argument("<image>", "分割対象の画像ファイルパス (png/jpg/webp)")
+    .option("-o, --output <path>", "セグメントの出力ベースパス（省略時は入力と同じ場所に <name>-1.png 形式）")
+    .option("--json", "JSON形式で出力する")
+    .action(async (imagePath: string, opts: { output?: string; json?: boolean }) => {
+      const fs = await import("node:fs");
+      const resolved = path.resolve(imagePath);
+      if (!fs.existsSync(resolved)) {
+        console.error(`ファイルが見つかりません: ${resolved}`);
+        process.exit(1);
+      }
+      const { chromium } = await loadPlaywright();
+      const browser = await chromium.launch();
+      try {
+        const page = await browser.newPage({ viewport: { width: 800, height: 600 } });
+        // 画像 URL を直接開く（Chromium が <img> でラップして原寸表示する）
+        const fileUrl = `file://${encodeURI(resolved)}`;
+        await page.goto(fileUrl, { waitUntil: "load", timeout: 15000 });
+        const { width, height } = await page.evaluate(() => {
+          const img = document.querySelector("img");
+          if (!img) throw new Error("image element not found");
+          // Chromium の画像ビューアはフィット表示するため原寸に戻す
+          img.style.width = `${img.naturalWidth}px`;
+          img.style.height = `${img.naturalHeight}px`;
+          img.style.maxWidth = "none";
+          img.style.margin = "0";
+          document.body.style.margin = "0";
+          document.body.style.padding = "0";
+          return { width: img.naturalWidth, height: img.naturalHeight };
+        });
+
+        const plan = computeSegmentPlan(height);
+        if (plan.length === 0) {
+          if (opts.json) console.log(JSON.stringify({ width, height, segments: [] }, null, 2));
+          else console.log(`分割不要です（高さ ${height}px ≤ ${SEGMENT_THRESHOLD}px）`);
+          return;
+        }
+
+        await page.setViewportSize({ width, height: Math.min(height, MAX_FULL_HEIGHT) });
+        const basePath = opts.output ? path.resolve(opts.output) : resolved;
+        const segmentPaths: string[] = [];
+        for (let i = 0; i < plan.length; i++) {
+          const { y, h } = plan[i];
+          const segPath = segmentPath(basePath, i + 1);
+          await page.screenshot({ path: segPath, clip: { x: 0, y, width, height: h }, type: "png" });
+          segmentPaths.push(segPath);
+        }
+
+        if (opts.json) {
+          console.log(JSON.stringify({ width, height, segments: segmentPaths }, null, 2));
+        } else {
+          console.log(
+            `分割しました: ${width}x${height} → ${segmentPaths.length}枚 (${segmentPaths[0]} .. ${segmentPaths[segmentPaths.length - 1]})`,
+          );
+        }
+      } finally {
+        await browser.close();
+      }
+    });
 }
