@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 
 export interface FieldSelectOption {
@@ -18,28 +19,59 @@ interface FieldSelectProps {
 export function FieldSelect({ value, onChange, options, placeholder = '選択してください', disabled, id }: FieldSelectProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxH: 240 });
+
+  const updatePos = useCallback(() => {
+    if (!btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    const gap = 4;
+    const maxH = 240;
+    const spaceBelow = window.innerHeight - r.bottom - gap;
+    const spaceAbove = r.top - gap;
+    if (spaceBelow >= maxH) {
+      setPos({ top: r.bottom + gap, left: r.left, width: r.width, maxH });
+    } else if (spaceAbove >= maxH) {
+      setPos({ top: r.top - gap - maxH, left: r.left, width: r.width, maxH });
+    } else if (spaceBelow >= spaceAbove) {
+      setPos({ top: r.bottom + gap, left: r.left, width: r.width, maxH: spaceBelow - 8 });
+    } else {
+      const h = Math.min(maxH, spaceAbove - 8);
+      setPos({ top: r.top - gap - h, left: r.left, width: r.width, maxH: h });
+    }
+  }, []);
 
   useEffect(() => {
     if (!open) return;
+    updatePos();
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (ref.current?.contains(t) || dropRef.current?.contains(t)) return;
+      setOpen(false);
     }
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false);
     }
+    function handleScroll() { updatePos(); }
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('keydown', handleKey);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll);
     return () => {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('keydown', handleKey);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
     };
-  }, [open]);
+  }, [open, updatePos]);
 
   const selected = options.find((o) => o.value === value);
 
   return (
-    <div ref={ref} className="relative" id={id}>
+    <div ref={ref} id={id}>
       <button
+        ref={btnRef}
         type="button"
         disabled={disabled}
         onClick={() => setOpen(!open)}
@@ -63,12 +95,17 @@ export function FieldSelect({ value, onChange, options, placeholder = '選択し
         />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
-          className="absolute z-50 w-full overflow-y-auto"
+          ref={dropRef}
+          className="overflow-y-auto"
           style={{
-            top: 'calc(100% + 4px)',
-            maxHeight: 240,
+            position: 'fixed',
+            zIndex: 9999,
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            maxHeight: pos.maxH,
             borderRadius: 8,
             background: 'var(--color-surface)',
             border: '1px solid var(--color-hairline)',
@@ -101,7 +138,8 @@ export function FieldSelect({ value, onChange, options, placeholder = '選択し
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

@@ -13,6 +13,8 @@ interface EvaluationRow {
   status: string;
   persona_display_name: string;
   evaluated_at: string;
+  resolved_prompt: string | null;
+  model_id: string | null;
 }
 
 function toDomain(row: EvaluationRow): Evaluation {
@@ -27,6 +29,8 @@ function toDomain(row: EvaluationRow): Evaluation {
     status: row.status as Evaluation["status"],
     personaDisplayName: row.persona_display_name,
     evaluatedAt: row.evaluated_at,
+    resolvedPrompt: row.resolved_prompt ?? undefined,
+    modelId: row.model_id ?? undefined,
   };
 }
 
@@ -45,13 +49,15 @@ export class D1EvaluationRepository implements EvaluationRepository {
     await this.db
       .prepare(`INSERT OR REPLACE INTO evaluations
         (test_id, persona_id, winner, confidence, reason, scores_a, scores_b,
-         status, persona_display_name, evaluated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+         status, persona_display_name, evaluated_at, resolved_prompt, model_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(
         evaluation.testId, evaluation.personaId, evaluation.winner,
         evaluation.confidence, evaluation.reason,
         JSON.stringify(evaluation.scoresA), JSON.stringify(evaluation.scoresB),
         evaluation.status, evaluation.personaDisplayName, evaluation.evaluatedAt,
+        evaluation.resolvedPrompt ?? null,
+        evaluation.modelId ?? null,
       )
       .run();
   }

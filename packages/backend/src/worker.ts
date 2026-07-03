@@ -20,6 +20,18 @@ app.use("*", async (c, next) => {
     return next();
   }
 
+  const authHeader = c.req.header("Authorization");
+  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
+  if (bearer) {
+    const container = createCloudflareContainer(c.env);
+    const result = await container.apiKeyUseCases.verify(bearer);
+    if (!result) return c.json({ error: "UNAUTHORIZED", message: "invalid api key" }, 401);
+    c.set("container" as never, container as never);
+    c.set("userId" as never, result.userId as never);
+    c.set("authVia" as never, "apikey" as never);
+    return next();
+  }
+
   const jwt = c.req.header("X-Access-Jwt");
   if (!jwt) return c.json({ error: "Unauthorized" }, 401);
 
@@ -28,6 +40,7 @@ app.use("*", async (c, next) => {
     const container = createCloudflareContainer(c.env);
     c.set("container" as never, container as never);
     c.set("userId" as never, email as never);
+    c.set("authVia" as never, "session" as never);
     return next();
   } catch (e) {
     return c.json({ error: "Unauthorized", message: String(e) }, 401);
@@ -83,6 +96,10 @@ app.post("/tests/:id/execute", async (c) => {
     c.executionCtx.waitUntil(
       container.evaluationUseCases.executeTest(userId, testId, {
         buildImageSource,
+      }).catch(async (e) => {
+        // 未捕捉例外で status が running のまま残ると UI が永遠に「レポート生成中」になる
+        console.error("[executeTest] fatal:", e);
+        try { await container.evaluationUseCases.abortTest(userId, testId); } catch {}
       })
     );
 

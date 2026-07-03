@@ -19,6 +19,8 @@ interface ABTestRow {
   reason_summary_a: string | null;
   reason_summary_b: string | null;
   winners_reason_summary: string | null;
+  improvement_suggestions: string | null;
+  executed_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +43,10 @@ function toDomain(row: ABTestRow): ABTest {
     reasonSummaryA: row.reason_summary_a ? JSON.parse(row.reason_summary_a) as string[] : undefined,
     reasonSummaryB: row.reason_summary_b ? JSON.parse(row.reason_summary_b) as string[] : undefined,
     winnersReasonSummary: row.winners_reason_summary ?? undefined,
+    improvementReport: row.improvement_suggestions
+      ? (() => { const p = JSON.parse(row.improvement_suggestions!) as unknown; return Array.isArray(p) ? { suggestions: p } as ABTest["improvementReport"] : p as ABTest["improvementReport"]; })()
+      : undefined,
+    executedBy: row.executed_by ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -71,8 +77,8 @@ export class D1ABTestRepository implements ABTestRepository {
         (test_id, user_id, title, status, design_a_image_key, design_b_image_key,
          design_a_input_type, design_b_input_type, design_a_url, design_b_url,
          persona_ids, focus_points, reason_summary_status, reason_summary_a, reason_summary_b,
-         winners_reason_summary, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+         winners_reason_summary, improvement_suggestions, executed_by, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(
         test.testId, test.userId, test.title, test.status,
         test.designAImageKey ?? null, test.designBImageKey ?? null,
@@ -84,12 +90,14 @@ export class D1ABTestRepository implements ABTestRepository {
         test.reasonSummaryA ? JSON.stringify(test.reasonSummaryA) : null,
         test.reasonSummaryB ? JSON.stringify(test.reasonSummaryB) : null,
         test.winnersReasonSummary ?? null,
+        test.improvementReport ? JSON.stringify(test.improvementReport) : null,
+        test.executedBy ?? null,
         test.createdAt, test.updatedAt,
       )
       .run();
   }
 
-  async updateFields(userId: string, testId: string, fields: Partial<Pick<ABTest, 'status' | 'title' | 'reasonSummaryStatus' | 'reasonSummaryA' | 'reasonSummaryB' | 'winnersReasonSummary' | 'updatedAt'>>): Promise<void> {
+  async updateFields(userId: string, testId: string, fields: Partial<Pick<ABTest, 'status' | 'title' | 'reasonSummaryStatus' | 'reasonSummaryA' | 'reasonSummaryB' | 'winnersReasonSummary' | 'improvementReport' | 'executedBy' | 'updatedAt'>>): Promise<void> {
     const sets: string[] = [];
     const values: unknown[] = [];
     if (fields.status !== undefined) { sets.push("status = ?"); values.push(fields.status); }
@@ -98,6 +106,8 @@ export class D1ABTestRepository implements ABTestRepository {
     if (fields.reasonSummaryA !== undefined) { sets.push("reason_summary_a = ?"); values.push(fields.reasonSummaryA ? JSON.stringify(fields.reasonSummaryA) : null); }
     if (fields.reasonSummaryB !== undefined) { sets.push("reason_summary_b = ?"); values.push(fields.reasonSummaryB ? JSON.stringify(fields.reasonSummaryB) : null); }
     if (fields.winnersReasonSummary !== undefined) { sets.push("winners_reason_summary = ?"); values.push(fields.winnersReasonSummary ?? null); }
+    if ('improvementReport' in fields) { sets.push("improvement_suggestions = ?"); values.push(fields.improvementReport ? JSON.stringify(fields.improvementReport) : null); }
+    if (fields.executedBy !== undefined) { sets.push("executed_by = ?"); values.push(fields.executedBy ?? null); }
     if (fields.updatedAt !== undefined) { sets.push("updated_at = ?"); values.push(fields.updatedAt); }
     if (sets.length === 0) return;
     await this.db

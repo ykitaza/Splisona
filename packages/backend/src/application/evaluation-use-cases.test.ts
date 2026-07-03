@@ -90,6 +90,7 @@ describe("EvaluationUseCases", () => {
     aiService = {
       generateDraft: vi.fn(),
       chat: vi.fn(),
+      generateImprovementSuggestions: vi.fn().mockResolvedValue({ suggestions: [] }),
       evaluateDesigns: vi.fn().mockResolvedValue({
         winner: "A",
         confidence: 85,
@@ -193,6 +194,123 @@ describe("EvaluationUseCases", () => {
       const calls = (testRepo.updateFields as ReturnType<typeof vi.fn>).mock.calls;
       const lastCall = calls[calls.length - 1];
       expect(lastCall[2].status).toBe("completed");
+    });
+  });
+
+  describe("ingestResults", () => {
+    function makeIngestInput(overrides: Partial<Parameters<EvaluationUseCases["ingestResults"]>[2]> = {}) {
+      return {
+        model: "claude-sonnet-4-5",
+        evaluations: [
+          {
+            personaId: "p1",
+            winner: "A" as const,
+            confidence: 80,
+            reason: "A is clearer",
+            scoresA: scores(8),
+            scoresB: scores(5),
+          },
+          {
+            personaId: "p2",
+            winner: "B" as const,
+            confidence: 70,
+            reason: "B feels safer",
+            scoresA: scores(4),
+            scoresB: scores(7),
+          },
+        ],
+        ...overrides,
+      };
+    }
+
+    it("saves completed evaluations with modelId and marks the test completed with executedBy", async () => {
+      await useCases.ingestResults("u1", "t1", makeIngestInput());
+
+      expect(evalRepo.removeAllByTest).toHaveBeenCalledWith("t1");
+      expect(savedEvals).toHaveLength(2);
+      for (const e of savedEvals) {
+        expect(e.status).toBe("completed");
+        expect(e.modelId).toBe("claude-sonnet-4-5");
+      }
+      expect(savedEvals[0].personaDisplayName).toBe("Test Persona");
+
+      const calls = (testRepo.updateFields as ReturnType<typeof vi.fn>).mock.calls;
+      const lastCall = calls[calls.length - 1];
+      expect(lastCall[2].status).toBe("completed");
+      expect(lastCall[2].executedBy).toBe("local:claude-sonnet-4-5");
+      expect(lastCall[2].reasonSummaryStatus).toBe("ready");
+    });
+
+    it("uses generateReasonSummaryFields / generateImprovementSuggestions pipeline when omitted", async () => {
+      await useCases.ingestResults("u1", "t1", makeIngestInput());
+
+      expect(aiService.summarizeReasons).toHaveBeenCalled();
+      expect(aiService.generateImprovementSuggestions).toHaveBeenCalled();
+    });
+
+    it("uses provided reasonSummary / improvementReport without calling the AI pipeline for them", async () => {
+      await useCases.ingestResults(
+        "u1",
+        "t1",
+        makeIngestInput({
+          reasonSummary: { reasonsA: ["clear layout"], reasonsB: [], winnersReasonSummary: "clear layout" },
+          improvementReport: { suggestions: [] },
+        }),
+      );
+
+      expect(aiService.summarizeReasons).not.toHaveBeenCalled();
+      expect(aiService.generateImprovementSuggestions).not.toHaveBeenCalled();
+
+      const calls = (testRepo.updateFields as ReturnType<typeof vi.fn>).mock.calls;
+      const lastCall = calls[calls.length - 1];
+      expect(lastCall[2].reasonSummaryA).toEqual(["clear layout"]);
+      expect(lastCall[2].winnersReasonSummary).toBe("clear layout");
+      expect(lastCall[2].improvementReport).toEqual({ suggestions: [] });
+    });
+
+    it("throws NotFoundError when the test does not exist", async () => {
+      (testRepo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      await expect(useCases.ingestResults("u1", "t1", makeIngestInput())).rejects.toThrow("not found");
+    });
+
+    it("throws ConflictError when the test is currently running", async () => {
+      (testRepo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(makeTest({ status: "running" }));
+      await expect(useCases.ingestResults("u1", "t1", makeIngestInput())).rejects.toThrow("already running");
+    });
+
+    it("throws ValidationError for an unknown personaId", async () => {
+      await expect(
+        useCases.ingestResults(
+          "u1",
+          "t1",
+          makeIngestInput({
+            evaluations: [
+              { personaId: "unknown", winner: "A", confidence: 80, reason: "x", scoresA: scores(8), scoresB: scores(5) },
+            ],
+          }),
+        ),
+      ).rejects.toThrow(/personaId/);
+    });
+
+    it("throws ValidationError when a score is out of range", async () => {
+      await expect(
+        useCases.ingestResults(
+          "u1",
+          "t1",
+          makeIngestInput({
+            evaluations: [
+              {
+                personaId: "p1",
+                winner: "A",
+                confidence: 80,
+                reason: "x",
+                scoresA: { ...scores(8), usability: 150 },
+                scoresB: scores(5),
+              },
+            ],
+          }),
+        ),
+      ).rejects.toThrow(/usability/);
     });
   });
 });

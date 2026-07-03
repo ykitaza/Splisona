@@ -8,6 +8,7 @@ export interface TestDraftData {
   sideA: DesignSideData | null;
   sideB: DesignSideData | null;
   personaIds: string[];
+  focusPoints?: string;
   resumeId?: string;
 }
 
@@ -46,6 +47,7 @@ export const testDraft = {
     _draft.sideA = null;
     _draft.sideB = null;
     _draft.personaIds = [];
+    delete _draft.focusPoints;
     delete _draft.resumeId;
   },
 };

@@ -30,6 +30,23 @@ export function personaTypeLabel(type: string): string {
   return desc ? `${type}（${desc}）` : type;
 }
 
+export interface ImprovementSuggestion {
+  target: "A" | "B";
+  /** 根拠の種別: 対象案自身の弱点 or もう一方の案からの強みの移植 */
+  kind: "weakness" | "transplant";
+  title: string;
+  evidence: string;
+  quote?: string;
+  implementationPrompt: string;
+}
+
+export interface ImprovementReport {
+  /** 評価コメントから生成した各デザインの1行サマリー */
+  designSummaryA?: string;
+  designSummaryB?: string;
+  suggestions: ImprovementSuggestion[];
+}
+
 export interface ABTest {
   testId: string;
   userId: string;
@@ -43,10 +60,13 @@ export interface ABTest {
   designBUrl?: string;
   personaIds: string[];
   focusPoints?: string;
-  reasonSummaryStatus?: "generating" | "ready";
+  reasonSummaryStatus?: "generating" | "generating_suggestions" | "ready";
   reasonSummaryA?: string[];
   reasonSummaryB?: string[];
   winnersReasonSummary?: string;
+  improvementReport?: ImprovementReport;
+  /** ローカル実行された場合の実行元識別子 (例: "local:claude-sonnet-4-5")。undefined=クラウド実行 */
+  executedBy?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -70,6 +90,8 @@ export interface Evaluation {
   status: "evaluating" | "completed" | "failed";
   personaDisplayName: string;
   evaluatedAt: string;
+  resolvedPrompt?: string;
+  modelId?: string;
 }
 
 export interface Project {
@@ -99,6 +121,7 @@ export interface EvaluationInput {
   reason: string;
   scoresA: EvaluationScores;
   scoresB: EvaluationScores;
+  resolvedPrompt?: string;
 }
 
 export interface ReasonSummary {
@@ -129,6 +152,7 @@ export function toABTestDTO(t: ABTest) {
     },
     personaIds: t.personaIds,
     focusPoints: t.focusPoints,
+    executedBy: t.executedBy,
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
   };

@@ -7,6 +7,7 @@ export interface RouteEnv {
   Variables: {
     container: AppContainer;
     userId: string;
+    authVia: "session" | "apikey";
   };
 }
 
@@ -190,6 +191,14 @@ export function createRoutes() {
     } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
   });
 
+  api.post("/tests/:id/results", async (c) => {
+    try {
+      const input = await c.req.json();
+      await c.var.container.evaluationUseCases.ingestResults(c.var.userId, c.req.param("id"), input);
+      return c.json({ ok: true });
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
   // --- Capture ---
   api.post("/tests/:id/capture", async (c) => {
     try {
@@ -218,10 +227,15 @@ export function createRoutes() {
     const { token } = await c.req.json<{ token: string }>();
     if (!token) return c.json({ valid: false, error: "token required" }, 400);
     try {
-      const res = await fetch("https://api.figma.com/v1/me", { headers: { "X-Figma-Token": token } });
-      if (!res.ok) return c.json({ valid: false, error: `Figma API returned ${res.status}` });
-      const data = await res.json() as { email?: string; handle?: string };
-      return c.json({ valid: true, email: data.email, handle: data.handle });
+      // file_content:read スコープのみで検証可能な方法:
+      // 存在しないファイルを叩き、404=トークン有効 / 403=トークン無効
+      const res = await fetch("https://api.figma.com/v1/files/__verify__", { headers: { "X-Figma-Token": token } });
+      if (res.status === 404) return c.json({ valid: true });
+      if (res.status === 403) {
+        const data = await res.json() as { err?: string };
+        return c.json({ valid: false, error: data.err || "Invalid token" });
+      }
+      return c.json({ valid: false, error: `Figma API returned ${res.status}` });
     } catch (e) { return c.json({ valid: false, error: String(e) }); }
   });
 
@@ -237,6 +251,34 @@ export function createRoutes() {
       await c.var.container.settingsUseCases.put(c.var.userId, section, data);
       return c.json({ ok: true });
     } catch (e) { return c.json({ error: "invalid section" }, 400); }
+  });
+
+  // --- Agent (API Key) ---
+  api.get("/agent/whoami", async (c) => {
+    return c.json({ userId: c.var.userId });
+  });
+
+  api.post("/agent/keys", async (c) => {
+    if (c.var.authVia !== "session") return c.json({ error: "FORBIDDEN", message: "api key cannot manage keys" }, 403);
+    try {
+      const { name } = await c.req.json();
+      if (!name?.trim()) return c.json({ error: "VALIDATION_ERROR", message: "name is required" }, 400);
+      return c.json(await c.var.container.apiKeyUseCases.issue(c.var.userId, name), 201);
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.get("/agent/keys", async (c) => {
+    if (c.var.authVia !== "session") return c.json({ error: "FORBIDDEN", message: "api key cannot manage keys" }, 403);
+    try { return c.json(await c.var.container.apiKeyUseCases.list(c.var.userId)); }
+    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.delete("/agent/keys/:keyId", async (c) => {
+    if (c.var.authVia !== "session") return c.json({ error: "FORBIDDEN", message: "api key cannot manage keys" }, 403);
+    try {
+      await c.var.container.apiKeyUseCases.revoke(c.var.userId, c.req.param("keyId"));
+      return c.json({ deleted: true });
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
   });
 
   return api;

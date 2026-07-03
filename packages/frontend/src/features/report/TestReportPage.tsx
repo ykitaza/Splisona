@@ -1,12 +1,14 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Check, Plus, Pencil, FolderPlus, FolderMinus, Trash2 } from 'lucide-react';
+import { ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Check, Plus, Pencil, FolderPlus, FolderMinus, Trash2, FileJson, FileText } from 'lucide-react';
 import { ImageLightbox } from '@/shared/ui/ImageLightbox';
 import { RadarChart } from './RadarChart';
+import { ImprovementDrawer } from './ImprovementDrawer';
+import { buildPromptContext } from './prompt-context';
 import { AttributeHeatmap } from './AttributeHeatmap';
 import { MethodPopover } from './Popovers';
 import { HelpDot } from '@/shared/ui/HelpDot';
-import { getReport, cloneTest, exportTest, updateTest, deleteTest } from '@/features/test/api';
+import { getReport, cloneTest, updateTest, deleteTest } from '@/features/test/api';
 import { listProjects, addTestToProject, removeTestFromProject } from '@/features/project/api';
 import { getConfig } from '@/features/settings/api';
 import { usePersonas } from '@/features/persona/usePersonas';
@@ -20,6 +22,7 @@ import type { DesignInput } from '@/features/test/types';
 import type { Persona } from '@/features/persona/types';
 import { ProjectSubmenuPanel } from '@/shared/ui/ProjectSubmenuPanel';
 import type { Project } from '@/features/project/types';
+import { buildExportJson, buildExportHtml, downloadBlob } from './export-report';
 
 const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
   usability: '使いやすさ',
@@ -28,6 +31,63 @@ const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
   engagement: '訴求力',
   trust: '信頼感',
 };
+
+function ExportMenu({ onJson, onHtml }: { onJson: () => void; onHtml: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function close(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const items = [
+    { label: 'HTML', icon: <FileText size={14} />, action: onHtml },
+    { label: 'JSON', icon: <FileJson size={14} />, action: onJson },
+  ];
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center bg-surface border border-hairline text-text-mid font-sans font-medium transition-colors hover:text-text-hi"
+        style={{ gap: 8, borderRadius: 10, padding: '10px 15px', fontSize: 13 }}
+      >
+        <Download size={15} />
+        書き出し
+        <ChevronDown size={13} style={{ marginLeft: 2, opacity: 0.5 }} />
+      </button>
+      {open && (
+        <div
+          className="bg-raised border border-hairline"
+          style={{
+            position: 'absolute', right: 0, top: '100%', marginTop: 6,
+            borderRadius: 10, padding: 4, minWidth: 220, zIndex: 50,
+            boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+          }}
+        >
+          {items.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => { setOpen(false); item.action(); }}
+              className="flex items-center w-full text-left text-text-mid font-sans transition-colors hover:text-text-hi hover:bg-surface"
+              style={{ gap: 10, padding: '9px 12px', borderRadius: 8, fontSize: 13, border: 'none', background: 'none', cursor: 'pointer' }}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SegmentBar({ countA, countB, countNone }: { countA: number; countB: number; countNone: number }) {
   const total = countA + countB + countNone;
@@ -359,6 +419,7 @@ export function TestReportPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [attrPopoverId, setAttrPopoverId] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string>('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [parentProject, setParentProject] = useState<Project | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -400,6 +461,7 @@ export function TestReportPage() {
         sideA: designInputToSideData(cloned.designAInput),
         sideB: designInputToSideData(cloned.designBInput),
         personaIds: cloned.personaIds,
+        focusPoints: cloned.focusPoints,
         resumeId: cloned.testId,
       });
       navigate(parentProject ? `/tests/new?projectId=${parentProject.projectId}` : '/tests/new');
@@ -408,16 +470,22 @@ export function TestReportPage() {
     }
   }
 
-  async function handleExport() {
-    if (!id) return;
-    const csv = await exportTest(id);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `chorus-report-${id}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  function exportBaseName() {
+    // ファイル名に使えない文字を除去し、テスト名をそのまま名前にする
+    const title = (report?.abTest.title ?? '').trim().replace(/[\\/:*?"<>|]/g, '_');
+    return title || `splisona-report-${report?.abTest.testId ?? 'unknown'}`;
+  }
+
+  function handleExportJson() {
+    if (!report) return;
+    const json = buildExportJson(report, personas, modelId);
+    downloadBlob(new Blob([json], { type: 'application/json;charset=utf-8;' }), `${exportBaseName()}.json`);
+  }
+
+  async function handleExportHtml() {
+    if (!report) return;
+    const html = await buildExportHtml(report, personas, modelId);
+    downloadBlob(new Blob([html], { type: 'text/html;charset=utf-8;' }), `${exportBaseName()}.html`);
   }
 
   if (!report) {
@@ -530,15 +598,7 @@ export function TestReportPage() {
           </div>
         </div>
         <div className="flex items-center" style={{ gap: 10 }}>
-          <button
-            type="button"
-            onClick={handleExport}
-            className="flex items-center bg-surface border border-hairline text-text-mid font-sans font-medium transition-colors hover:text-text-hi"
-            style={{ gap: 8, borderRadius: 10, padding: '10px 15px', fontSize: 13 }}
-          >
-            <Download size={15} />
-            書き出し
-          </button>
+          <ExportMenu onJson={handleExportJson} onHtml={handleExportHtml} />
           <button
             type="button"
             disabled={isRerunning}
@@ -585,8 +645,36 @@ export function TestReportPage() {
               <p className="text-text-hi font-sans text-sm">主な理由: {summary.winnersReasonSummary}</p>
             </div>
           )}
+          {(summary.improvementReport?.suggestions.length ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="flex items-center justify-between px-4 py-2.5 rounded-md bg-accent-dim transition-opacity hover:opacity-85"
+              style={{ border: 'none', cursor: 'pointer', width: '100%' }}
+            >
+              <span className="flex items-center gap-2.5">
+                <Lightbulb size={15} className="text-accent flex-shrink-0" />
+                <span className="text-text-hi font-sans text-sm">
+                  改善提案が {summary.improvementReport!.suggestions.length} 件あります
+                  （A案 {summary.improvementReport!.suggestions.filter((s) => s.target === 'A').length} · B案 {summary.improvementReport!.suggestions.filter((s) => s.target === 'B').length}）
+                </span>
+              </span>
+              <span className="flex items-center gap-1 text-accent font-sans text-sm font-semibold">
+                見る
+                <ChevronDown size={14} className="text-accent" style={{ transform: 'rotate(-90deg)' }} />
+              </span>
+            </button>
+          )}
         </div>
       </RevealSection>
+
+      {drawerOpen && summary.improvementReport && (
+        <ImprovementDrawer
+          report={summary.improvementReport}
+          contextHeader={buildPromptContext(report, personas)}
+          onClose={() => setDrawerOpen(false)}
+        />
+      )}
 
       <div className="h-px bg-hairline" />
 
@@ -614,7 +702,13 @@ export function TestReportPage() {
             <HelpDot content={`生成元: ${modelId || '—'}。各ペルソナの評価理由をAIが要約した結果です。`} />
           </div>
           {summary.reasonSummaryA.length === 0 && summary.reasonSummaryB.length === 0 ? (
-            <p className="text-text-lo font-sans text-sm">—</p>
+            <div className="flex flex-col" style={{ gap: 12, paddingTop: 36 }}>
+              <p className="text-text-mid font-sans text-sm" style={{ lineHeight: 1.6 }}>
+                {winnerSide === 'tie' || !winnerSide
+                  ? '両デザインの評価が拮抗しています。各ペルソナのコメントと評価軸別スコアを確認してください。'
+                  : '評価理由のまとめはまだ生成されていません。'}
+              </p>
+            </div>
           ) : (
             <div className="flex flex-col" style={{ gap: 12, paddingTop: 36 }}>
               <ReasonGroup caption="A が支持された理由" color="var(--color-win-a, #6E78D9)" reasons={summary.reasonSummaryA} />
@@ -660,7 +754,7 @@ export function TestReportPage() {
       <RevealSection enabled={reveal}>
       <div className="flex flex-col" style={{ gap: 32 }}>
       <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>ペルソナ別の評価</span>
-      <div className="bg-base border border-hairline overflow-hidden" style={{ borderRadius: 14 }}>
+      <div className="bg-base border border-hairline" style={{ borderRadius: 14 }}>
         <div className="flex items-center px-4 border-b border-hairline bg-base" style={{ gap: 16, padding: '12px 16px' }}>
           <div style={{ width: 250 }}>
             <span className="text-text-lo font-mono" style={{ fontSize: 10, letterSpacing: 0.8 }}>PERSONA</span>
@@ -746,12 +840,12 @@ export function TestReportPage() {
                 <div className="flex flex-col gap-4 bg-raised" style={{ padding: '4px 16px 20px 307px' }}>
                   <div className="flex flex-col gap-1.5">
                     <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>使用モデル</span>
-                    <p className="text-text-mid font-mono text-xs">{modelId || '—'}</p>
+                    <p className="text-text-mid font-mono text-xs">{ev.modelId ?? modelId ?? '—'}</p>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>解決済みプロンプト</span>
                     <p className="text-text-mid font-sans text-xs whitespace-pre-wrap" style={{ lineHeight: 1.5 }}>
-                      {[
+                      {ev.resolvedPrompt ?? [
                         `ペルソナ「${ev.personaDisplayName}」として、デザイン A と B を比較し、5軸で評価してください。`,
                         abTest.focusPoints ? `\n注目ポイント:\n${abTest.focusPoints}` : null,
                       ].filter(Boolean).join('')}

@@ -62,10 +62,6 @@ export function getReport(id: string): Promise<ReportResponse> {
   return apiRequest(`/tests/${id}/report`);
 }
 
-export function exportTest(id: string): Promise<string> {
-  return apiRequest(`/tests/${id}/export`);
-}
-
 export interface CaptureRequest {
   side: 'A' | 'B';
   inputType: 'figma_url' | 'site_url';

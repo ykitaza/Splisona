@@ -1,16 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Link as LinkIcon, Cpu, FileText, ChevronRight, Lock, Plus, ArrowLeft, RotateCcw } from 'lucide-react';
+import { X, Link as LinkIcon, Cpu, FileText, ChevronRight, Lock, Plus, ArrowLeft, RotateCcw, KeyRound, Copy, Check as CheckIcon } from 'lucide-react';
 import { Modal } from '@/shared/ui/Modal';
-import { getSettings, putSettings, getConfig, type SettingsSection } from './api';
+import { getSettings, putSettings, getConfig, listApiKeys, createApiKey, revokeApiKey, type SettingsSection, type ApiKeyRecord } from './api';
+import { verifyFigmaToken } from '@/features/test/api';
 
 const SECTIONS = [
   { key: 'figma' as const, label: 'Figma 連携', icon: LinkIcon },
   { key: 'model' as const, label: 'AI モデル', icon: Cpu },
   { key: 'prompt' as const, label: 'プロンプト', icon: FileText },
+  { key: 'apikeys' as const, label: 'API キー', icon: KeyRound },
 ];
 
-const SECTION_DESCS: Partial<Record<SettingsSection, string>> = {
+type SectionKey = SettingsSection | 'apikeys';
+
+const SECTION_DESCS: Partial<Record<SectionKey, string>> = {
   prompt: 'テストで使用するプロンプトの確認と追加指示の設定',
+  apikeys: 'CLI やエージェントから Splisona API にアクセスするためのキーです。splisona auth login からも発行できます。',
 };
 
 const PROMPT_TEMPLATES = [
@@ -48,7 +53,7 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
-  const [section, setSection] = useState<SettingsSection>('figma');
+  const [section, setSection] = useState<SectionKey>('figma');
   const [_data, setData] = useState<Record<string, unknown>>({});
   const [modelId, setModelId] = useState<string>('');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -160,6 +165,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                 {section === 'figma' && <FigmaSection />}
                 {section === 'model' && <ModelSection modelId={modelId} />}
                 {section === 'prompt' && <PromptSection promptData={promptData} onSelect={setSelectedTemplate} />}
+                {section === 'apikeys' && <ApiKeysSection />}
               </div>
             </>
           )}
@@ -171,8 +177,12 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
 
 function FigmaSection() {
   const [token, setToken] = useState('');
-  const [saved, setSaved] = useState(false);
+  const [verified, setVerified] = useState<null | boolean>(null);
+  const [verifyHandle, setVerifyHandle] = useState('');
+  const [verifyError, setVerifyError] = useState('');
+  const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     getSettings().then((d) => {
@@ -181,7 +191,29 @@ function FigmaSection() {
     });
   }, []);
 
-  const isConnected = token.length > 0;
+  async function handleTest() {
+    if (!token.trim()) return;
+    setTesting(true);
+    setVerified(null);
+    setVerifyError('');
+    try {
+      const res = await verifyFigmaToken(token);
+      if (res.valid) {
+        setVerified(true);
+        setVerifyHandle(res.handle || res.email || '');
+        await putSettings('figma', { token });
+        window.dispatchEvent(new CustomEvent('figma-token-updated'));
+      } else {
+        setVerified(false);
+        setVerifyError(res.error || 'トークンが無効です');
+      }
+    } catch {
+      setVerified(false);
+      setVerifyError('接続テストに失敗しました');
+    } finally {
+      setTesting(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -203,39 +235,57 @@ function FigmaSection() {
           style={{
             padding: '3px 10px',
             borderRadius: 999,
-            background: isConnected ? '#54B58720' : '#E06A6A20',
-            color: isConnected ? '#54B587' : '#E06A6A',
+            background: verified === true ? '#54B58720' : verified === false ? '#E06A6A20' : '#9BA1AC20',
+            color: verified === true ? '#54B587' : verified === false ? '#E06A6A' : '#9BA1AC',
           }}
         >
-          {isConnected ? '接続済み' : '未接続'}
+          {verified === true ? '接続済み' : verified === false ? '接続失敗' : '未検証'}
         </span>
+        {verified === true && verifyHandle && (
+          <span className="text-text-lo font-mono text-xs">{verifyHandle}</span>
+        )}
       </div>
+      {verified === false && verifyError && (
+        <p className="text-danger font-sans text-xs" style={{ marginTop: -16 }}>{verifyError}</p>
+      )}
       <div className="flex flex-col gap-1.5">
         <label className="text-text-mid font-sans text-xs font-medium">アクセストークン</label>
         <input
           type="password"
           placeholder="figd_..."
           value={token}
-          onChange={(e) => setToken(e.target.value)}
+          onChange={(e) => { setToken(e.target.value); setVerified(null); }}
           className="rounded-md bg-raised border border-hairline px-3 py-2 text-text-hi font-mono text-sm"
         />
       </div>
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={saving}
-        className="self-start flex items-center bg-accent text-white font-sans text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50"
-        style={{ borderRadius: 6, padding: '8px 16px' }}
-      >
-        {saved ? '保存しました' : saving ? '保存中...' : '更新'}
-      </button>
+      <div className="flex items-center" style={{ gap: 10 }}>
+        <button
+          type="button"
+          onClick={handleTest}
+          disabled={testing || !token.trim()}
+          className="flex items-center bg-accent text-white font-sans text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50"
+          style={{ borderRadius: 6, padding: '8px 16px' }}
+        >
+          {testing ? '検証中...' : '接続テスト'}
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || !token.trim()}
+          className="flex items-center border border-hairline text-text-mid font-sans text-sm transition-colors hover:text-text-hi disabled:opacity-50"
+          style={{ borderRadius: 6, padding: '8px 16px' }}
+        >
+          {saved ? '保存しました' : saving ? '保存中...' : '保存のみ'}
+        </button>
+      </div>
       <div className="h-px bg-hairline" />
       <div className="flex flex-col" style={{ gap: 8 }}>
         <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 0.5 }}>トークンの取得方法</span>
         <ol className="text-text-mid font-sans text-sm list-decimal pl-5" style={{ lineHeight: 1.8 }}>
-          <li>Figma にログインし、Settings を開く</li>
-          <li>Personal access tokens で新しいトークンを生成</li>
-          <li>生成されたトークンをここに貼り付けて更新</li>
+          <li>Figma にログインし、左上アイコン → <strong>Settings</strong> を開く</li>
+          <li><strong>Security</strong> タブ → Personal access tokens → <strong>Generate new token</strong></li>
+          <li>Scopes で <code className="font-mono text-xs bg-raised px-1 py-0.5 rounded">file_content:read</code> にチェック（他は不要）</li>
+          <li>トークンを生成し、ここに貼り付けて「接続テスト」</li>
         </ol>
       </div>
     </div>
@@ -266,6 +316,147 @@ function ModelSection({ modelId }: { modelId: string }) {
         {modelId && (
           <span className="text-text-lo font-mono text-xs">{modelId}</span>
         )}
+      </div>
+    </div>
+  );
+}
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString('ja-JP');
+}
+
+function ApiKeysSection() {
+  const [keys, setKeys] = useState<ApiKeyRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState('');
+  const [issuing, setIssuing] = useState(false);
+  const [issuedKey, setIssuedKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    listApiKeys()
+      .then(setKeys)
+      .catch(() => setError('API キー一覧の取得に失敗しました'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function handleIssue() {
+    if (!name.trim()) return;
+    setIssuing(true);
+    setError(null);
+    try {
+      const res = await createApiKey(name.trim());
+      setIssuedKey(res.plainKey);
+      setName('');
+      load();
+    } catch {
+      setError('API キーの発行に失敗しました');
+    } finally {
+      setIssuing(false);
+    }
+  }
+
+  async function handleRevoke(keyId: string) {
+    if (!window.confirm('このキーを失効させますか？この操作は取り消せません。')) return;
+    try {
+      await revokeApiKey(keyId);
+      load();
+    } catch {
+      setError('API キーの失効に失敗しました');
+    }
+  }
+
+  async function handleCopy() {
+    if (!issuedKey) return;
+    await navigator.clipboard.writeText(issuedKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="flex flex-col" style={{ gap: 24 }}>
+      {issuedKey && (
+        <div className="flex flex-col" style={{ gap: 8, borderRadius: 6, padding: 12, background: 'var(--color-accent-dim)' }}>
+          <span className="text-accent font-mono text-xs" style={{ letterSpacing: 0.5 }}>
+            このキーは二度と表示されません。今すぐコピーしてください。
+          </span>
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <span className="text-text-hi font-mono text-xs flex-1 break-all">{issuedKey}</span>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="flex items-center justify-center flex-shrink-0 text-text-mid hover:text-text-hi transition-colors"
+              style={{ width: 28, height: 28 }}
+              aria-label="コピー"
+            >
+              {copied ? <CheckIcon size={14} className="text-success" /> : <Copy size={14} />}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="text-danger font-sans text-xs">{error}</p>}
+
+      <div className="flex items-end" style={{ gap: 10 }}>
+        <div className="flex flex-col gap-1.5 flex-1">
+          <label className="text-text-mid font-sans text-xs font-medium">名前</label>
+          <input
+            type="text"
+            placeholder="例: MacBook CLI"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="bg-transparent border-b border-hairline px-0 py-1.5 text-text-hi font-sans text-sm outline-none focus:border-accent"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleIssue}
+          disabled={issuing || !name.trim()}
+          className="flex items-center bg-accent text-white font-sans text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50"
+          style={{ borderRadius: 6, padding: '8px 16px' }}
+        >
+          {issuing ? '発行中...' : '発行'}
+        </button>
+      </div>
+
+      <div className="h-px bg-hairline" />
+
+      <div className="flex flex-col">
+        {loading && <p className="text-text-lo font-sans text-xs">読み込み中...</p>}
+        {!loading && keys.length === 0 && (
+          <p className="text-text-lo font-sans text-xs">発行済みの API キーはありません</p>
+        )}
+        {!loading && keys.map((k) => (
+          <div
+            key={k.keyId}
+            className="flex items-center justify-between"
+            style={{ padding: '12px 0', borderBottom: '1px solid var(--color-hairline)' }}
+          >
+            <div className="flex flex-col" style={{ gap: 4 }}>
+              <div className="flex items-center" style={{ gap: 10 }}>
+                <span className="text-text-hi font-sans text-sm font-medium">{k.name}</span>
+                <span className="text-text-lo font-mono text-xs">{k.prefix}</span>
+              </div>
+              <span className="text-text-lo font-mono text-xs">
+                作成: {formatDateTime(k.createdAt)} ・ 最終使用: {k.lastUsedAt ? formatDateTime(k.lastUsedAt) : '未使用'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleRevoke(k.keyId)}
+              className="text-danger font-sans text-xs transition-colors hover:opacity-80"
+              style={{ flexShrink: 0 }}
+            >
+              失効
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

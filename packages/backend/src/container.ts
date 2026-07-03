@@ -15,11 +15,14 @@ import { ReportUseCases } from "./application/report-use-cases.js";
 import { SettingsUseCases } from "./application/settings-use-cases.js";
 import { CaptureUseCases } from "./application/capture-use-cases.js";
 import { ProjectUseCases } from "./application/project-use-cases.js";
+import { ApiKeyUseCases } from "./application/api-key-use-cases.js";
+import { MemoryApiKeyRepository } from "./infra/local/memory-repos.js";
 import type { PersonaRepository } from "./domain/ports/persona-repository.js";
 import type { ABTestRepository } from "./domain/ports/abtest-repository.js";
 import type { EvaluationRepository } from "./domain/ports/evaluation-repository.js";
 import type { SettingsRepository } from "./domain/ports/settings-repository.js";
 import type { ProjectRepository } from "./domain/ports/project-repository.js";
+import type { ApiKeyRepository } from "./domain/ports/api-key-repository.js";
 import type { AIService } from "./domain/ports/ai-service.js";
 import type { StorageService } from "./domain/ports/storage-service.js";
 
@@ -29,6 +32,7 @@ export interface AppContainer {
   evalRepo: EvaluationRepository;
   settingsRepo: SettingsRepository;
   projectRepo: ProjectRepository;
+  apiKeyRepo: ApiKeyRepository;
   aiService: AIService;
   storageService: StorageService;
 
@@ -40,6 +44,7 @@ export interface AppContainer {
   settingsUseCases: SettingsUseCases;
   captureUseCases: CaptureUseCases;
   projectUseCases: ProjectUseCases;
+  apiKeyUseCases: ApiKeyUseCases;
 
   imageBucket: string;
   modelId: string;
@@ -56,6 +61,7 @@ export interface ContainerConfig {
   evalRepo?: EvaluationRepository;
   settingsRepo?: SettingsRepository;
   projectRepo?: ProjectRepository;
+  apiKeyRepo?: ApiKeyRepository;
   aiService?: AIService;
   storageService?: StorageService;
   captureFigmaNode?: (url: string, token: string) => Promise<Buffer>;
@@ -79,6 +85,8 @@ export function createContainer(config: ContainerConfig = {}): AppContainer {
   const projectRepo = config.projectRepo ?? new Proxy({} as ProjectRepository, {
     get: () => () => { throw new Error("ProjectRepository not configured"); },
   });
+  // AWS/Dynamo 実装は未対応のため、デフォルトはインメモリ実装を使う
+  const apiKeyRepo = config.apiKeyRepo ?? new MemoryApiKeyRepository();
 
   const aiService = config.aiService ?? new BedrockAIService(
     new BedrockRuntimeClient({ region }), modelId,
@@ -99,6 +107,7 @@ export function createContainer(config: ContainerConfig = {}): AppContainer {
   const reportUseCases = new ReportUseCases(testRepo, evalRepo);
   const settingsUseCases = new SettingsUseCases(settingsRepo);
   const projectUseCases = new ProjectUseCases(projectRepo, testRepo);
+  const apiKeyUseCases = new ApiKeyUseCases(apiKeyRepo);
 
   const captureFigmaNode = config.captureFigmaNode ?? (async () => { throw new Error("Figma capture not configured"); });
   const captureWebsite = config.captureWebsite ?? (async () => { throw new Error("Website capture not configured"); });
@@ -110,6 +119,7 @@ export function createContainer(config: ContainerConfig = {}): AppContainer {
     evalRepo,
     settingsRepo,
     projectRepo,
+    apiKeyRepo,
     aiService,
     storageService,
     personaUseCases,
@@ -120,6 +130,7 @@ export function createContainer(config: ContainerConfig = {}): AppContainer {
     settingsUseCases,
     captureUseCases,
     projectUseCases,
+    apiKeyUseCases,
     imageBucket,
     modelId,
   };

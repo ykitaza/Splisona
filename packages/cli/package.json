@@ -1,0 +1,22 @@
+{
+  "name": "@chorus/cli",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "bin": {
+    "splisona": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "playwright": "^1.61.1",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

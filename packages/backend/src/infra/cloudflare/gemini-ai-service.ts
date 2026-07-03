@@ -1,6 +1,8 @@
 import type { AIService, ConversationMessage, EvaluateDesignsParams } from "../../domain/ports/ai-service.js";
 import { personaTypeLabel } from "../../domain/types.js";
-import type { DraftResult, EvaluationInput, ReasonSummary } from "../../domain/types.js";
+import { buildEvaluationPrompt } from "../../domain/services/evaluation-prompt.js";
+import type { DraftResult, EvaluationInput, ImprovementReport, ReasonSummary } from "../../domain/types.js";
+import { improvementSuggestionsSchema } from "../../domain/services/improvement-prompt.js";
 
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -49,19 +51,13 @@ export class GeminiAIService implements AIService {
 
   async evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput> {
     const { persona, imageA, imageB, additionalInstruction, projectContext, focusPoints } = params;
-    const prompt = [
-      `あなたは「${persona.displayName}」というペルソナです。`,
-      `タイプ: ${personaTypeLabel(persona.type)}`,
-      persona.occupation ? `職業: ${persona.occupation}` : null,
-      persona.freeText ? `詳細: ${persona.freeText}` : null,
-      projectContext ? `\nデザインの背景:\n${projectContext}` : null,
-      "",
-      "最初の画像がデザインA、次の画像がデザインBです。",
-      "あなたのペルソナ視点から評価してください。",
-      "scoresA と scoresB に、A案・B案それぞれの各軸スコア（0〜100）を採点してください。reason は必ず日本語で記述してください。",
-      focusPoints ? `\n注目ポイント:\n${focusPoints}` : null,
-      additionalInstruction ? `\n追加指示:\n${additionalInstruction}` : null,
-    ].filter((l) => l !== null).join("\n");
+    const prompt = buildEvaluationPrompt({
+      persona,
+      projectContext,
+      focusPoints,
+      additionalInstruction,
+      evaluateInstruction: "あなたのペルソナ視点から評価してください。",
+    });
 
     const parts: GeminiPart[] = [{ text: prompt }];
     parts.push(toImagePart(imageA));
@@ -83,12 +79,13 @@ export class GeminiAIService implements AIService {
       reason: input.reason,
       scoresA: input.scoresA,
       scoresB: input.scoresB,
+      resolvedPrompt: prompt,
     };
   }
 
   async generateTitle(imageA: EvaluateDesignsParams["imageA"], imageB: EvaluateDesignsParams["imageA"]): Promise<string> {
     const parts: GeminiPart[] = [
-      { text: "2つのデザイン画像を見て、この比較テストに適した短いタイトルを1つだけ日本語で生成してください。15文字以内で、内容が分かる簡潔な名称にしてください。" },
+      { text: "2つのデザイン画像を見て、それぞれの題材（サービス名・ブランド名・ページの主題など）を短く特定し、「A側の題材 | B側の題材」の形式でタイトルを生成してください（例: 楽天Pay | PayPay）。各側は10文字以内の日本語または固有名詞。両方が同じ題材の場合のみ「◯◯ 新旧比較」のような形式にしてください。タイトルのみを出力し、他の説明は不要です。" },
       toImagePart(imageA),
       toImagePart(imageB),
     ];
@@ -141,6 +138,19 @@ export class GeminiAIService implements AIService {
     return JSON.parse(result) as ReasonSummary;
   }
 
+  async generateImprovementSuggestions(requestText: string): Promise<ImprovementReport> {
+    const result = await this.generate({
+      contents: [{ role: "user", parts: [{ text: requestText }] }],
+      generationConfig: {
+        temperature: 0.3,
+        responseMimeType: "application/json",
+        responseSchema: improvementSuggestionsSchema,
+      },
+    });
+    const parsed = JSON.parse(result) as ImprovementReport;
+    return { ...parsed, suggestions: parsed.suggestions ?? [] };
+  }
+
   private async generate(request: GeminiRequest): Promise<string> {
     const url = `${BASE_URL}/${this.modelId}:generateContent`;
     const res = await fetch(url, {
@@ -150,6 +160,8 @@ export class GeminiAIService implements AIService {
         "x-goog-api-key": this.apiKey,
       },
       body: JSON.stringify(request),
+      // 大きな画像ペイロードで応答が返らずハングすると、テストが running のまま固まるため
+      signal: AbortSignal.timeout(90_000),
     });
 
     if (!res.ok) {

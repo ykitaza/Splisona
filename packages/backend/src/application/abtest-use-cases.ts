@@ -160,7 +160,7 @@ export class ABTestUseCases {
   }
 
   async getProgress(userId: string, testId: string): Promise<{
-    total: number; completed: number; failed: number; status: string;
+    total: number; completed: number; failed: number; status: string; generationPhase?: string;
   }> {
     const test = await this.testRepo.findById(userId, testId);
     if (!test) throw new NotFoundError("ABTest");
@@ -169,6 +169,6 @@ export class ABTestUseCases {
     const completed = evaluations.filter((e) => e.status === "completed").length;
     const failed = evaluations.filter((e) => e.status === "failed").length;
 
-    return { total: test.personaIds.length, completed, failed, status: test.status };
+    return { total: test.personaIds.length, completed, failed, status: test.status, generationPhase: test.reasonSummaryStatus };
   }
 }

@@ -3,6 +3,7 @@ import { D1ABTestRepository } from "./d1-abtest-repository.js";
 import { D1EvaluationRepository } from "./d1-evaluation-repository.js";
 import { D1SettingsRepository } from "./d1-settings-repository.js";
 import { D1ProjectRepository } from "./d1-project-repository.js";
+import { D1ApiKeyRepository } from "./d1-api-key-repository.js";
 import { GeminiAIService } from "./gemini-ai-service.js";
 import { WorkersAIService } from "./workers-ai-service.js";
 import { captureWebsiteWithBrowser } from "./browser-capture.js";
@@ -16,6 +17,7 @@ import { ReportUseCases } from "../../application/report-use-cases.js";
 import { SettingsUseCases } from "../../application/settings-use-cases.js";
 import { CaptureUseCases } from "../../application/capture-use-cases.js";
 import { ProjectUseCases } from "../../application/project-use-cases.js";
+import { ApiKeyUseCases } from "../../application/api-key-use-cases.js";
 import type { AppContainer } from "../../container.js";
 import type { D1Database } from "./d1-types.js";
 
@@ -43,6 +45,7 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
   const testRepo = new D1ABTestRepository(env.DB);
   const evalRepo = new D1EvaluationRepository(env.DB);
   const settingsRepo = new D1SettingsRepository(env.DB);
+  const apiKeyRepo = new D1ApiKeyRepository(env.DB);
 
   const useWorkersAI = env.AI_PROVIDER === "workers-ai" && env.AI;
   const modelId = useWorkersAI
@@ -69,6 +72,7 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
   );
 
   const projectUseCases = new ProjectUseCases(projectRepo, testRepo);
+  const apiKeyUseCases = new ApiKeyUseCases(apiKeyRepo);
 
   return {
     personaRepo,
@@ -76,6 +80,7 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
     evalRepo,
     settingsRepo,
     projectRepo,
+    apiKeyRepo,
     aiService,
     storageService,
     personaUseCases,
@@ -86,6 +91,7 @@ export function createCloudflareContainer(env: CloudflareEnv): AppContainer {
     settingsUseCases,
     captureUseCases,
     projectUseCases,
+    apiKeyUseCases,
     imageBucket: "",
     modelId,
   };

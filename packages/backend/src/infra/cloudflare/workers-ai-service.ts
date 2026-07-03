@@ -1,6 +1,8 @@
 import type { AIService, ConversationMessage, EvaluateDesignsParams, ImageSource } from "../../domain/ports/ai-service.js";
 import { personaTypeLabel } from "../../domain/types.js";
-import type { DraftResult, EvaluationInput, ReasonSummary } from "../../domain/types.js";
+import { improvementSuggestionsSchema } from "../../domain/services/improvement-prompt.js";
+import { buildEvaluationPrompt } from "../../domain/services/evaluation-prompt.js";
+import type { DraftResult, EvaluationInput, ImprovementReport, ReasonSummary } from "../../domain/types.js";
 
 interface AiBinding {
   run(model: string, input: Record<string, unknown>): Promise<unknown>;
@@ -47,19 +49,13 @@ export class WorkersAIService implements AIService {
 
   async evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput> {
     const { persona, imageA, imageB, additionalInstruction, projectContext, focusPoints } = params;
-    const prompt = [
-      `あなたは「${persona.displayName}」というペルソナです。`,
-      `タイプ: ${personaTypeLabel(persona.type)}`,
-      persona.occupation ? `職業: ${persona.occupation}` : null,
-      persona.freeText ? `詳細: ${persona.freeText}` : null,
-      projectContext ? `\nデザインの背景:\n${projectContext}` : null,
-      "",
-      "最初の画像がデザインA、次の画像がデザインBです。",
-      "あなたのペルソナ視点から評価してください。",
-      "scoresA と scoresB に、A案・B案それぞれの各軸スコア（0〜100）を採点してください。reason は必ず日本語で記述してください。",
-      focusPoints ? `\n注目ポイント:\n${focusPoints}` : null,
-      additionalInstruction ? `\n追加指示:\n${additionalInstruction}` : null,
-    ].filter((l) => l !== null).join("\n");
+    const prompt = buildEvaluationPrompt({
+      persona,
+      projectContext,
+      focusPoints,
+      additionalInstruction,
+      evaluateInstruction: "あなたのペルソナ視点から評価してください。",
+    });
 
     const images = [toBase64(imageA), toBase64(imageB)];
 
@@ -81,13 +77,14 @@ export class WorkersAIService implements AIService {
       reason: input.reason,
       scoresA: input.scoresA,
       scoresB: input.scoresB,
+      resolvedPrompt: prompt,
     };
   }
 
   async generateTitle(imageA: ImageSource, imageB: ImageSource): Promise<string> {
     const images = [toBase64(imageA), toBase64(imageB)];
     const result = await this.runWithImages(
-      "2つのデザイン画像を見て、この比較テストに適した短いタイトルを1つだけ日本語で生成してください。15文字以内で、内容が分かる簡潔な名称にしてください。タイトルのみを出力し、他の説明は不要です。",
+      "2つのデザイン画像を見て、それぞれの題材（サービス名・ブランド名・ページの主題など）を短く特定し、「A側の題材 | B側の題材」の形式でタイトルを生成してください（例: 楽天Pay | PayPay）。各側は10文字以内の日本語または固有名詞。両方が同じ題材の場合のみ「◯◯ 新旧比較」のような形式にしてください。タイトルのみを出力し、他の説明は不要です。",
       images,
       { temperature: 0.3 },
     );
@@ -123,6 +120,18 @@ export class WorkersAIService implements AIService {
   ): Promise<string> {
     const response = await this.ai.run(this.modelId, { messages, ...opts });
     return this.extractResponse(response);
+  }
+
+  async generateImprovementSuggestions(requestText: string): Promise<ImprovementReport> {
+    const result = await this.run([{ role: "user", content: requestText }], {
+      temperature: 0.3,
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: "improvements", schema: improvementSuggestionsSchema },
+      },
+    });
+    const parsed = JSON.parse(result) as ImprovementReport;
+    return { ...parsed, suggestions: parsed.suggestions ?? [] };
   }
 
   private async runWithImages(

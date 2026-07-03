@@ -1,7 +1,8 @@
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import type { AIService, ConversationMessage, EvaluateDesignsParams } from "../../domain/ports/ai-service.js";
 import { personaTypeLabel } from "../../domain/types.js";
-import type { DraftResult, EvaluationInput, ReasonSummary } from "../../domain/types.js";
+import { buildEvaluationPrompt } from "../../domain/services/evaluation-prompt.js";
+import type { DraftResult, EvaluationInput, ImprovementReport, ReasonSummary } from "../../domain/types.js";
 
 export class BedrockAIService implements AIService {
   constructor(
@@ -72,19 +73,13 @@ export class BedrockAIService implements AIService {
 
   async evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput> {
     const { persona, imageA, imageB, additionalInstruction, projectContext, focusPoints } = params;
-    const prompt = [
-      `あなたは「${persona.displayName}」というペルソナです。`,
-      `タイプ: ${personaTypeLabel(persona.type)}`,
-      persona.occupation ? `職業: ${persona.occupation}` : null,
-      persona.freeText ? `詳細: ${persona.freeText}` : null,
-      projectContext ? `\nデザインの背景:\n${projectContext}` : null,
-      "",
-      "最初の画像がデザインA、次の画像がデザインBです。",
-      "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。",
-      "scoresA と scoresB に、A案・B案それぞれの各軸スコア（0〜100）を採点してください。reason は必ず日本語で記述してください。",
-      focusPoints ? `\n注目ポイント:\n${focusPoints}` : null,
-      additionalInstruction ? `\n追加指示:\n${additionalInstruction}` : null,
-    ].filter((l) => l !== null).join("\n");
+    const prompt = buildEvaluationPrompt({
+      persona,
+      projectContext,
+      focusPoints,
+      additionalInstruction,
+      evaluateInstruction: "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。",
+    });
 
     const toImageContent = (src: EvaluateDesignsParams["imageA"]) => {
       if (src.kind === "s3") {
@@ -133,6 +128,7 @@ export class BedrockAIService implements AIService {
       reason: input.reason,
       scoresA: input.scoresA,
       scoresB: input.scoresB,
+      resolvedPrompt: prompt,
     };
   }
 
@@ -151,7 +147,7 @@ export class BedrockAIService implements AIService {
         messages: [{
           role: "user",
           content: [
-            { text: "2つのデザイン画像を見て、この比較テストに適した短いタイトルを1つだけ日本語で生成してください。15文字以内で、内容が分かる簡潔な名称にしてください。タイトルのみを出力し、他の説明は不要です。" },
+            { text: "2つのデザイン画像を見て、それぞれの題材（サービス名・ブランド名・ページの主題など）を短く特定し、「A側の題材 | B側の題材」の形式でタイトルを生成してください（例: 楽天Pay | PayPay）。各側は10文字以内の日本語または固有名詞。両方が同じ題材の場合のみ「◯◯ 新旧比較」のような形式にしてください。タイトルのみを出力し、他の説明は不要です。" },
             toImageContent(imageA),
             toImageContent(imageB),
           ],
@@ -192,6 +188,28 @@ export class BedrockAIService implements AIService {
       reasonsA: Array.isArray(input.reasonsA) ? input.reasonsA : [],
       reasonsB: Array.isArray(input.reasonsB) ? input.reasonsB : [],
     };
+  }
+
+  async generateImprovementSuggestions(requestText: string): Promise<ImprovementReport> {
+    const command = new ConverseCommand({
+      modelId: this.modelId,
+      inferenceConfig: { temperature: 0.3 },
+      messages: [{ role: "user", content: [{ text: requestText }] }],
+      toolConfig: {
+        tools: [{ toolSpec: improvementSuggestionsToolSpec }],
+        toolChoice: { tool: { name: "suggest_improvements" } },
+      },
+    });
+
+    const response = (await this.invokeWithRetry(command)) as {
+      output?: { message?: { content?: Array<{ toolUse?: { name: string; input: unknown } }> } };
+    };
+    const block = response.output?.message?.content?.find(
+      (c) => c.toolUse?.name === "suggest_improvements"
+    );
+    const input = block?.toolUse?.input as ImprovementReport | undefined;
+    if (!input?.suggestions) throw new Error("suggest_improvements tool use not found");
+    return input;
   }
 
   private async invokeWithRetry(command: ConverseCommand, maxRetries = 3): Promise<unknown> {
@@ -274,6 +292,38 @@ const summarizeReasonsToolSpec: any = {
         },
       },
       required: ["reasonsA", "reasonsB"],
+    },
+  },
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const improvementSuggestionsToolSpec: any = {
+  name: "suggest_improvements",
+  description: "A/Bテストの評価結果から、指定されたデザイン案への改善提案を5件生成する",
+  inputSchema: {
+    json: {
+      type: "object",
+      properties: {
+        designSummaryA: { type: "string", description: "評価コメントから読み取れるデザインAの見た目・構成の1行サマリー" },
+        designSummaryB: { type: "string", description: "評価コメントから読み取れるデザインBの見た目・構成の1行サマリー" },
+        suggestions: {
+          type: "array",
+          description: "改善提案。指示されたデザイン案向けに5件。",
+          items: {
+            type: "object",
+            properties: {
+              target: { type: "string", enum: ["A", "B"], description: "改善対象の案" },
+              kind: { type: "string", enum: ["weakness", "transplant"], description: "weakness=対象案自身の弱点の修正 / transplant=もう一方の案の強みの移植" },
+              title: { type: "string", description: "命令形の1文の提案タイトル" },
+              evidence: { type: "string", description: "根拠の要約（言及ペルソナ数・タイプ、関連軸スコアなど）" },
+              quote: { type: "string", description: "根拠となる評価コメントからの短い引用と発言ペルソナ名。無ければ省略。" },
+              implementationPrompt: { type: "string", description: "AIツールに貼り付けて使える自己完結の実装プロンプト（## 課題（AIペルソナ評価より）/ ## 修正指示 / ## 完了条件 の3節構成）" },
+            },
+            required: ["target", "kind", "title", "evidence", "implementationPrompt"],
+          },
+        },
+      },
+      required: ["suggestions", "designSummaryA", "designSummaryB"],
     },
   },
 };

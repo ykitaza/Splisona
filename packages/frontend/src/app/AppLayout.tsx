@@ -290,6 +290,12 @@ export function AppLayout() {
   }, []);
 
   useEffect(() => {
+    function handleOpenSettings() { setSettingsOpen(true); }
+    window.addEventListener('open-settings', handleOpenSettings);
+    return () => window.removeEventListener('open-settings', handleOpenSettings);
+  }, []);
+
+  useEffect(() => {
     if (!menuOpen) return;
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);

@@ -124,14 +124,14 @@ export function TestRow({
             <div className="overflow-hidden flex-shrink-0 flex" style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}>
               {winner === 'A' && <div className="flex-shrink-0" style={{ width: 3, background: '#6E78D9' }} />}
               <div className="flex-1 min-w-0" style={{ overflow: 'hidden' }}>
-                {thumbA && <img src={thumbA} alt="A" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                {thumbA && <img src={thumbA} alt="A" width={200} height={120} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
               </div>
             </div>
             <span className="text-text-lo" style={{ fontSize: 14 }}>→</span>
             <div className="overflow-hidden flex-shrink-0 flex" style={{ width: 200, height: 120, borderRadius: 6, background: '#1C1F23' }}>
               {winner === 'B' && <div className="flex-shrink-0" style={{ width: 3, background: '#C9974F' }} />}
               <div className="flex-1 min-w-0" style={{ overflow: 'hidden' }}>
-                {thumbB && <img src={thumbB} alt="B" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                {thumbB && <img src={thumbB} alt="B" width={200} height={120} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
               </div>
             </div>
           </div>

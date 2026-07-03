@@ -45,10 +45,23 @@ app.use("*", cors({
 
 app.use("*", async (c, next) => {
   if (c.req.path.startsWith("/images/")) return next();
+
+  const authHeader = c.req.header("Authorization");
+  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
+  if (bearer) {
+    const result = await container.apiKeyUseCases.verify(bearer);
+    if (!result) return c.json({ error: "UNAUTHORIZED", message: "invalid api key" }, 401);
+    c.set("container", container);
+    c.set("userId", result.userId);
+    c.set("authVia", "apikey");
+    return next();
+  }
+
   const userId = c.req.header("x-local-user-id");
   if (!userId) return c.json({ error: "UNAUTHORIZED", message: "x-local-user-id header required in local mode" }, 401);
   c.set("container", container);
   c.set("userId", userId);
+  c.set("authVia", "session");
   await next();
 });
 

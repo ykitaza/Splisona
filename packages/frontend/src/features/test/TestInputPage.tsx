@@ -1,12 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Image, ImagePlus, Link2, Camera, Maximize2, Play, SlidersHorizontal, Check, X, ChevronDown } from 'lucide-react';
 import { HelpDot } from '@/shared/ui/HelpDot';
 import { ImageLightbox } from '@/shared/ui/ImageLightbox';
 import { Modal } from '@/shared/ui/Modal';
 import { testDraft, sideToDesignInput, type DesignSideData } from './testDraft';
-import { captureUrl, createTest, updateTest, executeTest, getUploadUrl, uploadToS3 } from './api';
+import { captureUrl, createTest, updateTest, executeTest, getUploadUrl, uploadToS3, verifyFigmaToken } from './api';
+import { resizeImageIfNeeded } from '@/shared/lib/image-resize';
 import { addTestToProject } from '@/features/project/api';
+import { getSettings } from '@/features/settings/api';
 import { usePersonas } from '@/features/persona/usePersonas';
 import { API_BASE, ApiError } from '@/shared/api/client';
 import { PERSONA_TYPE_LABELS } from '@/features/persona/types';
@@ -43,6 +45,24 @@ function DesignSidePanel({
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [figmaTokenSet, setFigmaTokenSet] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (activeTab === 'figma_url' && figmaTokenSet === null) {
+      getSettings().then(async (s) => {
+        const figma = s.figma as { token?: string } | undefined;
+        if (!figma?.token) { setFigmaTokenSet(false); return; }
+        const res = await verifyFigmaToken(figma.token);
+        setFigmaTokenSet(res.valid);
+      }).catch(() => setFigmaTokenSet(false));
+    }
+  }, [activeTab, figmaTokenSet]);
+
+  useEffect(() => {
+    function handleTokenUpdated() { setFigmaTokenSet(true); }
+    window.addEventListener('figma-token-updated', handleTokenUpdated);
+    return () => window.removeEventListener('figma-token-updated', handleTokenUpdated);
+  }, []);
 
   const file = sideData?.inputType === 'image_upload' && sideData.file.size > 0 ? sideData.file : null;
   const imagePreview = file ? URL.createObjectURL(file) : null;
@@ -230,40 +250,61 @@ function DesignSidePanel({
 
         {(activeTab === 'figma_url' || activeTab === 'site_url') && (
           <div className="flex flex-col gap-2.5">
-            <div className="flex items-center gap-2 bg-base border border-hairline px-3" style={{ borderRadius: 10 }}>
-              <Link2 size={15} className="text-text-lo flex-shrink-0" />
-              <input
-                type="url"
-                value={urlInput}
-                onChange={(e) => handleUrlChange(e.target.value)}
-                placeholder={activeTab === 'figma_url' ? 'https://www.figma.com/design/...' : 'https://example.com'}
-                className="flex-1 py-2.5 bg-transparent text-text-hi font-mono outline-none"
-                style={{ fontSize: 13 }}
-              />
-            </div>
-
-            <div
-              className="flex items-center justify-center overflow-hidden rounded-md"
-              style={{
-                height: 320,
-                background: 'var(--color-raised)',
-                cursor: existingPreviewUrl ? 'zoom-in' : 'default',
-              }}
-              onClick={() => { if (existingPreviewUrl) setLightboxSrc(existingPreviewUrl); }}
-            >
-              {isCapturing ? (
-                <div className="flex flex-col items-center gap-2">
-                  <div role="status" className="animate-spin rounded-full h-5 w-5 border-b-2 border-text-lo" />
-                  <span className="text-text-lo font-sans text-xs">取得中...</span>
-                </div>
-              ) : existingPreviewUrl ? (
-                <img src={existingPreviewUrl} alt={`${side}案プレビュー`} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-text-lo font-sans text-xs">
-                  {urlInput.trim() ? '「スクリーンショットを取得」を押してください' : 'URLを入力してください'}
+            {activeTab === 'figma_url' && figmaTokenSet === false ? (
+              <div
+                className="flex flex-col items-center justify-center gap-3 overflow-hidden rounded-md"
+                style={{ height: 354, border: '1px solid #5B616B', background: 'var(--color-raised)' }}
+              >
+                <span className="text-text-mid font-sans text-sm text-center" style={{ lineHeight: 1.6 }}>
+                  Figma API トークンが未設定です
                 </span>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => { window.dispatchEvent(new CustomEvent('open-settings')); }}
+                  className="flex items-center gap-1.5 font-sans text-sm font-medium transition-opacity hover:opacity-80"
+                  style={{ color: 'var(--color-accent)', padding: '6px 16px', borderRadius: 8, border: '1px solid var(--color-accent)', background: 'var(--color-accent-dim)' }}
+                >
+                  設定画面で登録
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 bg-base border border-hairline px-3" style={{ borderRadius: 10 }}>
+                  <Link2 size={15} className="text-text-lo flex-shrink-0" />
+                  <input
+                    type="url"
+                    value={urlInput}
+                    onChange={(e) => handleUrlChange(e.target.value)}
+                    placeholder={activeTab === 'figma_url' ? 'https://www.figma.com/design/...' : 'https://example.com'}
+                    className="flex-1 py-2.5 bg-transparent text-text-hi font-mono outline-none"
+                    style={{ fontSize: 13 }}
+                  />
+                </div>
+
+                <div
+                  className="flex items-center justify-center overflow-hidden rounded-md"
+                  style={{
+                    height: 320,
+                    background: 'var(--color-raised)',
+                    cursor: existingPreviewUrl ? 'zoom-in' : 'default',
+                  }}
+                  onClick={() => { if (existingPreviewUrl) setLightboxSrc(existingPreviewUrl); }}
+                >
+                  {isCapturing ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div role="status" className="animate-spin rounded-full h-5 w-5 border-b-2 border-text-lo" />
+                      <span className="text-text-lo font-sans text-xs">取得中...</span>
+                    </div>
+                  ) : existingPreviewUrl ? (
+                    <img src={existingPreviewUrl} alt={`${side}案プレビュー`} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-text-lo font-sans text-xs">
+                      {urlInput.trim() ? '「スクリーンショットを取得」を押してください' : 'URLを入力してください'}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
 
             {urlInput.trim() && (
               <button
@@ -440,8 +481,8 @@ export function TestInputPage() {
   const [sideB, setSideB] = useState<DesignSideData | null>(initial.sideB);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initial.personaIds));
   const [personaModalOpen, setPersonaModalOpen] = useState(false);
-  const [focusPoints, setFocusPoints] = useState('');
-  const [focusOpen, setFocusOpen] = useState(false);
+  const [focusPoints, setFocusPoints] = useState(initial.focusPoints ?? '');
+  const [focusOpen, setFocusOpen] = useState(!!initial.focusPoints);
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -465,11 +506,13 @@ export function TestInputPage() {
     if (!sideData) throw new Error(`${side}案のデータがありません`);
     if (sideData.imageKey) return sideData.imageKey;
     if (sideData.inputType === 'image_upload') {
+      // AI モデルの入力上限（1辺 8000px）を超える画像は自動縮小してからアップロード
+      const file = await resizeImageIfNeeded(sideData.file);
       const { uploadUrl, imageKey } = await getUploadUrl(testId, {
         side,
-        contentType: sideData.file.type as 'image/png' | 'image/jpeg' | 'image/webp',
+        contentType: file.type as 'image/png' | 'image/jpeg' | 'image/webp',
       });
-      await uploadToS3(uploadUrl, sideData.file);
+      await uploadToS3(uploadUrl, file);
       return imageKey;
     }
     const { imageKey } = await captureUrl(testId, { side, inputType: sideData.inputType, url: sideData.url });

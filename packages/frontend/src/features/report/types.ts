@@ -17,6 +17,23 @@ export interface EvaluationResult {
   scoresA: EvaluationScores;
   scoresB: EvaluationScores;
   status: "evaluating" | "completed" | "failed";
+  resolvedPrompt?: string;
+  modelId?: string;
+}
+
+export interface ImprovementSuggestion {
+  target: "A" | "B";
+  kind: "weakness" | "transplant";
+  title: string;
+  evidence: string;
+  quote?: string;
+  implementationPrompt: string;
+}
+
+export interface ImprovementReport {
+  designSummaryA?: string;
+  designSummaryB?: string;
+  suggestions: ImprovementSuggestion[];
 }
 
 export interface ReportSummary {
@@ -33,7 +50,8 @@ export interface ReportSummary {
   winnersReasonSummary: string;
   reasonSummaryA: string[];
   reasonSummaryB: string[];
-  reasonSummaryStatus?: "generating" | "ready";
+  reasonSummaryStatus?: "generating" | "generating_suggestions" | "ready";
+  improvementReport?: ImprovementReport;
 }
 
 export interface ReportResponse {

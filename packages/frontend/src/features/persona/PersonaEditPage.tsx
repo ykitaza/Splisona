@@ -19,7 +19,7 @@ export function PersonaEditPage() {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [occupation, setOccupation] = useState('');
-  const [deviationScore, _setDeviationScore] = useState('');
+  const [deviationScore, setDeviationScore] = useState('');
   const [annualIncome, setAnnualIncome] = useState('');
   const [education, setEducation] = useState('');
   const [freeText, setFreeText] = useState('');
@@ -277,6 +277,27 @@ export function PersonaEditPage() {
                   onChange={(e) => setOccupation(e.target.value)}
                   placeholder="営業職"
                   className="bg-transparent text-text-hi font-sans text-base border-b border-hairline pb-2 outline-none focus:border-accent"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-text-mid font-sans text-sm">偏差値</span>
+                    <HelpDot content="デザインリテラシーの偏差値。50が平均。高いほどデザインに対する目が厳しくなります。" />
+                  </div>
+                  {deviationScore && <span className="text-accent font-mono text-sm">{deviationScore}</span>}
+                </div>
+                <input
+                  id="deviationScore"
+                  type="range"
+                  min="25"
+                  max="75"
+                  step="1"
+                  value={deviationScore !== '' ? Number(deviationScore) : 50}
+                  onChange={(e) => setDeviationScore(e.target.value)}
+                  className="w-full"
+                  style={{ accentColor: 'var(--color-accent)' }}
                 />
               </div>
 

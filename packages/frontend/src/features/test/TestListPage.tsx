@@ -227,7 +227,7 @@ export function TestListPage() {
   function navigateToDraft(test: ABTest) {
     const sideA = restoreSide(test.designAInput);
     const sideB = restoreSide(test.designBInput);
-    testDraft.resume({ title: test.title, sideA, sideB, personaIds: test.personaIds, resumeId: test.testId });
+    testDraft.resume({ title: test.title, sideA, sideB, personaIds: test.personaIds, focusPoints: test.focusPoints, resumeId: test.testId });
     navigate('/tests/new');
   }
 

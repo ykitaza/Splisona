@@ -1,4 +1,4 @@
-import type { Evaluation, EvaluationScores } from "../types.js";
+import type { Evaluation, EvaluationScores, ImprovementReport } from "../types.js";
 
 export type Winner = "A" | "B" | "tie";
 
@@ -13,7 +13,8 @@ export interface EvaluationSummary {
   winnersReasonSummary: string;
   reasonSummaryA: string[];
   reasonSummaryB: string[];
-  reasonSummaryStatus: "generating" | "ready" | undefined;
+  reasonSummaryStatus: "generating" | "generating_suggestions" | "ready" | undefined;
+  improvementReport?: ImprovementReport;
 }
 
 export function determineWinner(evaluations: Evaluation[]): Winner {

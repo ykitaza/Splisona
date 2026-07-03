@@ -49,6 +49,7 @@ export function TestRunningPage() {
   const prevResultsRef = useRef<Record<string, EvaluationResult>>({});
   const hasLoggedStartRef = useRef(false);
   const hasLoggedSummaryRef = useRef(false);
+  const prevPhaseRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!id || !test) return;
@@ -120,8 +121,23 @@ export function TestRunningPage() {
           const nCount = evals.filter((e) => e.winner === 'none').length;
           addLog('全ペルソナ完了 · 集計中…');
           addLog(`A案支持: ${aCount} / B案支持: ${bCount} / 引分: ${nCount}`);
-          addLog('AI 要約リクエスト送信中…');
-          addLog('レポート生成中…');
+        }
+
+        // レポート生成フェーズの実イベント（バックエンドの進捗マーカーから）
+        const phase = data.generationPhase;
+        const prevPhase = prevPhaseRef.current;
+        if (phase !== prevPhase) {
+          if (phase === 'generating') {
+            addLog('推論開始: 評価理由の要約 (summarize_reasons)');
+          }
+          if (phase === 'generating_suggestions') {
+            if (prevPhase === 'generating') addLog('推論完了: 評価理由の要約');
+            addLog('推論開始: 改善提案の生成 (suggest_improvements)');
+          }
+          if (phase === 'ready' && prevPhase === 'generating_suggestions') {
+            addLog('推論完了: 改善提案の生成');
+          }
+          prevPhaseRef.current = phase;
         }
 
         if (data.status === 'completed' || data.status === 'failed') {
@@ -130,7 +146,9 @@ export function TestRunningPage() {
           } else {
             setIsDone(true);
             if (data.status === 'completed') {
-              addLog('要約生成完了');
+              // ポーリング間隔でフェーズ遷移を取りこぼした場合の補完
+              if (prevPhaseRef.current === 'generating') addLog('推論完了: 評価理由の要約');
+              if (prevPhaseRef.current === 'generating_suggestions') addLog('推論完了: 改善提案の生成');
               addLog('レポート書き込み完了');
               addLog(`exit 0`);
             } else {

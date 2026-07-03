@@ -45,6 +45,7 @@ export interface UploadUrlRequest {
 export type { UploadUrlResponse } from '@/shared/api/client';
 
 export interface ProgressResponse {
+  generationPhase?: 'generating' | 'generating_suggestions' | 'ready';
   total: number;
   completed: number;
   failed: number;

@@ -10,6 +10,7 @@ import { TestReportPage } from '@/features/report/TestReportPage';
 import { TestListPage } from '@/features/test/TestListPage';
 import { ProjectListPage } from '@/features/project/ProjectListPage';
 import { ProjectDetailPage } from '@/features/project/ProjectDetailPage';
+import { CliAuthPage } from '@/features/settings/CliAuthPage';
 
 export const routeConfig = [
   { path: '/signin', element: <SignInPage /> },
@@ -28,6 +29,7 @@ export const routeConfig = [
       { path: '/results', element: <TestListPage /> },
       { path: '/projects', element: <ProjectListPage /> },
       { path: '/projects/:id', element: <ProjectDetailPage /> },
+      { path: '/cli-auth', element: <CliAuthPage /> },
     ],
   },
 ];

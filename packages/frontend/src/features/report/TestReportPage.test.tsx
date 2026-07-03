@@ -6,7 +6,6 @@ import type { ReportResponse } from './types';
 
 vi.mock('@/features/test/api', () => ({
   getReport: vi.fn(),
-  exportTest: vi.fn(),
   executeTest: vi.fn(),
   cloneTest: vi.fn(),
   updateTest: vi.fn(),

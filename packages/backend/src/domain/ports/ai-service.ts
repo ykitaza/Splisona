@@ -1,4 +1,4 @@
-import type { DraftResult, EvaluationInput, ReasonSummary } from "../types.js";
+import type { DraftResult, EvaluationInput, ImprovementReport, ReasonSummary } from "../types.js";
 
 export interface ConversationMessage {
   role: "user" | "assistant";
@@ -9,7 +9,12 @@ export interface EvaluateDesignsParams {
   persona: {
     displayName: string;
     type: string;
+    age?: number;
+    gender?: string;
     occupation?: string;
+    annualIncome?: number;
+    education?: string;
+    deviationScore?: number;
     freeText?: string;
   };
   imageA: ImageSource;
@@ -28,5 +33,6 @@ export interface AIService {
   chat(systemPrompt: string, messages: ConversationMessage[]): Promise<string>;
   evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput>;
   summarizeReasons(reasonsText: string): Promise<ReasonSummary>;
+  generateImprovementSuggestions(requestText: string): Promise<ImprovementReport>;
   generateTitle(imageA: ImageSource, imageB: ImageSource): Promise<string>;
 }

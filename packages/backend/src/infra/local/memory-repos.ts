@@ -5,6 +5,7 @@ import type { ABTestRepository } from "../../domain/ports/abtest-repository.js";
 import type { EvaluationRepository } from "../../domain/ports/evaluation-repository.js";
 import type { SettingsRepository } from "../../domain/ports/settings-repository.js";
 import type { ProjectRepository } from "../../domain/ports/project-repository.js";
+import type { ApiKeyRepository, ApiKeyRecord } from "../../domain/ports/api-key-repository.js";
 import type { Persona, ABTest, Evaluation, SettingsRecord, Project } from "../../domain/types.js";
 
 const DATA_DIR = process.env.CHORUS_DATA_DIR ?? "/tmp/chorus-data";
@@ -80,7 +81,7 @@ export class MemoryABTestRepository implements ABTestRepository {
     this.flush();
   }
 
-  async updateFields(userId: string, testId: string, fields: Partial<Pick<ABTest, 'status' | 'title' | 'reasonSummaryStatus' | 'reasonSummaryA' | 'reasonSummaryB' | 'winnersReasonSummary' | 'updatedAt'>>): Promise<void> {
+  async updateFields(userId: string, testId: string, fields: Partial<Pick<ABTest, 'status' | 'title' | 'reasonSummaryStatus' | 'reasonSummaryA' | 'reasonSummaryB' | 'winnersReasonSummary' | 'improvementReport' | 'executedBy' | 'updatedAt'>>): Promise<void> {
     const existing = await this.findById(userId, testId);
     if (!existing) return;
     await this.save({ ...existing, ...fields });
@@ -175,6 +176,46 @@ export class MemorySettingsRepository implements SettingsRepository {
     if (idx >= 0) list[idx] = record;
     else list.push(record);
     this.store.set(userId, list);
+    this.flush();
+  }
+}
+
+export class MemoryApiKeyRepository implements ApiKeyRepository {
+  private store: Map<string, ApiKeyRecord>;
+
+  constructor() {
+    const entries: [string, ApiKeyRecord][] = loadJson("api-keys", []);
+    this.store = new Map(entries);
+  }
+
+  private flush() { saveJson("api-keys", [...this.store.entries()]); }
+
+  async findByHash(hash: string): Promise<ApiKeyRecord | undefined> {
+    return this.store.get(hash);
+  }
+
+  async listByUser(userId: string): Promise<ApiKeyRecord[]> {
+    return [...this.store.values()].filter((r) => r.userId === userId);
+  }
+
+  async save(hash: string, record: ApiKeyRecord): Promise<void> {
+    this.store.set(hash, record);
+    this.flush();
+  }
+
+  async remove(userId: string, keyId: string): Promise<void> {
+    for (const [hash, record] of this.store.entries()) {
+      if (record.userId === userId && record.keyId === keyId) {
+        this.store.delete(hash);
+      }
+    }
+    this.flush();
+  }
+
+  async touchLastUsed(hash: string, iso: string): Promise<void> {
+    const record = this.store.get(hash);
+    if (!record) return;
+    this.store.set(hash, { ...record, lastUsedAt: iso });
     this.flush();
   }
 }

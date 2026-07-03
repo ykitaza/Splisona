@@ -4,9 +4,29 @@ import type { PersonaRepository } from "../domain/ports/persona-repository.js";
 import type { SettingsRepository } from "../domain/ports/settings-repository.js";
 import type { ProjectRepository } from "../domain/ports/project-repository.js";
 import type { AIService, ImageSource } from "../domain/ports/ai-service.js";
-import type { ABTest, Evaluation } from "../domain/types.js";
+import type { ABTest, Evaluation, EvaluationScores } from "../domain/types.js";
 import { chunkArray, dedupe, zeroScores, buildReasonSummaryFields, groupReasonsByWinner } from "../domain/services/evaluation-scoring.js";
+import { buildImprovementRequestText } from "../domain/services/improvement-prompt.js";
 import { NotFoundError, ValidationError, ConflictError } from "./errors.js";
+
+const SCORE_AXES: Array<keyof EvaluationScores> = ["usability", "aesthetics", "clarity", "engagement", "trust"];
+
+export interface IngestEvaluationInput {
+  personaId: string;
+  winner: "A" | "B" | "none";
+  confidence: number;
+  reason: string;
+  scoresA: EvaluationScores;
+  scoresB: EvaluationScores;
+  resolvedPrompt?: string;
+}
+
+export interface IngestResultsInput {
+  model: string;
+  evaluations: IngestEvaluationInput[];
+  reasonSummary?: { reasonsA: string[]; reasonsB: string[]; winnersReasonSummary: string };
+  improvementReport?: ABTest["improvementReport"];
+}
 
 export class EvaluationUseCases {
   constructor(
@@ -62,6 +82,7 @@ export class EvaluationUseCases {
       reasonSummaryA: undefined,
       reasonSummaryB: undefined,
       winnersReasonSummary: undefined,
+      improvementReport: undefined,
       updatedAt: new Date().toISOString(),
     });
 
@@ -87,10 +108,20 @@ export class EvaluationUseCases {
     const completedEvals = evals.filter((e) => e.status === "completed");
 
     if (completedEvals.length > 0) {
+      // フェーズを進捗APIへ露出し、実行中画面のライブログで開始/完了を表示できるようにする
+      await this.testRepo.updateFields(userId, testId, { reasonSummaryStatus: "generating", updatedAt: new Date().toISOString() });
       const summaryFields = await this.generateReasonSummaryFields(completedEvals);
       await this.testRepo.updateFields(userId, testId, {
-        status: "completed",
         ...summaryFields,
+        reasonSummaryStatus: "generating_suggestions",
+        updatedAt: new Date().toISOString(),
+      });
+      const test2 = await this.testRepo.findById(userId, testId);
+      const improvementReport = await this.generateImprovementReport(completedEvals, test2?.focusPoints);
+      await this.testRepo.updateFields(userId, testId, {
+        status: "completed",
+        reasonSummaryStatus: "ready",
+        improvementReport,
         updatedAt: new Date().toISOString(),
       });
     } else {
@@ -98,6 +129,117 @@ export class EvaluationUseCases {
         status: "failed",
         updatedAt: new Date().toISOString(),
       });
+    }
+  }
+
+  async ingestResults(userId: string, testId: string, input: IngestResultsInput): Promise<void> {
+    const test = await this.testRepo.findById(userId, testId);
+    if (!test) throw new NotFoundError("ABTest");
+    if (test.status === "running") throw new ConflictError("Test is already running");
+
+    this.validateIngestInput(test, input);
+
+    await this.evalRepo.removeAllByTest(testId);
+
+    const now = new Date().toISOString();
+    const completedEvals: Evaluation[] = [];
+    for (const e of input.evaluations) {
+      const persona = await this.personaRepo.findById(userId, e.personaId);
+      const record: Evaluation = {
+        testId,
+        personaId: e.personaId,
+        winner: e.winner,
+        confidence: e.confidence,
+        reason: e.reason,
+        scoresA: e.scoresA,
+        scoresB: e.scoresB,
+        status: "completed",
+        personaDisplayName: persona?.displayName ?? e.personaId,
+        evaluatedAt: now,
+        resolvedPrompt: e.resolvedPrompt,
+        modelId: input.model,
+      };
+      await this.evalRepo.save(record);
+      completedEvals.push(record);
+    }
+
+    let summaryFields: { reasonSummaryStatus: "ready"; reasonSummaryA: string[]; reasonSummaryB: string[]; winnersReasonSummary: string };
+    if (input.reasonSummary) {
+      summaryFields = {
+        reasonSummaryStatus: "ready",
+        reasonSummaryA: input.reasonSummary.reasonsA,
+        reasonSummaryB: input.reasonSummary.reasonsB,
+        winnersReasonSummary: input.reasonSummary.winnersReasonSummary,
+      };
+    } else {
+      summaryFields = await this.generateReasonSummaryFields(completedEvals);
+    }
+
+    const improvementReport = input.improvementReport ?? await this.generateImprovementReport(completedEvals, test.focusPoints);
+
+    await this.testRepo.updateFields(userId, testId, {
+      status: "completed",
+      ...summaryFields,
+      improvementReport,
+      executedBy: `local:${input.model}`,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  private validateIngestInput(test: ABTest, input: IngestResultsInput): void {
+    if (!input.model?.trim()) throw new ValidationError("model is required");
+    if (!input.evaluations || input.evaluations.length === 0) throw new ValidationError("evaluations must not be empty");
+
+    const seen = new Set<string>();
+    for (const e of input.evaluations) {
+      if (!test.personaIds.includes(e.personaId)) {
+        throw new ValidationError(`Unknown personaId: ${e.personaId}`);
+      }
+      if (seen.has(e.personaId)) {
+        throw new ValidationError(`Duplicate personaId: ${e.personaId}`);
+      }
+      seen.add(e.personaId);
+
+      if (!["A", "B", "none"].includes(e.winner)) {
+        throw new ValidationError(`Invalid winner: ${e.winner}`);
+      }
+      if (typeof e.confidence !== "number" || e.confidence < 0 || e.confidence > 100) {
+        throw new ValidationError(`Invalid confidence for persona ${e.personaId}`);
+      }
+      for (const side of ["scoresA", "scoresB"] as const) {
+        const scores = e[side];
+        for (const axis of SCORE_AXES) {
+          const v = scores?.[axis];
+          if (typeof v !== "number" || Number.isNaN(v) || v < 0 || v > 100) {
+            throw new ValidationError(`Invalid ${side}.${axis} for persona ${e.personaId}`);
+          }
+        }
+      }
+    }
+  }
+
+  private async generateImprovementReport(
+    completedEvals: Evaluation[],
+    focusPoints: string | undefined,
+  ): Promise<ABTest["improvementReport"]> {
+    try {
+      // 件数と対象を確実にするため、A案用・B案用を別々の推論として実行し target はコードで付与する
+      const [resA, resB] = await Promise.all([
+        this.aiService.generateImprovementSuggestions(buildImprovementRequestText(completedEvals, focusPoints, "A")),
+        this.aiService.generateImprovementSuggestions(buildImprovementRequestText(completedEvals, focusPoints, "B")),
+      ]);
+      return {
+        designSummaryA: resA.designSummaryA || resB.designSummaryA,
+        designSummaryB: resA.designSummaryB || resB.designSummaryB,
+        suggestions: [
+          ...resA.suggestions.map((s) => ({ ...s, target: "A" as const })),
+          ...resB.suggestions.map((s) => ({ ...s, target: "B" as const })),
+        ],
+      };
+    } catch (e) {
+      // 改善提案の失敗はテスト完了を妨げない
+      console.error("[generateImprovementSuggestions] failed:", e);
+      return undefined;
     }
   }
 
@@ -151,7 +293,12 @@ export class EvaluationUseCases {
         persona: {
           displayName: personaDisplayName,
           type: persona?.type ?? "consumer",
+          age: persona?.age,
+          gender: persona?.gender,
           occupation: persona?.occupation,
+          annualIncome: persona?.annualIncome,
+          education: persona?.education,
+          deviationScore: persona?.deviationScore,
           freeText: persona?.freeText,
         },
         imageA,
@@ -172,6 +319,7 @@ export class EvaluationUseCases {
         status: "completed",
         personaDisplayName,
         evaluatedAt: new Date().toISOString(),
+        resolvedPrompt: input.resolvedPrompt,
       };
       await this.evalRepo.save(evalRecord);
     } catch {

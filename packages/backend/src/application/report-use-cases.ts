@@ -26,6 +26,7 @@ export class ReportUseCases {
       summary.reasonSummaryB = test.reasonSummaryB ?? [];
       summary.winnersReasonSummary = test.winnersReasonSummary ?? "";
       summary.reasonSummaryStatus = test.reasonSummaryStatus;
+      summary.improvementReport = test.improvementReport;
     }
 
     const evaluationResults = evaluations.map((e) => ({
@@ -37,6 +38,8 @@ export class ReportUseCases {
       scoresA: e.scoresA,
       scoresB: e.scoresB,
       status: e.status,
+      resolvedPrompt: e.resolvedPrompt,
+      modelId: e.modelId,
     }));
 
     return { abTest: toABTestDTO(test), summary, evaluations: evaluationResults };
