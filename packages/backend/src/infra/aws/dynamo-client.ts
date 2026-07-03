@@ -12,7 +12,7 @@ export function createDynamoClient(): DynamoDBDocumentClient {
         }
       : {}
   );
-  return DynamoDBDocumentClient.from(client);
+  return DynamoDBDocumentClient.from(client, { marshallOptions: { removeUndefinedValues: true } });
 }
 
 export class DynamoOperations {

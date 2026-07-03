@@ -13,6 +13,8 @@ interface EvaluationDynamoRecord {
   status: string;
   personaDisplayName: string;
   evaluatedAt: string;
+  resolvedPrompt?: string;
+  modelId?: string;
 }
 
 function toKey(testId: string, personaId: string) {
@@ -31,6 +33,8 @@ function toDomain(r: EvaluationDynamoRecord): Evaluation {
     status: r.status as Evaluation["status"],
     personaDisplayName: r.personaDisplayName,
     evaluatedAt: r.evaluatedAt,
+    resolvedPrompt: r.resolvedPrompt,
+    modelId: r.modelId,
   };
 }
 
@@ -45,6 +49,8 @@ function toRecord(e: Evaluation): EvaluationDynamoRecord {
     status: e.status,
     personaDisplayName: e.personaDisplayName,
     evaluatedAt: e.evaluatedAt,
+    resolvedPrompt: e.resolvedPrompt,
+    modelId: e.modelId,
   };
 }
 

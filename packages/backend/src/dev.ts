@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createRoutes, type RouteEnv } from "./routes.js";
 import { createContainer } from "./container.js";
-import { MemoryPersonaRepository, MemoryABTestRepository, MemoryEvaluationRepository, MemorySettingsRepository, MemoryProjectRepository } from "./infra/local/memory-repos.js";
+import { MemoryPersonaRepository, MemoryABTestRepository, MemoryEvaluationRepository, MemorySettingsRepository, MemoryProjectRepository, MemoryApiKeyRepository, MemoryShareLinkRepository } from "./infra/local/memory-repos.js";
 import { FileStorageService } from "./infra/local/file-storage-service.js";
 import { StubAIService } from "./infra/local/stub-ai-service.js";
 import { captureWebsite } from "./infra/local/screenshot-capture.js";
@@ -28,6 +28,8 @@ const container = createContainer({
   evalRepo: new MemoryEvaluationRepository(),
   settingsRepo: new MemorySettingsRepository(),
   projectRepo: new MemoryProjectRepository(),
+  apiKeyRepo: new MemoryApiKeyRepository(),
+  shareRepo: new MemoryShareLinkRepository(),
   storageService: fileStorage,
   captureWebsite,
   ...(USE_LOCAL_BEDROCK ? {} : { aiService: new StubAIService() }),

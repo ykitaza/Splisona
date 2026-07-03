@@ -4,7 +4,7 @@ import { createShareLink, getShareStatus, revokeShareLink } from '@/features/tes
 import type { ShareStatusResponse } from '@/features/test/api';
 import { API_BASE, getApiErrorMessage } from '@/shared/api/client';
 
-const SHARE_ORIGIN = 'https://splisona-api.demo-user01.workers.dev';
+const SHARE_ORIGIN = import.meta.env.VITE_SHARE_ORIGIN ?? 'https://splisona-api.demo-user01.workers.dev';
 
 function buildShareUrl(token: string): string {
   const base = API_BASE.includes('localhost') ? API_BASE : SHARE_ORIGIN;

@@ -36,3 +36,6 @@ packages/video/out/
 # Frontend build artifacts
 packages/frontend/.vite/
 packages/frontend/dist-export/
+
+# CDK synth output
+packages/infra/cdk.out/

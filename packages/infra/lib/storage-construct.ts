@@ -27,6 +27,16 @@ export class StorageConstruct extends Construct {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
+      // presigned URL経由のPUTアップロードをブラウザから直接行うため、CORSを許可する。
+      // オリジンはSPA配信元に限定したいところだが、ローカル開発や将来のドメイン変更を
+      // 考慮して一旦ワイルドカードにしている（バケット自体はBLOCK_ALLで非公開のまま）。
+      cors: [
+        {
+          allowedMethods: [s3.HttpMethods.PUT, s3.HttpMethods.GET],
+          allowedOrigins: ["*"],
+          allowedHeaders: ["*"],
+        },
+      ],
     });
 
     this.imageDistribution = new cloudfront.Distribution(
