@@ -222,6 +222,24 @@ export function createRoutes() {
     } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
   });
 
+  // --- Share ---
+  api.post("/tests/:id/share", async (c) => {
+    try { return c.json(await c.var.container.shareUseCases.create(c.var.userId, c.req.param("id")), 201); }
+    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.get("/tests/:id/share", async (c) => {
+    try { return c.json(await c.var.container.shareUseCases.status(c.var.userId, c.req.param("id"))); }
+    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
+  api.delete("/tests/:id/share", async (c) => {
+    try {
+      await c.var.container.shareUseCases.revoke(c.var.userId, c.req.param("id"));
+      return c.json({ deleted: true });
+    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+  });
+
   // --- Figma ---
   api.post("/figma/verify", async (c) => {
     const { token } = await c.req.json<{ token: string }>();

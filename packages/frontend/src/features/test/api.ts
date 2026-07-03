@@ -74,6 +74,30 @@ export interface CaptureResponse {
   segmentKeys?: string[];
 }
 
+export interface ShareLinkResponse {
+  token: string;
+  prefix: string;
+  createdAt: string;
+}
+
+export interface ShareStatusResponse {
+  shared: boolean;
+  prefix?: string;
+  createdAt?: string;
+}
+
+export function createShareLink(testId: string): Promise<ShareLinkResponse> {
+  return apiRequest(`/tests/${testId}/share`, { method: 'POST' });
+}
+
+export function getShareStatus(testId: string): Promise<ShareStatusResponse> {
+  return apiRequest(`/tests/${testId}/share`);
+}
+
+export function revokeShareLink(testId: string): Promise<{ deleted: true }> {
+  return apiRequest(`/tests/${testId}/share`, { method: 'DELETE' });
+}
+
 export interface FigmaVerifyResponse {
   valid: boolean;
   email?: string;

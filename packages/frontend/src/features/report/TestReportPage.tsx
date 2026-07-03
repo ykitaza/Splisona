@@ -7,6 +7,7 @@ import { RadarChart } from './RadarChart';
 import { ImprovementDrawer } from './ImprovementDrawer';
 import { buildPromptContext } from './prompt-context';
 import { AttributeHeatmap } from './AttributeHeatmap';
+import { SharePopover } from './SharePopover';
 import { MethodPopover } from './Popovers';
 import { HelpDot } from '@/shared/ui/HelpDot';
 import { getReport, cloneTest, updateTest, deleteTest } from '@/features/test/api';
@@ -615,6 +616,7 @@ export function TestReportPage() {
           </div>
         </div>
         <div className="flex items-center" style={{ gap: 10 }}>
+          {abTest.status === 'completed' && <SharePopover testId={abTest.testId} />}
           <ExportMenu onJson={handleExportJson} onHtml={handleExportHtml} />
           <button
             type="button"

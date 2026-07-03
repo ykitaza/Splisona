@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { createCloudflareContainer, type CloudflareEnv } from "./infra/cloudflare/container-cloudflare.js";
 import { verifyAccessJWT } from "./infra/cloudflare/cf-access-auth.js";
 import { createRoutes, type RouteEnv } from "./routes.js";
+import { buildSharePayload, buildShareHtml } from "./application/share-page.js";
 import type { ImageSource } from "./domain/ports/ai-service.js";
 
 type Bindings = CloudflareEnv & {
@@ -14,7 +15,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 // Auth middleware: JWT検証 → container + userId をコンテキストにセット
 app.use("*", async (c, next) => {
   // 認証不要のルート（containerは必要）
-  if (c.req.path === "/config" || c.req.path.startsWith("/images/") || c.req.path.startsWith("/upload/")) {
+  if (c.req.path === "/config" || c.req.path.startsWith("/images/") || c.req.path.startsWith("/upload/") || c.req.path.startsWith("/share/")) {
     const container = createCloudflareContainer(c.env);
     c.set("container" as never, container as never);
     return next();
@@ -49,6 +50,52 @@ app.use("*", async (c, next) => {
 
 // 共有ルーター（dev-server と同じルート定義）
 app.route("/", createRoutes());
+
+// --- CF固有: 共有レポートページ（公開・認証不要） ---
+app.get("/share/:token", async (c) => {
+  const container = (c as unknown as { var: { container: ReturnType<typeof createCloudflareContainer> } }).var.container;
+  const token = c.req.param("token");
+
+  const resolved = await container.shareUseCases.resolve(token);
+  if (!resolved) {
+    return c.html("<!doctype html><html><body><p>リンクが無効です</p></body></html>", 404);
+  }
+
+  const imagesBucket = c.env.IMAGES as unknown as {
+    get(key: string): Promise<{ text(): Promise<string>; arrayBuffer(): Promise<ArrayBuffer>; httpMetadata?: { contentType?: string } } | null>;
+  };
+
+  const templateObj = await imagesBucket.get("templates/export-template.html");
+  if (!templateObj) {
+    return c.html("<!doctype html><html><body><p>共有ページの準備ができていません</p></body></html>", 503);
+  }
+  const template = await templateObj.text();
+
+  const test = await container.testRepo.findById(resolved.userId, resolved.testId);
+
+  const loadImage = async (key: string | undefined): Promise<string | null> => {
+    if (!key) return null;
+    const obj = await imagesBucket.get(key);
+    if (!obj) return null;
+    const buf = Buffer.from(await obj.arrayBuffer());
+    const contentType = obj.httpMetadata?.contentType ?? "image/png";
+    return `data:${contentType};base64,${buf.toString("base64")}`;
+  };
+
+  const [imageA, imageB] = await Promise.all([
+    loadImage(test?.designAImageKey),
+    loadImage(test?.designBImageKey),
+  ]);
+
+  const payload = await buildSharePayload(container, resolved.userId, resolved.testId, { imageA, imageB });
+  const html = buildShareHtml(template, payload);
+
+  return c.body(html, 200, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "private, no-store",
+    "X-Robots-Tag": "noindex",
+  });
+});
 
 // --- CF固有: R2画像配信 ---
 app.get("/images/*", async (c) => {

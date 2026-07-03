@@ -6,6 +6,7 @@ import type { EvaluationRepository } from "../../domain/ports/evaluation-reposit
 import type { SettingsRepository } from "../../domain/ports/settings-repository.js";
 import type { ProjectRepository } from "../../domain/ports/project-repository.js";
 import type { ApiKeyRepository, ApiKeyRecord } from "../../domain/ports/api-key-repository.js";
+import type { ShareLinkRepository, ShareLinkRecord } from "../../domain/ports/share-link-repository.js";
 import type { Persona, ABTest, Evaluation, SettingsRecord, Project } from "../../domain/types.js";
 
 const DATA_DIR = process.env.CHORUS_DATA_DIR ?? "/tmp/chorus-data";
@@ -216,6 +217,39 @@ export class MemoryApiKeyRepository implements ApiKeyRepository {
     const record = this.store.get(hash);
     if (!record) return;
     this.store.set(hash, { ...record, lastUsedAt: iso });
+    this.flush();
+  }
+}
+
+export class MemoryShareLinkRepository implements ShareLinkRepository {
+  private store: Map<string, ShareLinkRecord>;
+
+  constructor() {
+    const entries: [string, ShareLinkRecord][] = loadJson("share-links", []);
+    this.store = new Map(entries);
+  }
+
+  private flush() { saveJson("share-links", [...this.store.entries()]); }
+
+  async findByHash(hash: string): Promise<ShareLinkRecord | undefined> {
+    return this.store.get(hash);
+  }
+
+  async findByTest(userId: string, testId: string): Promise<ShareLinkRecord | undefined> {
+    return [...this.store.values()].find((r) => r.userId === userId && r.testId === testId);
+  }
+
+  async save(hash: string, record: ShareLinkRecord): Promise<void> {
+    this.store.set(hash, record);
+    this.flush();
+  }
+
+  async removeByTest(userId: string, testId: string): Promise<void> {
+    for (const [hash, record] of this.store.entries()) {
+      if (record.userId === userId && record.testId === testId) {
+        this.store.delete(hash);
+      }
+    }
     this.flush();
   }
 }

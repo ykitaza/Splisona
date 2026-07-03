@@ -2,14 +2,19 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import { extname } from "node:path";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createRoutes, type RouteEnv } from "./routes.js";
 import { createContainer } from "./container.js";
 import { MemoryPersonaRepository, MemoryABTestRepository, MemoryEvaluationRepository, MemorySettingsRepository, MemoryProjectRepository } from "./infra/local/memory-repos.js";
 import { FileStorageService } from "./infra/local/file-storage-service.js";
 import { StubAIService } from "./infra/local/stub-ai-service.js";
 import { captureWebsite } from "./infra/local/screenshot-capture.js";
+import { buildSharePayload, buildShareHtml } from "./application/share-page.js";
 import type { ImageSource } from "./domain/ports/ai-service.js";
 import { loadSeedIfEmpty } from "./seed/load-seed.js";
+
+const EXPORT_TEMPLATE_PATH = fileURLToPath(new URL("../../frontend/public/export-template.html", import.meta.url));
 
 const USE_LOCAL_BEDROCK = process.env.LOCAL_BEDROCK === "true";
 const port = Number(process.env.PORT ?? 3001);
@@ -44,7 +49,7 @@ app.use("*", cors({
 }));
 
 app.use("*", async (c, next) => {
-  if (c.req.path.startsWith("/images/")) return next();
+  if (c.req.path.startsWith("/images/") || c.req.path.startsWith("/share/")) return next();
 
   const authHeader = c.req.header("Authorization");
   const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
@@ -67,6 +72,46 @@ app.use("*", async (c, next) => {
 
 // Shared routes
 app.route("/", createRoutes());
+
+// --- Dev-only: 共有レポートページ（公開・認証不要） ---
+app.get("/share/:token", async (c) => {
+  const token = c.req.param("token");
+
+  const resolved = await container.shareUseCases.resolve(token);
+  if (!resolved) {
+    return c.html("<!doctype html><html><body><p>リンクが無効です</p></body></html>", 404);
+  }
+
+  let template: string;
+  try {
+    template = readFileSync(EXPORT_TEMPLATE_PATH, "utf-8");
+  } catch {
+    return c.html("<!doctype html><html><body><p>共有ページの準備ができていません</p></body></html>", 503);
+  }
+
+  const test = await container.testRepo.findById(resolved.userId, resolved.testId);
+
+  const loadImage = (key: string | undefined): string | null => {
+    if (!key) return null;
+    const buf = fileStorage.readFile(key);
+    if (!buf) return null;
+    const format = fileStorage.getImageFormat(key);
+    const mime = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : format === "gif" ? "image/gif" : "image/png";
+    return `data:${mime};base64,${buf.toString("base64")}`;
+  };
+
+  const imageA = loadImage(test?.designAImageKey);
+  const imageB = loadImage(test?.designBImageKey);
+
+  const payload = await buildSharePayload(container, resolved.userId, resolved.testId, { imageA, imageB });
+  const html = buildShareHtml(template, payload);
+
+  return c.body(html, 200, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "private, no-store",
+    "X-Robots-Tag": "noindex",
+  });
+});
 
 // --- Dev-only: image upload & serving (local file storage) ---
 app.put("/images/*", async (c) => {
@@ -109,6 +154,10 @@ app.post("/tests/:id/execute", async (c) => {
         buildImageSource: buildLocalImageSource,
         onAbort: ac.signal,
       });
+    } catch (e) {
+      // 未捕捉例外は unhandled rejection でプロセスごと落ちるため、失敗として確定させる
+      console.error("[executeTest] fatal:", e);
+      try { await container.evaluationUseCases.abortTest(userId, testId); } catch {}
     } finally {
       runningAbortControllers.delete(testId);
     }
