@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Check, Plus, Pencil, FolderPlus, FolderMinus, Trash2, FileJson, FileText } from 'lucide-react';
 import { ImageLightbox } from '@/shared/ui/ImageLightbox';
+import { SegmentViewer } from './SegmentViewer';
 import { RadarChart } from './RadarChart';
 import { ImprovementDrawer } from './ImprovementDrawer';
 import { buildPromptContext } from './prompt-context';
@@ -303,6 +304,7 @@ function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
   totalCount: number;
 }) {
   const [lightbox, setLightbox] = useState(false);
+  const [segmentViewerOpen, setSegmentViewerOpen] = useState(false);
   const imageUrl = input.imageKey ? `${API_BASE}/images/${input.imageKey}` : null;
   const borderColor = isWinner
     ? (side === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)')
@@ -311,6 +313,9 @@ function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
   return (
     <>
       {lightbox && imageUrl && <ImageLightbox src={imageUrl} alt={`${side}案`} onClose={() => setLightbox(false)} />}
+      {segmentViewerOpen && input.segmentKeys && input.segmentKeys.length > 0 && (
+        <SegmentViewer side={side} segmentKeys={input.segmentKeys} onClose={() => setSegmentViewerOpen(false)} />
+      )}
       <div
         className="flex flex-col flex-1 min-w-0"
         style={{ gap: 16, paddingLeft: 16, borderLeft: `2px solid ${borderColor}` }}
@@ -333,6 +338,18 @@ function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
           )}
         </div>
         <DesignSourceInfo input={input} />
+        {input.segmentKeys && input.segmentKeys.length > 0 && (
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <span className="text-text-lo font-mono text-xs">評価入力: {input.segmentKeys.length}分割</span>
+            <button
+              type="button"
+              onClick={() => setSegmentViewerOpen(true)}
+              className="text-accent font-sans text-xs font-medium hover:opacity-80 transition-opacity"
+            >
+              入力画像を確認
+            </button>
+          </div>
+        )}
         <div className="h-px bg-hairline" />
         <div className="flex items-center justify-between">
           <span className="text-text-mid font-sans text-sm">{totalCount}人中{supportCount}人が支持</span>

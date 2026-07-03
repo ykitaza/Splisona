@@ -158,6 +158,9 @@ function DesignCard({ side, input, isWinner, supportCount, totalCount, imageData
         )}
       </div>
       <DesignSourceInfo input={input} />
+      {input.segmentKeys && input.segmentKeys.length > 0 && (
+        <span className="text-text-lo font-mono text-xs">評価入力: {input.segmentKeys.length}分割</span>
+      )}
       <div className="h-px bg-hairline" />
       <div className="flex items-center justify-between">
         <span className="text-text-mid font-sans text-sm">{totalCount}人中{supportCount}人が支持</span>

@@ -7,6 +7,7 @@ import { Modal } from '@/shared/ui/Modal';
 import { testDraft, sideToDesignInput, type DesignSideData } from './testDraft';
 import { captureUrl, createTest, updateTest, executeTest, getUploadUrl, uploadToS3, verifyFigmaToken } from './api';
 import { resizeImageIfNeeded } from '@/shared/lib/image-resize';
+import { splitImageIfNeeded } from '@/shared/lib/image-split';
 import { addTestToProject } from '@/features/project/api';
 import { getSettings } from '@/features/settings/api';
 import { usePersonas } from '@/features/persona/usePersonas';
@@ -501,11 +502,43 @@ export function TestInputPage() {
     testDraft.setPersonaIds(Array.from(ids));
   }
 
-  async function resolveImageKey(testId: string, side: 'A' | 'B'): Promise<string> {
+  async function resolveImageKey(testId: string, side: 'A' | 'B'): Promise<{ imageKey: string; segmentKeys?: string[] }> {
     const sideData = side === 'A' ? sideA : sideB;
     if (!sideData) throw new Error(`${side}案のデータがありません`);
-    if (sideData.imageKey) return sideData.imageKey;
+    if (sideData.imageKey) return { imageKey: sideData.imageKey, segmentKeys: sideData.inputType === 'image_upload' ? sideData.segmentKeys : undefined };
     if (sideData.inputType === 'image_upload') {
+      let segments: Blob[] | null = null;
+      try {
+        segments = await splitImageIfNeeded(sideData.file);
+      } catch (e) {
+        console.warn('画像分割に失敗したため、リサイズしての単一アップロードにフォールバックします', e);
+        segments = null;
+      }
+
+      if (segments) {
+        const segmentKeys: string[] = [];
+        for (let i = 0; i < segments.length; i++) {
+          const blob = segments[i];
+          const contentType = (blob.type || sideData.file.type) as 'image/png' | 'image/jpeg' | 'image/webp';
+          const { uploadUrl, imageKey: segKey } = await getUploadUrl(testId, {
+            side,
+            contentType,
+            segmentIndex: i + 1,
+          });
+          await uploadToS3(uploadUrl, new File([blob], `${sideData.file.name}-seg${i + 1}`, { type: contentType }));
+          segmentKeys.push(segKey);
+        }
+
+        // 原本（表示用）はそのままアップロード
+        const { uploadUrl, imageKey } = await getUploadUrl(testId, {
+          side,
+          contentType: sideData.file.type as 'image/png' | 'image/jpeg' | 'image/webp',
+        });
+        await uploadToS3(uploadUrl, sideData.file);
+        return { imageKey, segmentKeys };
+      }
+
+      // 分割不要（低身長）の場合は従来どおり resize してから単一アップロード
       // AI モデルの入力上限（1辺 8000px）を超える画像は自動縮小してからアップロード
       const file = await resizeImageIfNeeded(sideData.file);
       const { uploadUrl, imageKey } = await getUploadUrl(testId, {
@@ -513,10 +546,10 @@ export function TestInputPage() {
         contentType: file.type as 'image/png' | 'image/jpeg' | 'image/webp',
       });
       await uploadToS3(uploadUrl, file);
-      return imageKey;
+      return { imageKey };
     }
-    const { imageKey } = await captureUrl(testId, { side, inputType: sideData.inputType, url: sideData.url });
-    return imageKey;
+    const { imageKey, segmentKeys } = await captureUrl(testId, { side, inputType: sideData.inputType, url: sideData.url });
+    return { imageKey, segmentKeys };
   }
 
   async function handleExecute() {
@@ -539,14 +572,14 @@ export function TestInputPage() {
         testId = created.testId;
       }
 
-      const [imageKeyA, imageKeyB] = await Promise.all([
+      const [resolvedA, resolvedB] = await Promise.all([
         resolveImageKey(testId, 'A'),
         resolveImageKey(testId, 'B'),
       ]);
 
       await updateTest(testId, {
-        designAInput: { ...designAInput, imageKey: imageKeyA },
-        designBInput: { ...designBInput, imageKey: imageKeyB },
+        designAInput: { ...designAInput, imageKey: resolvedA.imageKey, segmentKeys: resolvedA.segmentKeys },
+        designBInput: { ...designBInput, imageKey: resolvedB.imageKey, segmentKeys: resolvedB.segmentKeys },
         personaIds,
       });
 

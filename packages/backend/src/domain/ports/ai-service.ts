@@ -17,8 +17,8 @@ export interface EvaluateDesignsParams {
     deviationScore?: number;
     freeText?: string;
   };
-  imageA: ImageSource;
-  imageB: ImageSource;
+  imagesA: ImageSource[];
+  imagesB: ImageSource[];
   additionalInstruction?: string;
   projectContext?: string;
   focusPoints?: string;

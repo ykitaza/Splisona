@@ -50,18 +50,19 @@ export class GeminiAIService implements AIService {
   }
 
   async evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput> {
-    const { persona, imageA, imageB, additionalInstruction, projectContext, focusPoints } = params;
+    const { persona, imagesA, imagesB, additionalInstruction, projectContext, focusPoints } = params;
     const prompt = buildEvaluationPrompt({
       persona,
       projectContext,
       focusPoints,
       additionalInstruction,
       evaluateInstruction: "あなたのペルソナ視点から評価してください。",
+      segmentation: { countA: imagesA.length, countB: imagesB.length, overlapPx: 150 },
     });
 
     const parts: GeminiPart[] = [{ text: prompt }];
-    parts.push(toImagePart(imageA));
-    parts.push(toImagePart(imageB));
+    for (const img of imagesA) parts.push(toImagePart(img));
+    for (const img of imagesB) parts.push(toImagePart(img));
 
     const result = await this.generate({
       contents: [{ role: "user", parts }],
@@ -83,7 +84,7 @@ export class GeminiAIService implements AIService {
     };
   }
 
-  async generateTitle(imageA: EvaluateDesignsParams["imageA"], imageB: EvaluateDesignsParams["imageA"]): Promise<string> {
+  async generateTitle(imageA: EvaluateDesignsParams["imagesA"][number], imageB: EvaluateDesignsParams["imagesA"][number]): Promise<string> {
     const parts: GeminiPart[] = [
       { text: "2つのデザイン画像を見て、それぞれの題材（サービス名・ブランド名・ページの主題など）を短く特定し、「A側の題材 | B側の題材」の形式でタイトルを生成してください（例: 楽天Pay | PayPay）。各側は10文字以内の日本語または固有名詞。両方が同じ題材の場合のみ「◯◯ 新旧比較」のような形式にしてください。タイトルのみを出力し、他の説明は不要です。" },
       toImagePart(imageA),
@@ -213,7 +214,7 @@ interface GeminiResponse {
   }>;
 }
 
-function toImagePart(src: EvaluateDesignsParams["imageA"]): GeminiPart {
+function toImagePart(src: EvaluateDesignsParams["imagesA"][number]): GeminiPart {
   if (src.kind === "bytes") {
     const mimeType = src.format === "jpeg" ? "image/jpeg"
       : src.format === "webp" ? "image/webp"

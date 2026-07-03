@@ -15,8 +15,8 @@ export class ABTestUseCases {
 
   async create(userId: string, input: {
     title: string;
-    designAInput?: { inputType?: string; imageKey?: string; figmaUrl?: string; siteUrl?: string };
-    designBInput?: { inputType?: string; imageKey?: string; figmaUrl?: string; siteUrl?: string };
+    designAInput?: { inputType?: string; imageKey?: string; figmaUrl?: string; siteUrl?: string; segmentKeys?: string[] };
+    designBInput?: { inputType?: string; imageKey?: string; figmaUrl?: string; siteUrl?: string; segmentKeys?: string[] };
     designAInputType?: string;
     designBInputType?: string;
     designAImageKey?: string;
@@ -37,6 +37,8 @@ export class ABTestUseCases {
       designBInputType: (dB.inputType ?? input.designBInputType ?? "image_upload") as ABTest["designBInputType"],
       designAImageKey: dA.imageKey ?? input.designAImageKey,
       designBImageKey: dB.imageKey ?? input.designBImageKey,
+      designASegmentKeys: dA.segmentKeys,
+      designBSegmentKeys: dB.segmentKeys,
       designAUrl: dA.figmaUrl ?? dA.siteUrl,
       designBUrl: dB.figmaUrl ?? dB.siteUrl,
       personaIds: input.personaIds ?? [],
@@ -69,8 +71,8 @@ export class ABTestUseCases {
 
   async update(userId: string, testId: string, input: {
     title?: string;
-    designAInput?: { inputType?: string; imageKey?: string; figmaUrl?: string; siteUrl?: string };
-    designBInput?: { inputType?: string; imageKey?: string; figmaUrl?: string; siteUrl?: string };
+    designAInput?: { inputType?: string; imageKey?: string; figmaUrl?: string; siteUrl?: string; segmentKeys?: string[] };
+    designBInput?: { inputType?: string; imageKey?: string; figmaUrl?: string; siteUrl?: string; segmentKeys?: string[] };
     designAInputType?: string;
     designBInputType?: string;
     designAImageKey?: string;
@@ -93,6 +95,8 @@ export class ABTestUseCases {
           designBInputType: dB.inputType ?? input.designBInputType,
           designAImageKey: dA.imageKey ?? input.designAImageKey,
           designBImageKey: dB.imageKey ?? input.designBImageKey,
+          designASegmentKeys: dA.segmentKeys,
+          designBSegmentKeys: dB.segmentKeys,
           designAUrl: dA.figmaUrl ?? dA.siteUrl,
           designBUrl: dB.figmaUrl ?? dB.siteUrl,
           personaIds: input.personaIds,
@@ -109,12 +113,14 @@ export class ABTestUseCases {
     await this.testRepo.remove(userId, testId);
   }
 
-  async getUploadUrl(userId: string, testId: string, side: string, contentType: string): Promise<UploadUrlResult> {
+  async getUploadUrl(userId: string, testId: string, side: string, contentType: string, segmentIndex?: number): Promise<UploadUrlResult> {
     const existing = await this.testRepo.findById(userId, testId);
     if (!existing) throw new NotFoundError("ABTest");
 
     const ext = contentType === "image/jpeg" ? "jpg" : contentType === "image/webp" ? "webp" : "png";
-    const imageKey = `${userId}/${testId}/${side}_${Date.now()}.${ext}`;
+    const imageKey = segmentIndex != null
+      ? `${userId}/${testId}/${side}-seg${segmentIndex}.${ext}`
+      : `${userId}/${testId}/${side}_${Date.now()}.${ext}`;
     return this.storageService.getUploadUrl(imageKey, contentType);
   }
 

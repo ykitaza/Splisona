@@ -65,7 +65,7 @@ export interface ContainerConfig {
   aiService?: AIService;
   storageService?: StorageService;
   captureFigmaNode?: (url: string, token: string) => Promise<Buffer>;
-  captureWebsite?: (url: string) => Promise<Buffer>;
+  captureWebsite?: (url: string) => Promise<{ full: Buffer; segments: Buffer[] }>;
 }
 
 export function createContainer(config: ContainerConfig = {}): AppContainer {

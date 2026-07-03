@@ -1,5 +1,5 @@
 export type DesignSideData =
-  | { inputType: 'image_upload'; file: File; imageKey: string }
+  | { inputType: 'image_upload'; file: File; imageKey: string; segmentKeys?: string[] }
   | { inputType: 'figma_url'; url: string; imageKey: string }
   | { inputType: 'site_url'; url: string; imageKey: string };
 
@@ -22,7 +22,7 @@ const _draft: TestDraftData = {
 export function sideToDesignInput(side: DesignSideData): import('./types').DesignInput {
   if (side.inputType === 'figma_url') return { inputType: 'figma_url', figmaUrl: side.url, imageKey: side.imageKey || undefined };
   if (side.inputType === 'site_url') return { inputType: 'site_url', siteUrl: side.url, imageKey: side.imageKey || undefined };
-  return { inputType: 'image_upload', imageKey: side.imageKey || undefined };
+  return { inputType: 'image_upload', imageKey: side.imageKey || undefined, segmentKeys: side.segmentKeys };
 }
 
 export const testDraft = {

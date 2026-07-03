@@ -65,8 +65,8 @@ export class EvaluationUseCases {
     if (!test.title?.trim()) {
       let generatedTitle: string;
       try {
-        const srcA = await buildSrc(test.designAImageKey!);
-        const srcB = await buildSrc(test.designBImageKey!);
+        const srcA = await buildSrc(test.designASegmentKeys?.[0] ?? test.designAImageKey!);
+        const srcB = await buildSrc(test.designBSegmentKeys?.[0] ?? test.designBImageKey!);
         generatedTitle = await this.aiService.generateTitle(srcA, srcB);
       } catch (e) {
         console.error("[generateTitle] failed:", e);
@@ -86,8 +86,12 @@ export class EvaluationUseCases {
       updatedAt: new Date().toISOString(),
     });
 
-    const imageA = await buildSrc(test.designAImageKey!);
-    const imageB = await buildSrc(test.designBImageKey!);
+    const imagesA = test.designASegmentKeys?.length
+      ? await Promise.all(test.designASegmentKeys.map(buildSrc))
+      : [await buildSrc(test.designAImageKey!)];
+    const imagesB = test.designBSegmentKeys?.length
+      ? await Promise.all(test.designBSegmentKeys.map(buildSrc))
+      : [await buildSrc(test.designBImageKey!)];
     const projectContext = await this.getProjectContext(userId, testId);
     const evalContext = { projectContext, focusPoints: test.focusPoints };
     const batches = chunkArray(test.personaIds, 5);
@@ -98,7 +102,7 @@ export class EvaluationUseCases {
       await Promise.allSettled(
         batch.map((personaId, i) =>
           new Promise<void>((r) => setTimeout(r, i * 400)).then(() =>
-            this.evaluateOnePersona(testId, personaId, userId, imageA, imageB, evalContext)
+            this.evaluateOnePersona(testId, personaId, userId, imagesA, imagesB, evalContext)
           )
         )
       );
@@ -273,8 +277,8 @@ export class EvaluationUseCases {
     testId: string,
     personaId: string,
     userId: string,
-    imageA: ImageSource,
-    imageB: ImageSource,
+    imagesA: ImageSource[],
+    imagesB: ImageSource[],
     context: { projectContext: string; focusPoints?: string },
   ): Promise<void> {
     const persona = await this.personaRepo.findById(userId, personaId);
@@ -301,8 +305,8 @@ export class EvaluationUseCases {
           deviationScore: persona?.deviationScore,
           freeText: persona?.freeText,
         },
-        imageA,
-        imageB,
+        imagesA,
+        imagesB,
         additionalInstruction: additional,
         projectContext: context.projectContext || undefined,
         focusPoints: context.focusPoints || undefined,

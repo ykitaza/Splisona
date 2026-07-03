@@ -12,6 +12,7 @@ export interface DesignInput {
   imageKey?: string;
   figmaUrl?: string;
   siteUrl?: string;
+  segmentKeys?: string[];
 }
 
 export interface ABTest {
@@ -40,6 +41,7 @@ export type UpdateABTestInput = Partial<CreateABTestInput>;
 export interface UploadUrlRequest {
   side: "A" | "B";
   contentType: "image/png" | "image/jpeg" | "image/webp";
+  segmentIndex?: number;
 }
 
 export type { UploadUrlResponse } from '@/shared/api/client';

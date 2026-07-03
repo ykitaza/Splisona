@@ -71,6 +71,7 @@ export interface CaptureRequest {
 export interface CaptureResponse {
   imageKey: string;
   previewUrl: string;
+  segmentKeys?: string[];
 }
 
 export interface FigmaVerifyResponse {

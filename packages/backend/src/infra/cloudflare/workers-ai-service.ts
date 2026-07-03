@@ -48,16 +48,17 @@ export class WorkersAIService implements AIService {
   }
 
   async evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput> {
-    const { persona, imageA, imageB, additionalInstruction, projectContext, focusPoints } = params;
+    const { persona, imagesA, imagesB, additionalInstruction, projectContext, focusPoints } = params;
     const prompt = buildEvaluationPrompt({
       persona,
       projectContext,
       focusPoints,
       additionalInstruction,
       evaluateInstruction: "あなたのペルソナ視点から評価してください。",
+      segmentation: { countA: imagesA.length, countB: imagesB.length, overlapPx: 150 },
     });
 
-    const images = [toBase64(imageA), toBase64(imageB)];
+    const images = [...imagesA, ...imagesB].map(toBase64);
 
     const result = await this.runWithImages(prompt, images, {
       temperature: 0.2,

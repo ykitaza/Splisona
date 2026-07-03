@@ -128,6 +128,34 @@ describe("EvaluationUseCases", () => {
     });
   });
 
+  describe("executeTest - segmented design images", () => {
+    it("builds imagesA/imagesB from segmentKeys when present and calls aiService.evaluateDesigns with multiple images", async () => {
+      const segmentedTest = makeTest({
+        designASegmentKeys: ["a-seg0.png", "a-seg1.png"],
+        designBSegmentKeys: ["b-seg0.png", "b-seg1.png"],
+      });
+      let findByIdCallCount = 0;
+      (testRepo.findById as ReturnType<typeof vi.fn>).mockImplementation(async () => {
+        findByIdCallCount++;
+        return { ...segmentedTest, status: findByIdCallCount === 1 ? "draft" as const : "running" as const };
+      });
+
+      const completedEvals = [makeEval("p1", "A"), makeEval("p2", "B"), makeEval("p3", "A")];
+      (evalRepo.findAllByTest as ReturnType<typeof vi.fn>).mockResolvedValue(completedEvals);
+
+      await useCases.executeTest("u1", "t1", {
+        buildImageSource: (key) => ({ kind: "bytes", data: Buffer.from(key), format: "png" }),
+      });
+
+      const calls = (aiService.evaluateDesigns as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+      for (const [params] of calls) {
+        expect(params.imagesA).toHaveLength(2);
+        expect(params.imagesB).toHaveLength(2);
+      }
+    });
+  });
+
   describe("executeTest - abort with completed evals (ここで締める)", () => {
     it("generates summaries from completed evals and sets completed", async () => {
       const ac = new AbortController();

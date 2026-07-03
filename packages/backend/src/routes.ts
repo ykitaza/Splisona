@@ -174,8 +174,8 @@ export function createRoutes() {
 
   api.post("/tests/:id/upload-url", async (c) => {
     try {
-      const { side, contentType = "image/png" } = await c.req.json();
-      return c.json(await c.var.container.abtestUseCases.getUploadUrl(c.var.userId, c.req.param("id"), side, contentType));
+      const { side, contentType = "image/png", segmentIndex } = await c.req.json();
+      return c.json(await c.var.container.abtestUseCases.getUploadUrl(c.var.userId, c.req.param("id"), side, contentType, segmentIndex));
     } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
   });
 

@@ -72,16 +72,17 @@ export class BedrockAIService implements AIService {
   }
 
   async evaluateDesigns(params: EvaluateDesignsParams): Promise<EvaluationInput> {
-    const { persona, imageA, imageB, additionalInstruction, projectContext, focusPoints } = params;
+    const { persona, imagesA, imagesB, additionalInstruction, projectContext, focusPoints } = params;
     const prompt = buildEvaluationPrompt({
       persona,
       projectContext,
       focusPoints,
       additionalInstruction,
       evaluateInstruction: "あなたのペルソナ視点から evaluate_designs ツールを使って評価してください。",
+      segmentation: { countA: imagesA.length, countB: imagesB.length, overlapPx: 150 },
     });
 
-    const toImageContent = (src: EvaluateDesignsParams["imageA"]) => {
+    const toImageContent = (src: EvaluateDesignsParams["imagesA"][number]) => {
       if (src.kind === "s3") {
         return { image: { format: "png" as const, source: { s3Location: { uri: `s3://${src.bucket}/${src.key}` } } } };
       }
@@ -95,8 +96,8 @@ export class BedrockAIService implements AIService {
         role: "user",
         content: [
           { text: prompt },
-          toImageContent(imageA),
-          toImageContent(imageB),
+          ...imagesA.map(toImageContent),
+          ...imagesB.map(toImageContent),
         ],
       }],
       toolConfig: {
@@ -132,8 +133,8 @@ export class BedrockAIService implements AIService {
     };
   }
 
-  async generateTitle(imageA: EvaluateDesignsParams["imageA"], imageB: EvaluateDesignsParams["imageA"]): Promise<string> {
-    const toImageContent = (src: EvaluateDesignsParams["imageA"]) => {
+  async generateTitle(imageA: EvaluateDesignsParams["imagesA"][number], imageB: EvaluateDesignsParams["imagesA"][number]): Promise<string> {
+    const toImageContent = (src: EvaluateDesignsParams["imagesA"][number]) => {
       if (src.kind === "s3") {
         return { image: { format: "png" as const, source: { s3Location: { uri: `s3://${src.bucket}/${src.key}` } } } };
       }

@@ -9,6 +9,8 @@ interface ABTestRow {
   status: string;
   design_a_image_key: string | null;
   design_b_image_key: string | null;
+  design_a_segments: string | null;
+  design_b_segments: string | null;
   design_a_input_type: string;
   design_b_input_type: string;
   design_a_url: string | null;
@@ -33,6 +35,8 @@ function toDomain(row: ABTestRow): ABTest {
     status: row.status as ABTest["status"],
     designAImageKey: row.design_a_image_key ?? undefined,
     designBImageKey: row.design_b_image_key ?? undefined,
+    designASegmentKeys: row.design_a_segments ? JSON.parse(row.design_a_segments) as string[] : undefined,
+    designBSegmentKeys: row.design_b_segments ? JSON.parse(row.design_b_segments) as string[] : undefined,
     designAInputType: row.design_a_input_type as ABTest["designAInputType"],
     designBInputType: row.design_b_input_type as ABTest["designBInputType"],
     designAUrl: row.design_a_url ?? undefined,
@@ -75,13 +79,16 @@ export class D1ABTestRepository implements ABTestRepository {
     await this.db
       .prepare(`INSERT OR REPLACE INTO abtests
         (test_id, user_id, title, status, design_a_image_key, design_b_image_key,
+         design_a_segments, design_b_segments,
          design_a_input_type, design_b_input_type, design_a_url, design_b_url,
          persona_ids, focus_points, reason_summary_status, reason_summary_a, reason_summary_b,
          winners_reason_summary, improvement_suggestions, executed_by, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(
         test.testId, test.userId, test.title, test.status,
         test.designAImageKey ?? null, test.designBImageKey ?? null,
+        test.designASegmentKeys ? JSON.stringify(test.designASegmentKeys) : null,
+        test.designBSegmentKeys ? JSON.stringify(test.designBSegmentKeys) : null,
         test.designAInputType, test.designBInputType,
         test.designAUrl ?? null, test.designBUrl ?? null,
         JSON.stringify(test.personaIds),

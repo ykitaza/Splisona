@@ -54,6 +54,8 @@ export interface ABTest {
   status: "draft" | "running" | "completed" | "failed";
   designAImageKey?: string;
   designBImageKey?: string;
+  designASegmentKeys?: string[];
+  designBSegmentKeys?: string[];
   designAInputType: "image_upload" | "figma_url" | "site_url";
   designBInputType: "image_upload" | "figma_url" | "site_url";
   designAUrl?: string;
@@ -143,11 +145,13 @@ export function toABTestDTO(t: ABTest) {
     designAInput: {
       inputType: t.designAInputType,
       imageKey: t.designAImageKey,
+      segmentKeys: t.designASegmentKeys,
       ...(t.designAUrl ? (t.designAInputType === "figma_url" ? { figmaUrl: t.designAUrl } : { siteUrl: t.designAUrl }) : {}),
     },
     designBInput: {
       inputType: t.designBInputType,
       imageKey: t.designBImageKey,
+      segmentKeys: t.designBSegmentKeys,
       ...(t.designBUrl ? (t.designBInputType === "figma_url" ? { figmaUrl: t.designBUrl } : { siteUrl: t.designBUrl }) : {}),
     },
     personaIds: t.personaIds,
