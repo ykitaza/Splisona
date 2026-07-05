@@ -4,11 +4,13 @@ import { createShareLink, getShareStatus, revokeShareLink } from '@/features/tes
 import type { ShareStatusResponse } from '@/features/test/api';
 import { API_BASE, getApiErrorMessage } from '@/shared/api/client';
 
-const SHARE_ORIGIN = import.meta.env.VITE_SHARE_ORIGIN ?? 'https://splisona-api.demo-user01.workers.dev';
+const SHARE_ORIGIN = import.meta.env.VITE_SHARE_ORIGIN as string | undefined;
 
 function buildShareUrl(token: string): string {
-  const base = API_BASE.includes('localhost') ? API_BASE : SHARE_ORIGIN;
-  return `${base}/share/${token}`;
+  // 優先順: 明示設定(AWS等) > ローカルAPI直 > アプリと同一ドメインの /s プロキシ(Pages Function)
+  if (SHARE_ORIGIN) return `${SHARE_ORIGIN}/share/${token}`;
+  if (API_BASE.includes('localhost')) return `${API_BASE}/share/${token}`;
+  return `${location.origin}/s/${token}`;
 }
 
 function formatDate(iso: string): string {
