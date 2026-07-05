@@ -13,6 +13,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@chorus/shared": "workspace:*",
     "@aws-amplify/auth": "^6.9.0",
     "aws-amplify": "^6.15.0",
     "lucide-react": "^1.21.0",

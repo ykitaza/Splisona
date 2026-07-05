@@ -9,6 +9,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@chorus/shared": "workspace:*",
     "@aws-sdk/client-bedrock-runtime": "^3.1075.0",
     "@aws-sdk/client-dynamodb": "^3.825.0",
     "@aws-sdk/client-lambda": "3.1075.0",

@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { PersonaRepository } from "../../domain/ports/persona-repository.js";
-import type { ABTestRepository } from "../../domain/ports/abtest-repository.js";
+import type { ABTestRepository, ABTestUpdatableFields } from "../../domain/ports/abtest-repository.js";
 import type { EvaluationRepository } from "../../domain/ports/evaluation-repository.js";
 import type { SettingsRepository } from "../../domain/ports/settings-repository.js";
 import type { ProjectRepository } from "../../domain/ports/project-repository.js";
@@ -82,7 +82,7 @@ export class MemoryABTestRepository implements ABTestRepository {
     this.flush();
   }
 
-  async updateFields(userId: string, testId: string, fields: Partial<Pick<ABTest, 'status' | 'title' | 'reasonSummaryStatus' | 'reasonSummaryA' | 'reasonSummaryB' | 'winnersReasonSummary' | 'improvementReport' | 'executedBy' | 'updatedAt'>>): Promise<void> {
+  async updateFields(userId: string, testId: string, fields: ABTestUpdatableFields): Promise<void> {
     const existing = await this.findById(userId, testId);
     if (!existing) return;
     await this.save({ ...existing, ...fields });

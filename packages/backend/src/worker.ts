@@ -1,107 +1,65 @@
-import { Hono } from "hono";
 import { createCloudflareContainer, type CloudflareEnv } from "./infra/cloudflare/container-cloudflare.js";
 import { verifyAccessJWT } from "./infra/cloudflare/cf-access-auth.js";
-import { createRoutes, type RouteEnv } from "./routes.js";
-import { buildSharePayload, buildShareHtml } from "./application/share-page.js";
+import { createApp, type AppAdapters } from "./create-app.js";
+import type { RouteEnv } from "./routes.js";
 import type { ImageSource } from "./domain/ports/ai-service.js";
+import type { Context } from "hono";
 
 type Bindings = CloudflareEnv & {
   CF_ACCESS_TEAM_DOMAIN: string;
   CF_ACCESS_AUD: string;
 };
 
-const app = new Hono<{ Bindings: Bindings }>();
+type Ctx = Context<RouteEnv>;
 
-// Auth middleware: JWT検証 → container + userId をコンテキストにセット
-app.use("*", async (c, next) => {
-  // 認証不要のルート（containerは必要）
-  if (c.req.path === "/config" || c.req.path.startsWith("/images/") || c.req.path.startsWith("/upload/") || c.req.path.startsWith("/share/")) {
-    const container = createCloudflareContainer(c.env);
-    c.set("container" as never, container as never);
-    return next();
-  }
+type ImagesBucket = {
+  get(key: string): Promise<{ text(): Promise<string>; arrayBuffer(): Promise<ArrayBuffer>; httpMetadata?: { contentType?: string } } | null>;
+};
 
-  const authHeader = c.req.header("Authorization");
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
-  if (bearer) {
-    const container = createCloudflareContainer(c.env);
-    const result = await container.apiKeyUseCases.verify(bearer);
-    if (!result) return c.json({ error: "UNAUTHORIZED", message: "invalid api key" }, 401);
-    c.set("container" as never, container as never);
-    c.set("userId" as never, result.userId as never);
-    c.set("authVia" as never, "apikey" as never);
-    return next();
-  }
+function envOf(c: Ctx): Bindings {
+  return c.env as unknown as Bindings;
+}
 
-  const jwt = c.req.header("X-Access-Jwt");
-  if (!jwt) return c.json({ error: "Unauthorized" }, 401);
+function imagesBucketOf(c: Ctx): ImagesBucket {
+  return envOf(c).IMAGES as unknown as ImagesBucket;
+}
 
-  try {
-    const email = await verifyAccessJWT(jwt, c.env.CF_ACCESS_TEAM_DOMAIN, c.env.CF_ACCESS_AUD);
-    const container = createCloudflareContainer(c.env);
-    c.set("container" as never, container as never);
-    c.set("userId" as never, email as never);
-    c.set("authVia" as never, "session" as never);
-    return next();
-  } catch (e) {
-    return c.json({ error: "Unauthorized", message: String(e) }, 401);
-  }
-});
+const adapters: AppAdapters = {
+  getContainer: (c) => createCloudflareContainer(envOf(c)),
 
-// 共有ルーター（dev-server と同じルート定義）
-app.route("/", createRoutes());
+  async verifySession(c) {
+    const jwt = c.req.header("X-Access-Jwt");
+    if (!jwt) return null;
+    try {
+      return await verifyAccessJWT(jwt, envOf(c).CF_ACCESS_TEAM_DOMAIN, envOf(c).CF_ACCESS_AUD);
+    } catch {
+      return null;
+    }
+  },
 
-// --- CF固有: 共有レポートページ（公開・認証不要） ---
-app.get("/share/:token", async (c) => {
-  const container = (c as unknown as { var: { container: ReturnType<typeof createCloudflareContainer> } }).var.container;
-  const token = c.req.param("token");
+  async loadShareTemplate(_container, c) {
+    const templateObj = await imagesBucketOf(c).get("templates/export-template.html");
+    if (!templateObj) return null;
+    return templateObj.text();
+  },
 
-  const resolved = await container.shareUseCases.resolve(token);
-  if (!resolved) {
-    return c.html("<!doctype html><html><body><p>リンクが無効です</p></body></html>", 404);
-  }
-
-  const imagesBucket = c.env.IMAGES as unknown as {
-    get(key: string): Promise<{ text(): Promise<string>; arrayBuffer(): Promise<ArrayBuffer>; httpMetadata?: { contentType?: string } } | null>;
-  };
-
-  const templateObj = await imagesBucket.get("templates/export-template.html");
-  if (!templateObj) {
-    return c.html("<!doctype html><html><body><p>共有ページの準備ができていません</p></body></html>", 503);
-  }
-  const template = await templateObj.text();
-
-  const test = await container.testRepo.findById(resolved.userId, resolved.testId);
-
-  const loadImage = async (key: string | undefined): Promise<string | null> => {
+  async loadImageDataUrl(_container, key, c) {
     if (!key) return null;
-    const obj = await imagesBucket.get(key);
+    const obj = await imagesBucketOf(c).get(key);
     if (!obj) return null;
     const buf = Buffer.from(await obj.arrayBuffer());
     const contentType = obj.httpMetadata?.contentType ?? "image/png";
     return `data:${contentType};base64,${buf.toString("base64")}`;
-  };
+  },
+};
 
-  const [imageA, imageB] = await Promise.all([
-    loadImage(test?.designAImageKey),
-    loadImage(test?.designBImageKey),
-  ]);
-
-  const payload = await buildSharePayload(container, resolved.userId, resolved.testId, { imageA, imageB });
-  const html = buildShareHtml(template, payload);
-
-  return c.body(html, 200, {
-    "Content-Type": "text/html; charset=utf-8",
-    "Cache-Control": "private, no-store",
-    "X-Robots-Tag": "noindex",
-  });
-});
+const app = createApp(adapters);
 
 // --- CF固有: R2画像配信 ---
 app.get("/images/*", async (c) => {
   try {
     const key = c.req.path.slice("/images/".length);
-    const obj = await (c.env.IMAGES as unknown as { get(key: string): Promise<{ body: ReadableStream; httpMetadata?: { contentType?: string } } | null> }).get(key);
+    const obj = await imagesBucketOf(c).get(key) as { body: ReadableStream; httpMetadata?: { contentType?: string } } | null;
     if (!obj) return c.text("Not Found", 404);
     const contentType = obj.httpMetadata?.contentType ?? "image/png";
     return new Response(obj.body, { headers: { "Content-Type": contentType, "Cache-Control": "public, max-age=31536000" } });
@@ -113,11 +71,10 @@ app.get("/images/*", async (c) => {
 // --- CF固有: R2アップロード ---
 app.put("/upload/*", async (c) => {
   try {
-    const container = createCloudflareContainer(c.env);
     const key = c.req.path.slice("/upload/".length);
     const contentType = c.req.query("contentType") ?? "image/png";
     const body = await c.req.arrayBuffer();
-    await container.storageService.putObject(key, Buffer.from(body), contentType);
+    await c.var.container.storageService.putObject(key, Buffer.from(body), contentType);
     return c.text("", 200);
   } catch (e) {
     return c.json({ error: String(e) }, 500);
@@ -127,12 +84,12 @@ app.put("/upload/*", async (c) => {
 // --- CF固有: evaluate でR2から画像読み込み (override) ---
 app.post("/tests/:id/execute", async (c) => {
   try {
-    const container = (c as unknown as { var: { container: ReturnType<typeof createCloudflareContainer>; userId: string } }).var.container;
-    const userId = (c as unknown as { var: { userId: string } }).var.userId;
+    const container = c.var.container;
+    const userId = c.var.userId;
     const testId = c.req.param("id");
 
     const buildImageSource = async (key: string): Promise<ImageSource> => {
-      const obj = await (c.env.IMAGES as unknown as { get(key: string): Promise<{ arrayBuffer(): Promise<ArrayBuffer> } | null> }).get(key);
+      const obj = await imagesBucketOf(c).get(key) as { arrayBuffer(): Promise<ArrayBuffer> } | null;
       if (!obj) throw new Error(`Image not found: ${key}`);
       const buf = Buffer.from(await obj.arrayBuffer());
       const ext = key.split(".").pop()?.toLowerCase() ?? "png";
@@ -158,8 +115,8 @@ app.post("/tests/:id/execute", async (c) => {
 
 app.post("/tests/:id/abort", async (c) => {
   try {
-    const container = (c as unknown as { var: { container: ReturnType<typeof createCloudflareContainer>; userId: string } }).var.container;
-    const userId = (c as unknown as { var: { userId: string } }).var.userId;
+    const container = c.var.container;
+    const userId = c.var.userId;
     await container.evaluationUseCases.abortTest(userId, c.req.param("id"));
     return c.json({ aborted: true });
   } catch (e) {

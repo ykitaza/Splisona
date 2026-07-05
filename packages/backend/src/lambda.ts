@@ -1,11 +1,9 @@
-import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";
 import type { LambdaEvent, LambdaContext } from "hono/aws-lambda";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { createContainer, type AppContainer } from "./container.js";
-import { createRoutes, type RouteEnv } from "./routes.js";
+import { createApp, type AppAdapters } from "./create-app.js";
 import { createCognitoVerifier, verifyCognitoToken, type CognitoVerifier } from "./infra/aws/cognito-auth.js";
-import { buildSharePayload, buildShareHtml } from "./application/share-page.js";
 import type { ImageSource } from "./domain/ports/ai-service.js";
 
 type S3ObjectStorage = {
@@ -23,86 +21,38 @@ export interface LambdaAppOptions {
   functionName?: string;
 }
 
-const PUBLIC_PATH_PREFIXES = ["/images/", "/upload/", "/share/"];
-
 export function createLambdaApp(container: AppContainer, opts: LambdaAppOptions) {
-  const app = new Hono<RouteEnv>();
+  const adapters: AppAdapters = {
+    getContainer: () => container,
 
-  // Auth middleware: JWT(Cognito)/APIキー検証 → container + userId をコンテキストにセット
-  app.use("*", async (c, next) => {
-    if (c.req.path === "/config" || PUBLIC_PATH_PREFIXES.some((p) => c.req.path.startsWith(p))) {
-      c.set("container", container);
-      return next();
-    }
+    async verifySession(c) {
+      if (!opts.cognitoVerifier) return null;
+      const authHeader = c.req.header("Authorization");
+      const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
+      if (!bearer) return null;
+      try {
+        return await verifyCognitoToken(opts.cognitoVerifier, bearer);
+      } catch {
+        return null;
+      }
+    },
 
-    const authHeader = c.req.header("Authorization");
-    const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
-    if (!bearer) return c.json({ error: "Unauthorized" }, 401);
+    async loadShareTemplate() {
+      const templateObj = await asS3Storage(container.storageService).getObject(opts.shareTemplateKey);
+      if (!templateObj) return null;
+      return Buffer.from(templateObj.body).toString("utf-8");
+    },
 
-    if (bearer.startsWith("sk_")) {
-      const result = await container.apiKeyUseCases.verify(bearer);
-      if (!result) return c.json({ error: "UNAUTHORIZED", message: "invalid api key" }, 401);
-      c.set("container", container);
-      c.set("userId", result.userId);
-      c.set("authVia", "apikey");
-      return next();
-    }
-
-    if (!opts.cognitoVerifier) return c.json({ error: "Unauthorized" }, 401);
-    try {
-      const userId = await verifyCognitoToken(opts.cognitoVerifier, bearer);
-      c.set("container", container);
-      c.set("userId", userId);
-      c.set("authVia", "session");
-      return next();
-    } catch (e) {
-      return c.json({ error: "Unauthorized", message: String(e) }, 401);
-    }
-  });
-
-  // 共有ルーター（dev-server / Cloudflare 版と同じルート定義）
-  app.route("/", createRoutes());
-
-  // --- AWS固有: 共有レポートページ（公開・認証不要） ---
-  app.get("/share/:token", async (c) => {
-    const token = c.req.param("token");
-
-    const resolved = await container.shareUseCases.resolve(token);
-    if (!resolved) {
-      return c.html("<!doctype html><html><body><p>リンクが無効です</p></body></html>", 404);
-    }
-
-    const storage = asS3Storage(container.storageService);
-    const templateObj = await storage.getObject(opts.shareTemplateKey);
-    if (!templateObj) {
-      return c.html("<!doctype html><html><body><p>共有ページの準備ができていません</p></body></html>", 503);
-    }
-    const template = Buffer.from(templateObj.body).toString("utf-8");
-
-    const test = await container.testRepo.findById(resolved.userId, resolved.testId);
-
-    const loadImage = async (key: string | undefined): Promise<string | null> => {
+    async loadImageDataUrl(_container, key) {
       if (!key) return null;
-      const obj = await storage.getObject(key);
+      const obj = await asS3Storage(container.storageService).getObject(key);
       if (!obj) return null;
       const contentType = obj.contentType ?? "image/png";
       return `data:${contentType};base64,${Buffer.from(obj.body).toString("base64")}`;
-    };
+    },
+  };
 
-    const [imageA, imageB] = await Promise.all([
-      loadImage(test?.designAImageKey),
-      loadImage(test?.designBImageKey),
-    ]);
-
-    const payload = await buildSharePayload(container, resolved.userId, resolved.testId, { imageA, imageB });
-    const html = buildShareHtml(template, payload);
-
-    return c.body(html, 200, {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "private, no-store",
-      "X-Robots-Tag": "noindex",
-    });
-  });
+  const app = createApp(adapters);
 
   // --- AWS固有: S3画像配信 ---
   app.get("/images/*", async (c) => {

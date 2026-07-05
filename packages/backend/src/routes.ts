@@ -25,41 +25,37 @@ export { handleError };
 export function createRoutes() {
   const api = new Hono<RouteEnv>();
 
+  api.onError((e, c) => {
+    const err = handleError(e);
+    return c.json(err.body, err.status);
+  });
+
   api.get("/config", (c) => c.json({ modelId: c.var.container.modelId }));
 
   // --- Persona ---
   api.get("/personas", async (c) => {
-    try { return c.json(await c.var.container.personaUseCases.list(c.var.userId)); }
-    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.personaUseCases.list(c.var.userId));
   });
 
   api.post("/personas", async (c) => {
-    try {
-      const input = await c.req.json();
-      if (!input.displayName?.trim()) return c.json({ error: "VALIDATION_ERROR", message: "displayName is required" }, 400);
-      return c.json(await c.var.container.personaUseCases.create(c.var.userId, input), 201);
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const input = await c.req.json();
+    if (!input.displayName?.trim()) return c.json({ error: "VALIDATION_ERROR", message: "displayName is required" }, 400);
+    return c.json(await c.var.container.personaUseCases.create(c.var.userId, input), 201);
   });
 
   api.get("/personas/:id", async (c) => {
-    try {
-      const persona = await c.var.container.personaUseCases.get(c.var.userId, c.req.param("id"));
-      if (!persona) return c.json({ error: "NOT_FOUND" }, 404);
-      return c.json(persona);
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const persona = await c.var.container.personaUseCases.get(c.var.userId, c.req.param("id"));
+    if (!persona) return c.json({ error: "NOT_FOUND" }, 404);
+    return c.json(persona);
   });
 
   api.put("/personas/:id", async (c) => {
-    try {
-      return c.json(await c.var.container.personaUseCases.update(c.var.userId, c.req.param("id"), await c.req.json()));
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.personaUseCases.update(c.var.userId, c.req.param("id"), await c.req.json()));
   });
 
   api.delete("/personas/:id", async (c) => {
-    try {
-      await c.var.container.personaUseCases.delete(c.var.userId, c.req.param("id"));
-      return c.json({ deleted: true });
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    await c.var.container.personaUseCases.delete(c.var.userId, c.req.param("id"));
+    return c.json({ deleted: true });
   });
 
   api.post("/personas/:id/draft", async (c) => {
@@ -71,10 +67,8 @@ export function createRoutes() {
   });
 
   api.post("/personas/:id/upload-url", async (c) => {
-    try {
-      const { contentType = "image/png" } = await c.req.json();
-      return c.json(await c.var.container.personaUseCases.getUploadUrl(c.var.userId, c.req.param("id"), contentType));
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const { contentType = "image/png" } = await c.req.json();
+    return c.json(await c.var.container.personaUseCases.getUploadUrl(c.var.userId, c.req.param("id"), contentType));
   });
 
   api.post("/personas/:id/interview", async (c) => {
@@ -90,113 +84,84 @@ export function createRoutes() {
 
   // --- Project ---
   api.get("/projects", async (c) => {
-    try { return c.json(await c.var.container.projectUseCases.list(c.var.userId)); }
-    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.projectUseCases.list(c.var.userId));
   });
 
   api.post("/projects", async (c) => {
-    try {
-      const input = await c.req.json();
-      if (!input.name?.trim()) return c.json({ error: "VALIDATION_ERROR", message: "name is required" }, 400);
-      return c.json(await c.var.container.projectUseCases.create(c.var.userId, input), 201);
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const input = await c.req.json();
+    if (!input.name?.trim()) return c.json({ error: "VALIDATION_ERROR", message: "name is required" }, 400);
+    return c.json(await c.var.container.projectUseCases.create(c.var.userId, input), 201);
   });
 
   api.get("/projects/:id", async (c) => {
-    try { return c.json(await c.var.container.projectUseCases.getDetail(c.var.userId, c.req.param("id"))); }
-    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.projectUseCases.getDetail(c.var.userId, c.req.param("id")));
   });
 
   api.put("/projects/:id", async (c) => {
-    try {
-      return c.json(await c.var.container.projectUseCases.update(c.var.userId, c.req.param("id"), await c.req.json()));
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.projectUseCases.update(c.var.userId, c.req.param("id"), await c.req.json()));
   });
 
   api.delete("/projects/:id", async (c) => {
-    try {
-      await c.var.container.projectUseCases.delete(c.var.userId, c.req.param("id"));
-      return c.json({ deleted: true });
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    await c.var.container.projectUseCases.delete(c.var.userId, c.req.param("id"));
+    return c.json({ deleted: true });
   });
 
   api.post("/projects/:id/tests", async (c) => {
-    try {
-      const { testId } = await c.req.json();
-      return c.json(await c.var.container.projectUseCases.addTest(c.var.userId, c.req.param("id"), testId));
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const { testId } = await c.req.json();
+    return c.json(await c.var.container.projectUseCases.addTest(c.var.userId, c.req.param("id"), testId));
   });
 
   api.delete("/projects/:id/tests/:testId", async (c) => {
-    try {
-      return c.json(await c.var.container.projectUseCases.removeTest(c.var.userId, c.req.param("id"), c.req.param("testId")));
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.projectUseCases.removeTest(c.var.userId, c.req.param("id"), c.req.param("testId")));
   });
 
   // --- ABTest ---
   api.post("/tests", async (c) => {
-    try {
-      const input = await c.req.json();
-      if (!input.title) input.title = "";
-      const test = await c.var.container.abtestUseCases.create(c.var.userId, input);
-      return c.json(toABTestDTO(test), 201);
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const input = await c.req.json();
+    if (!input.title) input.title = "";
+    const test = await c.var.container.abtestUseCases.create(c.var.userId, input);
+    return c.json(toABTestDTO(test), 201);
   });
 
   api.get("/tests", async (c) => {
-    try {
-      const tests = await c.var.container.abtestUseCases.list(c.var.userId);
-      return c.json(tests.map(toABTestDTO));
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const tests = await c.var.container.abtestUseCases.list(c.var.userId);
+    return c.json(tests.map(toABTestDTO));
   });
 
   api.get("/tests/:id", async (c) => {
-    try {
-      const test = await c.var.container.abtestUseCases.get(c.var.userId, c.req.param("id"));
-      if (!test) return c.json({ error: "NOT_FOUND" }, 404);
-      return c.json(toABTestDTO(test));
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const test = await c.var.container.abtestUseCases.get(c.var.userId, c.req.param("id"));
+    if (!test) return c.json({ error: "NOT_FOUND" }, 404);
+    return c.json(toABTestDTO(test));
   });
 
   api.put("/tests/:id", async (c) => {
-    try {
-      const test = await c.var.container.abtestUseCases.update(c.var.userId, c.req.param("id"), await c.req.json());
-      return c.json(toABTestDTO(test));
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const test = await c.var.container.abtestUseCases.update(c.var.userId, c.req.param("id"), await c.req.json());
+    return c.json(toABTestDTO(test));
   });
 
   api.delete("/tests/:id", async (c) => {
-    try {
-      await c.var.container.abtestUseCases.delete(c.var.userId, c.req.param("id"));
-      return c.json({ deleted: true });
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    await c.var.container.abtestUseCases.delete(c.var.userId, c.req.param("id"));
+    return c.json({ deleted: true });
   });
 
   api.post("/tests/:id/upload-url", async (c) => {
-    try {
-      const { side, contentType = "image/png", segmentIndex } = await c.req.json();
-      return c.json(await c.var.container.abtestUseCases.getUploadUrl(c.var.userId, c.req.param("id"), side, contentType, segmentIndex));
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const { side, contentType = "image/png", segmentIndex } = await c.req.json();
+    return c.json(await c.var.container.abtestUseCases.getUploadUrl(c.var.userId, c.req.param("id"), side, contentType, segmentIndex));
   });
 
   api.get("/tests/:id/progress", async (c) => {
-    try { return c.json(await c.var.container.abtestUseCases.getProgress(c.var.userId, c.req.param("id"))); }
-    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.abtestUseCases.getProgress(c.var.userId, c.req.param("id")));
   });
 
   api.post("/tests/:id/clone", async (c) => {
-    try {
-      const cloned = await c.var.container.abtestUseCases.clone(c.var.userId, c.req.param("id"));
-      return c.json(toABTestDTO(cloned));
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const cloned = await c.var.container.abtestUseCases.clone(c.var.userId, c.req.param("id"));
+    return c.json(toABTestDTO(cloned));
   });
 
   api.post("/tests/:id/results", async (c) => {
-    try {
-      const input = await c.req.json();
-      await c.var.container.evaluationUseCases.ingestResults(c.var.userId, c.req.param("id"), input);
-      return c.json({ ok: true });
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const input = await c.req.json();
+    await c.var.container.evaluationUseCases.ingestResults(c.var.userId, c.req.param("id"), input);
+    return c.json({ ok: true });
   });
 
   // --- Capture ---
@@ -211,33 +176,26 @@ export function createRoutes() {
 
   // --- Report ---
   api.get("/tests/:id/report", async (c) => {
-    try { return c.json(await c.var.container.reportUseCases.getReport(c.var.userId, c.req.param("id"))); }
-    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.reportUseCases.getReport(c.var.userId, c.req.param("id")));
   });
 
   api.get("/tests/:id/export", async (c) => {
-    try {
-      const csv = await c.var.container.reportUseCases.exportReport(c.var.userId, c.req.param("id"));
-      return c.body(csv, 200, { "Content-Type": "text/csv" });
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const csv = await c.var.container.reportUseCases.exportReport(c.var.userId, c.req.param("id"));
+    return c.body(csv, 200, { "Content-Type": "text/csv" });
   });
 
   // --- Share ---
   api.post("/tests/:id/share", async (c) => {
-    try { return c.json(await c.var.container.shareUseCases.create(c.var.userId, c.req.param("id")), 201); }
-    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.shareUseCases.create(c.var.userId, c.req.param("id")), 201);
   });
 
   api.get("/tests/:id/share", async (c) => {
-    try { return c.json(await c.var.container.shareUseCases.status(c.var.userId, c.req.param("id"))); }
-    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.shareUseCases.status(c.var.userId, c.req.param("id")));
   });
 
   api.delete("/tests/:id/share", async (c) => {
-    try {
-      await c.var.container.shareUseCases.revoke(c.var.userId, c.req.param("id"));
-      return c.json({ deleted: true });
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    await c.var.container.shareUseCases.revoke(c.var.userId, c.req.param("id"));
+    return c.json({ deleted: true });
   });
 
   // --- Figma ---
@@ -259,8 +217,7 @@ export function createRoutes() {
 
   // --- Settings ---
   api.get("/settings", async (c) => {
-    try { return c.json(await c.var.container.settingsUseCases.getAll(c.var.userId)); }
-    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.settingsUseCases.getAll(c.var.userId));
   });
 
   api.put("/settings", async (c) => {
@@ -278,25 +235,20 @@ export function createRoutes() {
 
   api.post("/agent/keys", async (c) => {
     if (c.var.authVia !== "session") return c.json({ error: "FORBIDDEN", message: "api key cannot manage keys" }, 403);
-    try {
-      const { name } = await c.req.json();
-      if (!name?.trim()) return c.json({ error: "VALIDATION_ERROR", message: "name is required" }, 400);
-      return c.json(await c.var.container.apiKeyUseCases.issue(c.var.userId, name), 201);
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    const { name } = await c.req.json();
+    if (!name?.trim()) return c.json({ error: "VALIDATION_ERROR", message: "name is required" }, 400);
+    return c.json(await c.var.container.apiKeyUseCases.issue(c.var.userId, name), 201);
   });
 
   api.get("/agent/keys", async (c) => {
     if (c.var.authVia !== "session") return c.json({ error: "FORBIDDEN", message: "api key cannot manage keys" }, 403);
-    try { return c.json(await c.var.container.apiKeyUseCases.list(c.var.userId)); }
-    catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    return c.json(await c.var.container.apiKeyUseCases.list(c.var.userId));
   });
 
   api.delete("/agent/keys/:keyId", async (c) => {
     if (c.var.authVia !== "session") return c.json({ error: "FORBIDDEN", message: "api key cannot manage keys" }, 403);
-    try {
-      await c.var.container.apiKeyUseCases.revoke(c.var.userId, c.req.param("keyId"));
-      return c.json({ deleted: true });
-    } catch (e) { const err = handleError(e); return c.json(err.body, err.status); }
+    await c.var.container.apiKeyUseCases.revoke(c.var.userId, c.req.param("keyId"));
+    return c.json({ deleted: true });
   });
 
   return api;

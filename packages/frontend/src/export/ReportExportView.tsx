@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Lightbulb, Image, PenTool, Globe, ChevronDown } from 'lucide-react';
+import { Check, Lightbulb, ChevronDown } from 'lucide-react';
 import { RadarChart } from '@/features/report/RadarChart';
 import { AttributeHeatmap } from '@/features/report/AttributeHeatmap';
 import { PersonaNode } from '@/features/persona/PersonaNode';
@@ -7,48 +7,13 @@ import { ImageLightbox } from '@/shared/ui/ImageLightbox';
 import { ImprovementDrawer } from '@/features/report/ImprovementDrawer';
 import { buildPromptContext } from '@/features/report/prompt-context';
 import { PERSONA_TYPE_LABELS } from '@/features/persona/types';
+import { SegmentBar } from '@/features/report/components/SegmentBar';
+import { ScoreBars } from '@/features/report/components/ScoreBars';
+import { DesignCard } from '@/features/report/components/DesignCard';
+import { SCORE_LABELS } from '@/features/report/components/score-labels';
 import type { ExportPayload } from './types';
 import type { EvaluationScores } from '@/features/report/types';
-import type { DesignInput } from '@/features/test/types';
 import type { Persona } from '@/features/persona/types';
-
-const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
-  usability: '使いやすさ',
-  aesthetics: '見た目',
-  clarity: '明確さ',
-  engagement: '訴求力',
-  trust: '信頼感',
-};
-
-function SegmentBar({ countA, countB, countNone }: { countA: number; countB: number; countNone: number }) {
-  const total = countA + countB + countNone;
-  if (total === 0) return null;
-  return (
-    <div data-testid="segment-bar" className="flex flex-col" style={{ gap: 12 }}>
-      <div className="flex overflow-hidden" style={{ height: 16, borderRadius: 999, gap: 2 }}>
-        {countA > 0 && <div style={{ flex: countA, background: '#6E78D9A0' }} />}
-        {countB > 0 && <div style={{ flex: countB, background: '#C9974FA0' }} />}
-        {countNone > 0 && <div style={{ flex: countNone, background: '#3A3D4280' }} />}
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#6E78D9A0' }} />
-          <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>A 勝利 · {countA}</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>{countB} · B 勝利</span>
-          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#C9974FA0' }} />
-        </span>
-        {countNone > 0 && (
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#3A3D4280' }} />
-            <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>引分 · {countNone}</span>
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function ReasonGroup({ caption, color, reasons }: { caption: string; color: string; reasons: string[] }) {
   if (reasons.length === 0) return null;
@@ -63,108 +28,6 @@ function ReasonGroup({ caption, color, reasons }: { caption: string; color: stri
           <span className="text-text-mid font-sans text-sm" style={{ lineHeight: 1.5 }}>{reason}</span>
         </div>
       ))}
-    </div>
-  );
-}
-
-function ScoreBars({ label, scoreA, scoreB }: { label: string; scoreA: number; scoreB: number }) {
-  const total = scoreA + scoreB;
-  const aRatio = total > 0 ? (scoreA / total) * 100 : 50;
-  const bRatio = total > 0 ? (scoreB / total) * 100 : 50;
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-text-mid font-sans text-sm">{label}</span>
-        <div className="flex items-center gap-3">
-          <span className="text-win-a font-mono text-xs font-semibold" style={{ minWidth: 44, textAlign: 'right' }}>
-            A {scoreA.toFixed(1)}
-          </span>
-          <span className="text-win-b font-mono text-xs font-semibold" style={{ minWidth: 44, textAlign: 'right' }}>
-            B {scoreB.toFixed(1)}
-          </span>
-        </div>
-      </div>
-      <div className="flex overflow-hidden rounded-full" style={{ height: 6, background: 'var(--color-raised, #1C1F23)' }}>
-        <div style={{ width: `${aRatio}%`, height: '100%', background: 'var(--color-win-a, #6E78D9)' }} />
-        <div style={{ width: `${bRatio}%`, height: '100%', background: 'var(--color-win-b, #C9974F)' }} />
-      </div>
-    </div>
-  );
-}
-
-function DesignSourceInfo({ input }: { input: DesignInput }) {
-  if (input.inputType === 'figma_url') {
-    return (
-      <span className="flex items-center gap-1.5 min-w-0 text-text-lo">
-        <PenTool size={13} className="text-text-lo flex-shrink-0" />
-        <span className="truncate font-mono text-xs">{input.figmaUrl ?? 'Figma URL'}</span>
-      </span>
-    );
-  }
-  if (input.inputType === 'site_url') {
-    return (
-      <span className="flex items-center gap-1.5 min-w-0 text-text-lo">
-        <Globe size={13} className="text-text-lo flex-shrink-0" />
-        <span className="truncate font-mono text-xs">{input.siteUrl ?? 'サイトURL'}</span>
-      </span>
-    );
-  }
-  return (
-    <div className="flex items-center gap-1.5 text-text-lo">
-      <Image size={13} className="flex-shrink-0" />
-      <span className="font-mono text-xs">画像アップロード</span>
-    </div>
-  );
-}
-
-function DesignCard({ side, input, isWinner, supportCount, totalCount, imageDataUrl, onZoom }: {
-  side: 'A' | 'B';
-  input: DesignInput;
-  isWinner: boolean;
-  supportCount: number;
-  totalCount: number;
-  imageDataUrl: string | null;
-  onZoom: (src: string, alt: string) => void;
-}) {
-  const borderColor = isWinner
-    ? (side === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)')
-    : 'var(--color-hairline)';
-
-  return (
-    <div
-      className="flex flex-col flex-1 min-w-0"
-      style={{ gap: 16, paddingLeft: 16, borderLeft: `2px solid ${borderColor}` }}
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-text-hi font-mono text-xs font-semibold" style={{ letterSpacing: 0.5 }}>{side}案</span>
-      </div>
-      <div
-        className="flex items-center justify-center overflow-hidden flex-shrink-0"
-        style={{ height: 180, borderRadius: 10, border: '1px solid var(--color-hairline)' }}
-      >
-        {imageDataUrl ? (
-          <img
-            src={imageDataUrl}
-            alt={`${side}案`}
-            className="w-full h-full object-cover"
-            style={{ cursor: 'zoom-in' }}
-            onClick={() => onZoom(imageDataUrl, `${side}案`)}
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            <Image size={32} className="text-text-lo" />
-            <span className="text-text-lo font-sans text-xs">画像なし</span>
-          </div>
-        )}
-      </div>
-      <DesignSourceInfo input={input} />
-      {input.segmentKeys && input.segmentKeys.length > 0 && (
-        <span className="text-text-lo font-mono text-xs">評価入力: {input.segmentKeys.length}分割</span>
-      )}
-      <div className="h-px bg-hairline" />
-      <div className="flex items-center justify-between">
-        <span className="text-text-mid font-sans text-sm">{totalCount}人中{supportCount}人が支持</span>
-      </div>
     </div>
   );
 }
@@ -297,8 +160,8 @@ export function ReportExportView({ data }: { data: ExportPayload }) {
       <div className="flex flex-col" style={{ gap: 14 }}>
         <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>比較したデザイン</span>
         <div className="flex min-w-0" style={{ gap: 32 }}>
-          <DesignCard side="A" input={abTest.designAInput} isWinner={summary.winner === 'A'} supportCount={supportCountA} totalCount={summary.totalPersonas} imageDataUrl={imageA} onZoom={(src, alt) => setLightbox({ src, alt })} />
-          <DesignCard side="B" input={abTest.designBInput} isWinner={summary.winner === 'B'} supportCount={supportCountB} totalCount={summary.totalPersonas} imageDataUrl={imageB} onZoom={(src, alt) => setLightbox({ src, alt })} />
+          <DesignCard side="A" input={abTest.designAInput} isWinner={summary.winner === 'A'} supportCount={supportCountA} totalCount={summary.totalPersonas} imageSrc={imageA} onZoom={(src, alt) => setLightbox({ src, alt })} />
+          <DesignCard side="B" input={abTest.designBInput} isWinner={summary.winner === 'B'} supportCount={supportCountB} totalCount={summary.totalPersonas} imageSrc={imageB} onZoom={(src, alt) => setLightbox({ src, alt })} />
         </div>
       </div>
 

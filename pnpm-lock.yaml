@@ -32,6 +32,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.1075.0
         version: 3.1075.0
+      '@chorus/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@cloudflare/puppeteer':
         specifier: ^1.1.0
         version: 1.1.0
@@ -63,6 +66,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@chorus/shared':
+        specifier: workspace:*
+        version: link:../shared
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -85,6 +91,9 @@ importers:
       '@aws-amplify/auth':
         specifier: ^6.9.0
         version: 6.20.0(@aws-amplify/core@6.16.4)
+      '@chorus/shared':
+        specifier: workspace:*
+        version: link:../shared
       aws-amplify:
         specifier: ^6.15.0
         version: 6.18.0
@@ -165,6 +174,12 @@ importers:
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@22.20.0)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  packages/shared:
+    devDependencies:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3

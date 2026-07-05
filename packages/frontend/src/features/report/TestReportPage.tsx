@@ -1,8 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronDown, Download, RefreshCw, Lightbulb, Image, PenTool, Globe, Check, Plus, Pencil, FolderPlus, FolderMinus, Trash2, FileJson, FileText } from 'lucide-react';
-import { ImageLightbox } from '@/shared/ui/ImageLightbox';
-import { SegmentViewer } from './SegmentViewer';
+import { ChevronDown, RefreshCw, Lightbulb, Check, Plus } from 'lucide-react';
 import { RadarChart } from './RadarChart';
 import { ImprovementDrawer } from './ImprovementDrawer';
 import { buildPromptContext } from './prompt-context';
@@ -10,6 +8,12 @@ import { AttributeHeatmap } from './AttributeHeatmap';
 import { SharePopover } from './SharePopover';
 import { MethodPopover } from './Popovers';
 import { HelpDot } from '@/shared/ui/HelpDot';
+import { ExportMenu } from './ExportMenu';
+import { TestTitleMenu } from './TestTitleMenu';
+import { SegmentBar } from './components/SegmentBar';
+import { ScoreBars } from './components/ScoreBars';
+import { DesignCard } from './components/DesignCard';
+import { SCORE_LABELS } from './components/score-labels';
 import { getReport, cloneTest, updateTest, deleteTest } from '@/features/test/api';
 import { listProjects, addTestToProject, removeTestFromProject } from '@/features/project/api';
 import { getConfig } from '@/features/settings/api';
@@ -22,213 +26,8 @@ import { PERSONA_TYPE_LABELS } from '@/features/persona/types';
 import type { ReportResponse, EvaluationScores } from './types';
 import type { DesignInput } from '@/features/test/types';
 import type { Persona } from '@/features/persona/types';
-import { ProjectSubmenuPanel } from '@/shared/ui/ProjectSubmenuPanel';
 import type { Project } from '@/features/project/types';
 import { buildExportJson, buildExportHtml, downloadBlob } from './export-report';
-
-const SCORE_LABELS: Record<keyof EvaluationScores, string> = {
-  usability: '使いやすさ',
-  aesthetics: '見た目',
-  clarity: '明確さ',
-  engagement: '訴求力',
-  trust: '信頼感',
-};
-
-function ExportMenu({ onJson, onHtml }: { onJson: () => void; onHtml: () => void }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function close(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [open]);
-
-  const items = [
-    { label: 'HTML', icon: <FileText size={14} />, action: onHtml },
-    { label: 'JSON', icon: <FileJson size={14} />, action: onJson },
-  ];
-
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center bg-surface border border-hairline text-text-mid font-sans font-medium transition-colors hover:text-text-hi"
-        style={{ gap: 8, borderRadius: 10, padding: '10px 15px', fontSize: 13 }}
-      >
-        <Download size={15} />
-        書き出し
-        <ChevronDown size={13} style={{ marginLeft: 2, opacity: 0.5 }} />
-      </button>
-      {open && (
-        <div
-          className="bg-raised border border-hairline"
-          style={{
-            position: 'absolute', right: 0, top: '100%', marginTop: 6,
-            borderRadius: 10, padding: 4, minWidth: 220, zIndex: 50,
-            boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-          }}
-        >
-          {items.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => { setOpen(false); item.action(); }}
-              className="flex items-center w-full text-left text-text-mid font-sans transition-colors hover:text-text-hi hover:bg-surface"
-              style={{ gap: 10, padding: '9px 12px', borderRadius: 8, fontSize: 13, border: 'none', background: 'none', cursor: 'pointer' }}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SegmentBar({ countA, countB, countNone }: { countA: number; countB: number; countNone: number }) {
-  const total = countA + countB + countNone;
-  if (total === 0) return null;
-  return (
-    <div data-testid="segment-bar" className="flex flex-col" style={{ gap: 12 }}>
-      <div className="flex overflow-hidden" style={{ height: 16, borderRadius: 999, gap: 2 }}>
-        {countA > 0 && <div style={{ flex: countA, background: '#6E78D9A0' }} />}
-        {countB > 0 && <div style={{ flex: countB, background: '#C9974FA0' }} />}
-        {countNone > 0 && <div style={{ flex: countNone, background: '#3A3D4280' }} />}
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#6E78D9A0' }} />
-          <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>A 勝利 · {countA}</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>{countB} · B 勝利</span>
-          <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#C9974FA0' }} />
-        </span>
-        {countNone > 0 && (
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#3A3D4280' }} />
-            <span className="text-text-mid font-mono text-xs" style={{ letterSpacing: 0.3 }}>引分 · {countNone}</span>
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function TestTitleMenu({
-  title,
-  parentProject,
-  allProjects,
-  onRename,
-  onAddToProject,
-  onRemoveFromProject,
-  onDelete,
-}: {
-  title: string;
-  parentProject: Project | null;
-  allProjects: Project[];
-  onRename: () => void;
-  onAddToProject: (projectId: string) => void;
-  onRemoveFromProject: () => void;
-  onDelete: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [projectSubOpen, setProjectSubOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setProjectSubOpen(false); }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative inline-flex">
-      <button
-        type="button"
-        onClick={() => { setOpen((o) => !o); setProjectSubOpen(false); }}
-        className="flex items-center transition-colors hover:text-text-hi"
-        style={{ gap: 4, color: '#F2F4F7' }}
-      >
-        <span className="font-sans font-semibold" style={{ fontSize: 15 }}>{title}</span>
-        <ChevronDown size={14} style={{ color: '#5B616B' }} />
-      </button>
-      {open && (
-        <div
-          className="absolute left-0 top-full mt-1 bg-surface border border-hairline rounded-lg overflow-visible z-30"
-          style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 220 }}
-        >
-          <button
-            type="button"
-            onClick={() => { setOpen(false); onRename(); }}
-            className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-            style={{ gap: 10, color: '#E1E4EA' }}
-          >
-            <Pencil size={14} style={{ color: '#9BA1AC' }} />
-            名前を変更
-          </button>
-
-          {parentProject ? (
-            <button
-              type="button"
-              onClick={() => { setOpen(false); onRemoveFromProject(); }}
-              className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-              style={{ gap: 10, color: '#E1E4EA' }}
-            >
-              <FolderMinus size={14} style={{ color: '#9BA1AC' }} />
-              プロジェクトから削除
-            </button>
-          ) : (
-            <div className="relative" onMouseEnter={() => setProjectSubOpen(true)} onMouseLeave={() => setProjectSubOpen(false)}>
-              <button
-                type="button"
-                className="flex items-center justify-between w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-                style={{ color: '#E1E4EA' }}
-              >
-                <span className="flex items-center" style={{ gap: 10 }}>
-                  <FolderPlus size={14} style={{ color: '#9BA1AC' }} />
-                  プロジェクトに追加
-                </span>
-                <ChevronDown size={12} style={{ color: '#5B616B', transform: 'rotate(-90deg)' }} />
-              </button>
-              {projectSubOpen && (
-                <div
-                  className="absolute left-full top-0 bg-surface border border-hairline rounded-lg overflow-hidden"
-                  style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)', minWidth: 200 }}
-                >
-                  <ProjectSubmenuPanel
-                    projects={allProjects}
-                    onSelect={(projectId) => { setOpen(false); setProjectSubOpen(false); onAddToProject(projectId); }}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          <div style={{ height: 1, background: '#FFFFFF14', margin: '0 12px' }} />
-          <button
-            type="button"
-            onClick={() => { setOpen(false); onDelete(); }}
-            className="flex items-center w-full px-4 py-2.5 font-sans text-sm transition-colors hover:bg-raised"
-            style={{ gap: 10, color: '#E5484D' }}
-          >
-            <Trash2 size={14} style={{ color: '#E5484D' }} />
-            削除
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function ReasonGroup({ caption, color, reasons }: { caption: string; color: string; reasons: string[] }) {
   if (reasons.length === 0) return null;
@@ -244,119 +43,6 @@ function ReasonGroup({ caption, color, reasons }: { caption: string; color: stri
         </div>
       ))}
     </div>
-  );
-}
-
-function ScoreBars({ label, scoreA, scoreB }: { label: string; scoreA: number; scoreB: number }) {
-  const total = scoreA + scoreB;
-  const aRatio = total > 0 ? (scoreA / total) * 100 : 50;
-  const bRatio = total > 0 ? (scoreB / total) * 100 : 50;
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-text-mid font-sans text-sm">{label}</span>
-        <div className="flex items-center gap-3">
-          <span className="text-win-a font-mono text-xs font-semibold" style={{ minWidth: 44, textAlign: 'right' }}>
-            A {scoreA.toFixed(1)}
-          </span>
-          <span className="text-win-b font-mono text-xs font-semibold" style={{ minWidth: 44, textAlign: 'right' }}>
-            B {scoreB.toFixed(1)}
-          </span>
-        </div>
-      </div>
-      <div className="flex overflow-hidden rounded-full" style={{ height: 6, background: 'var(--color-raised, #1C1F23)' }}>
-        <div style={{ width: `${aRatio}%`, height: '100%', background: 'var(--color-win-a, #6E78D9)' }} />
-        <div style={{ width: `${bRatio}%`, height: '100%', background: 'var(--color-win-b, #C9974F)' }} />
-      </div>
-    </div>
-  );
-}
-
-function DesignSourceInfo({ input }: { input: DesignInput }) {
-  if (input.inputType === 'figma_url') {
-    return (
-      <a href={input.figmaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 min-w-0 text-text-lo hover:opacity-70 transition-opacity">
-        <PenTool size={13} className="text-text-lo flex-shrink-0" />
-        <span className="truncate font-mono text-xs">{input.figmaUrl ?? 'Figma URL'}</span>
-      </a>
-    );
-  }
-  if (input.inputType === 'site_url') {
-    return (
-      <a href={input.siteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 min-w-0 text-text-lo hover:opacity-70 transition-opacity">
-        <Globe size={13} className="text-text-lo flex-shrink-0" />
-        <span className="truncate font-mono text-xs">{input.siteUrl ?? 'サイトURL'}</span>
-      </a>
-    );
-  }
-  return (
-    <div className="flex items-center gap-1.5 text-text-lo">
-      <Image size={13} className="flex-shrink-0" />
-      <span className="font-mono text-xs">画像アップロード</span>
-    </div>
-  );
-}
-
-function DesignCard({ side, input, isWinner, supportCount, totalCount }: {
-  side: 'A' | 'B';
-  input: DesignInput;
-  isWinner: boolean;
-  supportCount: number;
-  totalCount: number;
-}) {
-  const [lightbox, setLightbox] = useState(false);
-  const [segmentViewerOpen, setSegmentViewerOpen] = useState(false);
-  const imageUrl = input.imageKey ? `${API_BASE}/images/${input.imageKey}` : null;
-  const borderColor = isWinner
-    ? (side === 'A' ? 'var(--color-win-a)' : 'var(--color-win-b)')
-    : 'var(--color-hairline)';
-
-  return (
-    <>
-      {lightbox && imageUrl && <ImageLightbox src={imageUrl} alt={`${side}案`} onClose={() => setLightbox(false)} />}
-      {segmentViewerOpen && input.segmentKeys && input.segmentKeys.length > 0 && (
-        <SegmentViewer side={side} segmentKeys={input.segmentKeys} onClose={() => setSegmentViewerOpen(false)} />
-      )}
-      <div
-        className="flex flex-col flex-1 min-w-0"
-        style={{ gap: 16, paddingLeft: 16, borderLeft: `2px solid ${borderColor}` }}
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-text-hi font-mono text-xs font-semibold" style={{ letterSpacing: 0.5 }}>{side}案</span>
-        </div>
-        <div
-          className="flex items-center justify-center overflow-hidden flex-shrink-0"
-          style={{ height: 180, borderRadius: 10, border: '1px solid var(--color-hairline)', cursor: imageUrl ? 'zoom-in' : 'default' }}
-          onClick={() => { if (imageUrl) setLightbox(true); }}
-        >
-          {imageUrl ? (
-            <img src={imageUrl} alt={`${side}案`} className="w-full h-full object-cover" />
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <Image size={32} className="text-text-lo" />
-              <span className="text-text-lo font-sans text-xs">画像なし</span>
-            </div>
-          )}
-        </div>
-        <DesignSourceInfo input={input} />
-        {input.segmentKeys && input.segmentKeys.length > 0 && (
-          <div className="flex items-center" style={{ gap: 8 }}>
-            <span className="text-text-lo font-mono text-xs">評価入力: {input.segmentKeys.length}分割</span>
-            <button
-              type="button"
-              onClick={() => setSegmentViewerOpen(true)}
-              className="text-accent font-sans text-xs font-medium hover:opacity-80 transition-opacity"
-            >
-              入力画像を確認
-            </button>
-          </div>
-        )}
-        <div className="h-px bg-hairline" />
-        <div className="flex items-center justify-between">
-          <span className="text-text-mid font-sans text-sm">{totalCount}人中{supportCount}人が支持</span>
-        </div>
-      </div>
-    </>
   );
 }
 
@@ -702,8 +388,8 @@ export function TestReportPage() {
         <div className="flex flex-col" style={{ gap: 14 }}>
           <span className="text-text-lo font-mono text-xs" style={{ letterSpacing: 1.2 }}>比較したデザイン</span>
           <div className="flex min-w-0" style={{ gap: 32 }}>
-            <DesignCard side="A" input={abTest.designAInput} isWinner={summary.winner === 'A'} supportCount={supportCountA} totalCount={summary.totalPersonas} />
-            <DesignCard side="B" input={abTest.designBInput} isWinner={summary.winner === 'B'} supportCount={supportCountB} totalCount={summary.totalPersonas} />
+            <DesignCard side="A" input={abTest.designAInput} isWinner={summary.winner === 'A'} supportCount={supportCountA} totalCount={summary.totalPersonas} imageSrc={abTest.designAInput.imageKey ? `${API_BASE}/images/${abTest.designAInput.imageKey}` : null} enableSegmentViewer />
+            <DesignCard side="B" input={abTest.designBInput} isWinner={summary.winner === 'B'} supportCount={supportCountB} totalCount={summary.totalPersonas} imageSrc={abTest.designBInput.imageKey ? `${API_BASE}/images/${abTest.designBInput.imageKey}` : null} enableSegmentViewer />
           </div>
         </div>
       </RevealSection>

@@ -1,43 +1,12 @@
 import * as path from "node:path";
 import type { Command } from "commander";
+import { SEGMENT_THRESHOLD, MAX_FULL_HEIGHT, computeSegmentPlan } from "@chorus/shared";
 
 const MAX_SCROLL_HEIGHT = 4000;
 const MAX_VIEWPORT_HEIGHT = 7800;
 const SCROLL_STEP = 800;
 const SCROLL_WAIT_MS = 150;
 const MAX_SCROLL_STEPS = 20;
-
-// 縦長ページの分割撮影仕様（--split）
-const SEGMENT_THRESHOLD = 2600;
-const SEGMENT_HEIGHT = 2000;
-const SEGMENT_OVERLAP = 150;
-const MAX_SEGMENTS = 6;
-const MAX_FULL_HEIGHT = 16000;
-
-/** 高さ (実コンテンツ高) からセグメント撮影位置を算出する */
-function computeSegmentPlan(height: number): { y: number; h: number }[] {
-  if (height <= SEGMENT_THRESHOLD) return [];
-
-  let segH = SEGMENT_HEIGHT;
-  const stride0 = segH - SEGMENT_OVERLAP;
-  let count = Math.max(1, Math.ceil((height - segH) / stride0) + 1);
-
-  if (count > MAX_SEGMENTS) {
-    count = MAX_SEGMENTS;
-    segH = Math.ceil((height + SEGMENT_OVERLAP * (count - 1)) / count);
-  }
-
-  const stride = segH - SEGMENT_OVERLAP;
-  const positions: { y: number; h: number }[] = [];
-  for (let i = 0; i < count; i++) {
-    const y = i * stride;
-    if (y >= height) break;
-    const h = Math.min(segH, height - y);
-    positions.push({ y, h });
-    if (y + h >= height) break;
-  }
-  return positions;
-}
 
 /** "out.png" -> "out-1.png" のようにセグメント用のファイルパスを作る */
 function segmentPath(outputPath: string, index: number): string {

@@ -1,3 +1,5 @@
+import { MAX_FULL_HEIGHT, computeSegmentPlan } from "@chorus/shared";
+
 export class ScreenshotError extends Error {
   constructor(message: string) {
     super(message);
@@ -5,38 +7,7 @@ export class ScreenshotError extends Error {
   }
 }
 
-// 縦長ページの分割撮影仕様
-const SEGMENT_THRESHOLD = 2600;
-const SEGMENT_HEIGHT = 2000;
-const SEGMENT_OVERLAP = 150;
-const MAX_SEGMENTS = 6;
-const MAX_FULL_HEIGHT = 16000;
 const VIEWPORT_WIDTH = 1280;
-
-/** 高さ (実コンテンツ高) からセグメント撮影位置を算出する */
-function computeSegmentPlan(height: number): { y: number; h: number }[] {
-  if (height <= SEGMENT_THRESHOLD) return [];
-
-  let segH = SEGMENT_HEIGHT;
-  const stride0 = segH - SEGMENT_OVERLAP;
-  let count = Math.max(1, Math.ceil((height - segH) / stride0) + 1);
-
-  if (count > MAX_SEGMENTS) {
-    count = MAX_SEGMENTS;
-    segH = Math.ceil((height + SEGMENT_OVERLAP * (count - 1)) / count);
-  }
-
-  const stride = segH - SEGMENT_OVERLAP;
-  const positions: { y: number; h: number }[] = [];
-  for (let i = 0; i < count; i++) {
-    const y = i * stride;
-    if (y >= height) break;
-    const h = Math.min(segH, height - y);
-    positions.push({ y, h });
-    if (y + h >= height) break;
-  }
-  return positions;
-}
 
 /**
  * 指定 URL のスクリーンショットを撮影する（Playwright / dev 専用）。

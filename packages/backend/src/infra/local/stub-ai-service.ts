@@ -1,3 +1,4 @@
+import { SEGMENT_OVERLAP } from "@chorus/shared";
 import type { AIService, ConversationMessage, EvaluateDesignsParams, ImageSource } from "../../domain/ports/ai-service.js";
 import type { DraftResult, EvaluationInput, ImprovementReport, ImprovementSuggestion, ReasonSummary } from "../../domain/types.js";
 import { buildEvaluationPrompt } from "../../domain/services/evaluation-prompt.js";
@@ -33,7 +34,7 @@ export class StubAIService implements AIService {
         focusPoints: params.focusPoints,
         additionalInstruction: params.additionalInstruction,
         evaluateInstruction: "あなたのペルソナ視点から評価してください。",
-        segmentation: { countA: params.imagesA.length, countB: params.imagesB.length, overlapPx: 150 },
+        segmentation: { countA: params.imagesA.length, countB: params.imagesB.length, overlapPx: SEGMENT_OVERLAP },
       }),
     };
   }

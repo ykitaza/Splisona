@@ -1,3 +1,4 @@
+import { SEGMENT_OVERLAP } from "@chorus/shared";
 import type { AIService, ConversationMessage, EvaluateDesignsParams } from "../../domain/ports/ai-service.js";
 import { personaTypeLabel } from "../../domain/types.js";
 import { buildEvaluationPrompt } from "../../domain/services/evaluation-prompt.js";
@@ -57,7 +58,7 @@ export class GeminiAIService implements AIService {
       focusPoints,
       additionalInstruction,
       evaluateInstruction: "あなたのペルソナ視点から評価してください。",
-      segmentation: { countA: imagesA.length, countB: imagesB.length, overlapPx: 150 },
+      segmentation: { countA: imagesA.length, countB: imagesB.length, overlapPx: SEGMENT_OVERLAP },
     });
 
     const parts: GeminiPart[] = [{ text: prompt }];

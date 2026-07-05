@@ -1,4 +1,4 @@
-import type { ABTestRepository } from "../../domain/ports/abtest-repository.js";
+import type { ABTestRepository, ABTestUpdatableFields } from "../../domain/ports/abtest-repository.js";
 import type { ABTest } from "../../domain/types.js";
 import type { D1Database } from "./d1-types.js";
 
@@ -104,7 +104,7 @@ export class D1ABTestRepository implements ABTestRepository {
       .run();
   }
 
-  async updateFields(userId: string, testId: string, fields: Partial<Pick<ABTest, 'status' | 'title' | 'reasonSummaryStatus' | 'reasonSummaryA' | 'reasonSummaryB' | 'winnersReasonSummary' | 'improvementReport' | 'executedBy' | 'updatedAt'>>): Promise<void> {
+  async updateFields(userId: string, testId: string, fields: ABTestUpdatableFields): Promise<void> {
     const sets: string[] = [];
     const values: unknown[] = [];
     if (fields.status !== undefined) { sets.push("status = ?"); values.push(fields.status); }

@@ -1,3 +1,4 @@
+import { SEGMENT_OVERLAP } from "@chorus/shared";
 import type { AIService, ConversationMessage, EvaluateDesignsParams, ImageSource } from "../../domain/ports/ai-service.js";
 import { personaTypeLabel } from "../../domain/types.js";
 import { improvementSuggestionsSchema } from "../../domain/services/improvement-prompt.js";
@@ -55,7 +56,7 @@ export class WorkersAIService implements AIService {
       focusPoints,
       additionalInstruction,
       evaluateInstruction: "あなたのペルソナ視点から評価してください。",
-      segmentation: { countA: imagesA.length, countB: imagesB.length, overlapPx: 150 },
+      segmentation: { countA: imagesA.length, countB: imagesB.length, overlapPx: SEGMENT_OVERLAP },
     });
 
     const images = [...imagesA, ...imagesB].map(toBase64);

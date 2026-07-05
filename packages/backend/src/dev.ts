@@ -1,16 +1,14 @@
-import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import { extname } from "node:path";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { createRoutes, type RouteEnv } from "./routes.js";
+import { createApp, type AppAdapters } from "./create-app.js";
 import { createContainer } from "./container.js";
 import { MemoryPersonaRepository, MemoryABTestRepository, MemoryEvaluationRepository, MemorySettingsRepository, MemoryProjectRepository, MemoryApiKeyRepository, MemoryShareLinkRepository } from "./infra/local/memory-repos.js";
 import { FileStorageService } from "./infra/local/file-storage-service.js";
 import { StubAIService } from "./infra/local/stub-ai-service.js";
 import { captureWebsite } from "./infra/local/screenshot-capture.js";
-import { buildSharePayload, buildShareHtml } from "./application/share-page.js";
 import type { ImageSource } from "./domain/ports/ai-service.js";
 import { loadSeedIfEmpty } from "./seed/load-seed.js";
 
@@ -43,77 +41,40 @@ function buildLocalImageSource(key: string): ImageSource {
 
 const runningAbortControllers = new Map<string, AbortController>();
 
-const app = new Hono<RouteEnv>();
+const adapters: AppAdapters = {
+  preMiddleware: [
+    cors({
+      origin: (origin) => origin?.startsWith("http://localhost:") ? origin : "http://localhost:5173",
+      credentials: true,
+    }),
+  ],
 
-app.use("*", cors({
-  origin: (origin) => origin?.startsWith("http://localhost:") ? origin : "http://localhost:5173",
-  credentials: true,
-}));
+  getContainer: () => container,
 
-app.use("*", async (c, next) => {
-  if (c.req.path.startsWith("/images/") || c.req.path.startsWith("/share/")) return next();
+  async verifySession(c) {
+    return c.req.header("x-local-user-id") ?? null;
+  },
+  sessionErrorBody: { error: "UNAUTHORIZED", message: "x-local-user-id header required in local mode" },
 
-  const authHeader = c.req.header("Authorization");
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
-  if (bearer) {
-    const result = await container.apiKeyUseCases.verify(bearer);
-    if (!result) return c.json({ error: "UNAUTHORIZED", message: "invalid api key" }, 401);
-    c.set("container", container);
-    c.set("userId", result.userId);
-    c.set("authVia", "apikey");
-    return next();
-  }
+  async loadShareTemplate() {
+    try {
+      return readFileSync(EXPORT_TEMPLATE_PATH, "utf-8");
+    } catch {
+      return null;
+    }
+  },
 
-  const userId = c.req.header("x-local-user-id");
-  if (!userId) return c.json({ error: "UNAUTHORIZED", message: "x-local-user-id header required in local mode" }, 401);
-  c.set("container", container);
-  c.set("userId", userId);
-  c.set("authVia", "session");
-  await next();
-});
-
-// Shared routes
-app.route("/", createRoutes());
-
-// --- Dev-only: 共有レポートページ（公開・認証不要） ---
-app.get("/share/:token", async (c) => {
-  const token = c.req.param("token");
-
-  const resolved = await container.shareUseCases.resolve(token);
-  if (!resolved) {
-    return c.html("<!doctype html><html><body><p>リンクが無効です</p></body></html>", 404);
-  }
-
-  let template: string;
-  try {
-    template = readFileSync(EXPORT_TEMPLATE_PATH, "utf-8");
-  } catch {
-    return c.html("<!doctype html><html><body><p>共有ページの準備ができていません</p></body></html>", 503);
-  }
-
-  const test = await container.testRepo.findById(resolved.userId, resolved.testId);
-
-  const loadImage = (key: string | undefined): string | null => {
+  async loadImageDataUrl(_container, key) {
     if (!key) return null;
     const buf = fileStorage.readFile(key);
     if (!buf) return null;
     const format = fileStorage.getImageFormat(key);
     const mime = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : format === "gif" ? "image/gif" : "image/png";
     return `data:${mime};base64,${buf.toString("base64")}`;
-  };
+  },
+};
 
-  const imageA = loadImage(test?.designAImageKey);
-  const imageB = loadImage(test?.designBImageKey);
-
-  const payload = await buildSharePayload(container, resolved.userId, resolved.testId, { imageA, imageB });
-  const html = buildShareHtml(template, payload);
-
-  return c.body(html, 200, {
-    "Content-Type": "text/html; charset=utf-8",
-    "Cache-Control": "private, no-store",
-    "X-Robots-Tag": "noindex",
-  });
-});
+const app = createApp(adapters);
 
 // --- Dev-only: image upload & serving (local file storage) ---
 app.put("/images/*", async (c) => {

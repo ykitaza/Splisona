@@ -1,4 +1,4 @@
-import type { ABTestRepository } from "../../domain/ports/abtest-repository.js";
+import type { ABTestRepository, ABTestUpdatableFields } from "../../domain/ports/abtest-repository.js";
 import type { ABTest, ImprovementReport } from "../../domain/types.js";
 import type { DynamoOperations } from "./dynamo-client.js";
 
@@ -101,7 +101,7 @@ export class DynamoABTestRepository implements ABTestRepository {
     await this.db.putItem(toRecord(test) as unknown as Record<string, unknown>);
   }
 
-  async updateFields(userId: string, testId: string, fields: Partial<Pick<ABTest, 'status' | 'title' | 'reasonSummaryStatus' | 'reasonSummaryA' | 'reasonSummaryB' | 'winnersReasonSummary' | 'improvementReport' | 'executedBy' | 'updatedAt'>>): Promise<void> {
+  async updateFields(userId: string, testId: string, fields: ABTestUpdatableFields): Promise<void> {
     const existing = await this.findById(userId, testId);
     if (!existing) return;
     await this.save({ ...existing, ...fields });

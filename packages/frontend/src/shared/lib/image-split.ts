@@ -3,10 +3,7 @@
  * 高さ 2600px を超える画像を、高さ 2000px・のりしろ 150px の
  * セグメントに分割する（最大6分割。6を超える場合はセグメント高を広げて6枚に収める）。
  */
-const SPLIT_THRESHOLD = 2600;
-const SEGMENT_HEIGHT = 2000;
-const OVERLAP = 150;
-const MAX_SEGMENTS = 6;
+import { computeSegmentPlan } from '@chorus/shared';
 
 export interface SplitResult {
   blobs: Blob[]; // 上から順
@@ -21,26 +18,17 @@ export async function splitImageIfNeeded(file: File): Promise<Blob[] | null> {
   }
 
   const { width, height } = bitmap;
-  if (height <= SPLIT_THRESHOLD) {
+  const plan = computeSegmentPlan(height);
+  if (plan.length === 0) {
     bitmap.close();
     return null;
-  }
-
-  let segH = SEGMENT_HEIGHT;
-  let segCount = Math.ceil((height - OVERLAP) / (segH - OVERLAP));
-  if (segCount > MAX_SEGMENTS) {
-    segCount = MAX_SEGMENTS;
-    segH = Math.ceil((height + OVERLAP * (segCount - 1)) / segCount);
   }
 
   const type = file.type === 'image/jpeg' || file.type === 'image/webp' ? file.type : 'image/png';
   const quality = type === 'image/jpeg' || type === 'image/webp' ? 0.92 : undefined;
 
   const blobs: Blob[] = [];
-  for (let i = 0; i < segCount; i++) {
-    const y = i * (segH - OVERLAP);
-    const h = i === segCount - 1 ? height - y : segH;
-
+  for (const { y, h } of plan) {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = h;

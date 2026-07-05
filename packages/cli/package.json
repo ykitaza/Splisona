@@ -11,6 +11,7 @@
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
+    "@chorus/shared": "workspace:*",
     "commander": "^12.1.0"
   },
   "devDependencies": {
