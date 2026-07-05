@@ -188,7 +188,7 @@ export const AppShell: React.FC<AppShellProps> = ({ activeNav, children }) => {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
             <span style={{ fontFamily: FONT_SANS, fontSize: 13, color: TEXT_HI, fontWeight: 500 }}>山田 太郎</span>
-            <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: TEXT_LO, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>demo-user01@gm...</span>
+            <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: TEXT_LO, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>user@example.co...</span>
           </div>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEXT_LO} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m7 15 5 5 5-5" /><path d="m7 9 5-5 5 5" />

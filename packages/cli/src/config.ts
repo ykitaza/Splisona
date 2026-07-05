@@ -2,7 +2,9 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-export const DEFAULT_API_URL = "https://splisona-api.demo-user01.workers.dev";
+import { DEFAULT_API_ORIGIN } from "@chorus/shared";
+
+export const DEFAULT_API_URL = DEFAULT_API_ORIGIN;
 export const DEFAULT_WEB_URL = "https://splisona.pages.dev";
 
 const CONFIG_DIR = path.join(os.homedir(), ".splisona");

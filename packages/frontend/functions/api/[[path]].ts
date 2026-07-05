@@ -1,4 +1,6 @@
-const API_ORIGIN = "https://splisona-api.demo-user01.workers.dev";
+import { DEFAULT_API_ORIGIN } from "@chorus/shared";
+
+const API_ORIGIN = DEFAULT_API_ORIGIN;
 
 export const onRequest: PagesFunction = async (context) => {
   const { request, params } = context;

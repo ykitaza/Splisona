@@ -1,6 +1,6 @@
 -- Seed: デフォルトペルソナ再作成 + 完了済みレポート2件
 -- 旧デフォルトペルソナを削除（新12体は list() 呼び出し時に自動作成される）
-DELETE FROM personas WHERE persona_id LIKE 'default-%' AND user_id = 'demo-user01@gmail.com';
+DELETE FROM personas WHERE persona_id LIKE 'default-%' AND user_id = 'demo-user@example.com';
 
 -- 旧シードテストを削除して再投入
 DELETE FROM evaluations WHERE test_id IN ('seed-test-01', 'seed-test-02');
@@ -10,11 +10,11 @@ DELETE FROM abtests WHERE test_id IN ('seed-test-01', 'seed-test-02');
 INSERT INTO abtests (test_id, user_id, title, status, design_a_image_key, design_b_image_key, design_a_input_type, design_b_input_type, persona_ids, reason_summary_status, reason_summary_a, reason_summary_b, winners_reason_summary, created_at, updated_at)
 VALUES (
   'seed-test-01',
-  'demo-user01@gmail.com',
+  'demo-user@example.com',
   '[サンプル] AURORA LP比較: ミニマル vs ボールド',
   'completed',
-  'demo-user01@gmail.com/seed-test-01/A.png',
-  'demo-user01@gmail.com/seed-test-01/B.png',
+  'demo-user@example.com/seed-test-01/A.png',
+  'demo-user@example.com/seed-test-01/B.png',
   'image_upload',
   'image_upload',
   '["default-01","default-02","default-03","default-04","default-05","default-06","default-07","default-08","default-09","default-10","default-11","default-12"]',
@@ -44,11 +44,11 @@ INSERT INTO evaluations (test_id, persona_id, persona_display_name, winner, conf
 INSERT INTO abtests (test_id, user_id, title, status, design_a_image_key, design_b_image_key, design_a_input_type, design_b_input_type, persona_ids, reason_summary_status, reason_summary_a, reason_summary_b, winners_reason_summary, created_at, updated_at)
 VALUES (
   'seed-test-02',
-  'demo-user01@gmail.com',
+  'demo-user@example.com',
   '[サンプル] AURORA LP比較: 情報量 vs インパクト',
   'completed',
-  'demo-user01@gmail.com/seed-test-02/A.png',
-  'demo-user01@gmail.com/seed-test-02/B.png',
+  'demo-user@example.com/seed-test-02/A.png',
+  'demo-user@example.com/seed-test-02/B.png',
   'image_upload',
   'image_upload',
   '["default-01","default-02","default-03","default-04","default-05","default-06","default-07","default-08","default-09","default-10","default-11","default-12"]',
